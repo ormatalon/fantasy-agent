@@ -5,6 +5,7 @@ Usage (from repo root):
     uv run python -m src.interface.cli roster [--team "name"]
     uv run python -m src.interface.cli transactions [--limit N]
     uv run python -m src.interface.cli projections [--week N] [--limit N]
+    uv run python -m src.interface.cli backtest [--season YYYY] [--weeks START-END]
 """
 
 import argparse
@@ -13,6 +14,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 import config
+from src.evaluation.backtest import run_backtest
 from src.ingestion import storage
 from src.ingestion.sleeper import SleeperClient, SleeperError, prompt_choose_league, resolve_league
 from src.projections.engine import build_projection_table
@@ -168,6 +170,30 @@ def cmd_projections(args: argparse.Namespace) -> None:
         )
 
 
+def cmd_backtest(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    if not conn.execute("SELECT 1 FROM leagues LIMIT 1").fetchone():
+        print("No league synced yet - run `sync` first.", file=sys.stderr)
+        sys.exit(1)
+
+    start, end = (int(x) for x in args.weeks.split("-"))
+    weeks = list(range(start, end + 1))
+
+    report = run_backtest(conn, args.season, weeks)
+
+    baseline = report["sleeper_only"]
+    print(f"Backtest: season {args.season}, weeks {args.weeks}\n")
+    print(f"{'Tier':<20}{'N':>6}{'MAE':>8}{'RMSE':>8}{'vs baseline MAE':>18}")
+    for tier_name, label in [
+        ("sleeper_only", "Sleeper only (baseline)"),
+        ("blend", "+ blend"),
+        ("blend_matchup", "+ blend + matchup"),
+    ]:
+        r = report[tier_name]
+        delta = f"{(r.mae - baseline.mae) / baseline.mae:+.1%}" if baseline.mae and r.n else "n/a"
+        print(f"{label:<20}{r.n:>6}{r.mae:>8.2f}{r.rmse:>8.2f}{delta:>18}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="fantasy-agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -184,6 +210,10 @@ def main() -> None:
     proj_p.add_argument("--week", type=int, help="Defaults to the current week")
     proj_p.add_argument("--limit", type=int, default=30)
 
+    backtest_p = sub.add_parser("backtest", help="Accuracy report vs. baseline over past weeks")
+    backtest_p.add_argument("--season", default="2024", help="A completed season (default: 2024)")
+    backtest_p.add_argument("--weeks", default="3-17", help="Week range, e.g. 3-17")
+
     args = parser.parse_args()
 
     try:
@@ -195,6 +225,8 @@ def main() -> None:
             cmd_transactions(args)
         elif args.command == "projections":
             cmd_projections(args)
+        elif args.command == "backtest":
+            cmd_backtest(args)
     except SleeperError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

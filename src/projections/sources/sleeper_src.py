@@ -7,11 +7,12 @@ for past and upcoming seasons): /projections/nfl/<season>/<week>
 import httpx
 
 from src.ingestion.id_crosswalk import Crosswalk
+from src.projections.positions import SKILL_POSITIONS
 from src.projections.scoring import score_stats
 from src.projections.sources.base import ProjectionSource, SourceProjection
 
 PROJECTIONS_BASE = "https://api.sleeper.app/projections/nfl"
-POSITIONS = ["QB", "RB", "WR", "TE", "K", "DEF"]
+POSITIONS = SKILL_POSITIONS + ["DEF"]
 
 
 class SleeperSource(ProjectionSource):

@@ -59,8 +59,10 @@ def build_projection_table(conn: sqlite3.Connection, season: str, week: int) -> 
 
     blended = blend(projections_by_source, config.SOURCE_WEIGHTS)
 
-    points_allowed = matchup.compute_points_allowed_multipliers(season, week, config.MATCHUP_TRAILING_WEEKS)
-    team_opponents = matchup.get_team_opponents(season, week)
+    points_allowed, team_opponents = {}, {}
+    if config.MATCHUP_ADJUSTMENT_ENABLED:
+        points_allowed = matchup.compute_points_allowed_multipliers(season, week, config.MATCHUP_TRAILING_WEEKS)
+        team_opponents = matchup.get_team_opponents(season, week)
     backup_bumps = injury.compute_backup_bumps(conn)
 
     results = []
@@ -75,7 +77,9 @@ def build_projection_table(conn: sqlite3.Connection, season: str, week: int) -> 
         name = " ".join(p for p in [player["first_name"], player["last_name"]] if p) or player_id
         position, team = player["position"], player["team"]
 
-        mm = matchup.get_multiplier(points_allowed, team_opponents, team, position) if team and position else 1.0
+        mm = 1.0
+        if config.MATCHUP_ADJUSTMENT_ENABLED and team and position:
+            mm = matchup.get_multiplier(points_allowed, team_opponents, team, position)
         im = backup_bumps.get(player_id) or injury.get_designation_multiplier(player["injury_status"])
 
         total_multiplier = mm * im

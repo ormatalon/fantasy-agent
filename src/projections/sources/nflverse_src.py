@@ -1,16 +1,16 @@
 """nflverse-derived projections: a trailing recent-performance average.
 
 Not a "true" projection service — a simple, transparent baseline built from
-actual recent box scores via nfl_data_py, useful as one blended input.
+actual recent box scores via nflverse, useful as one blended input.
 Requires current-season history, so it contributes nothing in week 1 (the
 blend tolerates a source returning no data for a player/week).
 """
 
 import sys
 
-import nfl_data_py as nfl
-
 from src.ingestion.id_crosswalk import Crosswalk
+from src.ingestion.nflverse_client import import_weekly_stats
+from src.projections.positions import SKILL_POSITIONS
 from src.projections.sources.base import ProjectionSource, SourceProjection
 
 TRAILING_WEEKS = 4
@@ -27,12 +27,16 @@ class NflverseSource(ProjectionSource):
             return []
 
         try:
-            df = nfl.import_weekly_data(years=[season_int])
+            df = import_weekly_stats(years=[season_int])
         except Exception as e:
             print(f"nflverse: no weekly data available for {season_int} yet ({e}); skipping.", file=sys.stderr)
             return []
 
-        df = df[(df["week"] < week_int) & (df["week"] >= max(1, week_int - TRAILING_WEEKS))]
+        df = df[
+            (df["week"] < week_int)
+            & (df["week"] >= max(1, week_int - TRAILING_WEEKS))
+            & (df["position"].isin(SKILL_POSITIONS))
+        ]
         if df.empty:
             return []
 

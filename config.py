@@ -31,3 +31,13 @@ SOURCE_WEIGHTS: dict[str, float] = {
 # baseline for the matchup adjustment.
 MATCHUP_TRAILING_WEEKS = 8
 
+# Whether the matchup adjustment is actually applied to live projections.
+# Stage 2's backtest (2024 season, weeks 3-17) showed it makes MAE *worse*
+# than the plain blend (5.09 vs 4.83), even after trying shrinkage across
+# 16 (shrink_k, trailing_weeks) combos — none beat the unadjusted blend.
+# Per PLAN.md's own rule ("if it doesn't beat baseline, it doesn't ship"),
+# leave this off until the model is reworked and re-proven via `backtest`.
+# The evaluation harness still scores it every run (see evaluation/backtest.py)
+# so future attempts have an immediate answer on whether they helped.
+MATCHUP_ADJUSTMENT_ENABLED = False
+

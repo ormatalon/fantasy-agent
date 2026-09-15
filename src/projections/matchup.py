@@ -3,12 +3,15 @@ upcoming opponent's defense has been to that position, relative to league
 average.
 
 Both points-allowed-by-position and the schedule (who plays whom) come from
-nflverse via nfl_data_py — no external source needed for this module.
+nflverse — no external source needed for this module.
 """
 
 import sys
 
 import nfl_data_py as nfl
+
+from src.ingestion.nflverse_client import import_weekly_stats
+from src.projections.positions import SKILL_POSITIONS
 
 NEUTRAL_MULTIPLIER = 1.0
 # Guardrails so one small sample (bye-week-shortened window, etc.) can't
@@ -23,11 +26,15 @@ def compute_points_allowed_multipliers(
     """Returns {(defense_team, offense_position): multiplier vs league average}."""
     season_int, week_int = int(season), int(week)
     try:
-        df = nfl.import_weekly_data(years=[season_int])
+        df = import_weekly_stats(years=[season_int])
     except Exception as e:
         print(f"matchup: no weekly data available for {season_int} yet ({e}); using neutral multipliers.", file=sys.stderr)
         return {}
-    df = df[(df["week"] < week_int) & (df["week"] >= max(1, week_int - trailing_weeks))]
+    df = df[
+        (df["week"] < week_int)
+        & (df["week"] >= max(1, week_int - trailing_weeks))
+        & (df["position"].isin(SKILL_POSITIONS))
+    ]
     if df.empty:
         return {}
 

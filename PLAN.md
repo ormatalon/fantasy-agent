@@ -133,10 +133,10 @@ Never bundle two stages into one commit, and never commit an unapproved stage.
 - Pull base projections from **Sleeper and nflverse-derived** (FantasyPros deferred, see §2); reconcile via the crosswalk.  
 - Implement each feed behind the `ProjectionSource` interface (`projections/sources/`) and blend all **registered** sources — never hardcode the source list. Adding a new source later (including **my own ML model**, `my_model_src.py`) must require only implementing the interface and adding a weight in `config.py`, with no changes to `blend.py` or any decision module.  
 - Weighted-average blend into a baseline (weights live in `config.py`).  
-- Matchup adjustment: compute each defense's points-allowed-by-position from nflverse, convert to a multiplier vs. league average, scale each player. (The "RB vs. worst run defense gets a bump" case must fall out of this.)  
+- Matchup adjustment: compute each defense's points-allowed-by-position from nflverse, convert to a multiplier vs. league average, scale each player. (The "RB vs. worst run defense gets a bump" case must fall out of this.) **Update after Stage 2's backtest: this adjustment, as built, consistently underperforms plain blending (see Stage 2, tested across two independent seasons) and is disabled by default (`config.MATCHUP_ADJUSTMENT_ENABLED = False`) until reworked and re-proven — the underlying multiplier-computation code stays, and the evaluation harness still scores it every run so a future attempt gets an immediate answer.**  
 - Injury/news overlay: apply discounts for Q/D/O designations; bump backups on role changes (e.g., starter ruled out).  
 - **Output a mean AND a variance per player per week.**  
-- **DoD:** engine emits an adjusted projection table; a spot-check of 3–4 players shows the matchup and injury adjustments moving numbers in the correct direction.
+- **DoD:** engine emits an adjusted projection table; a spot-check of 3–4 players shows the matchup and injury adjustments moving numbers in the correct direction. (Met for injury; matchup's spot-check moved numbers in the *expected* direction — see live 2024 example in Stage 2 — but Stage 2 then showed that direction doesn't reliably beat a simpler baseline, which is exactly what the harness is for.)
 
 ### Stage 2 — Evaluation harness (do NOT skip)
 
@@ -144,6 +144,17 @@ Never bundle two stages into one commit, and never commit an unapproved stage.
 - Report error (MAE/RMSE) and, critically, error **relative to the raw-consensus baseline** — prove the adjustments add value rather than assuming they do.  
 - This becomes the regression guard for every later change to the projection engine.  
 - **DoD:** one command produces an accuracy report vs. baseline over a backtest window.
+- **Data source note:** `nfl_data_py==0.3.3` (the only version ever published — effectively unmaintained) points at a stale nflverse release path that stops at the 2024 season. `src/ingestion/nflverse_client.py` reads nflverse's current asset directly instead, which is what makes the 2025+ backtest below possible. That same investigation also surfaced a real bug: the raw file includes every roster position (OL, DL, LB, punters, ...), not just fantasy-relevant ones, which was quietly inflating match counts with trivial "0 predicted vs. 0 actual" pairs and made the matchup adjustment look far worse than it is. Fixed by filtering to `src/projections/positions.py`'s `SKILL_POSITIONS` everywhere nflverse data is consumed (source, matchup, backtest).
+- **Result (weeks 3-17, skill positions only, both seasons independently — not tuned and evaluated on the same one):**
+
+  | Tier | 2024 MAE | 2024 vs. baseline | 2025 MAE | 2025 vs. baseline |
+  |---|---|---|---|---|
+  | Sleeper only (baseline) | 5.00 | — | 4.80 | — |
+  | + blend (Sleeper + nflverse) | 4.63 | -7.4% | 4.44 | -7.5% |
+  | + blend + matchup | 4.86 | -2.9% | 4.63 | -3.5% |
+
+  Blending clearly beats the single-source baseline in both seasons. The matchup adjustment beats the naive baseline too, but consistently underperforms plain blend — i.e. it adds noise on top of an already-better signal. Confirmed with a 24-combination shrinkage/trailing-window sweep across both seasons: heavier shrinkage monotonically approaches (but in 2024 never quite reaches) blend-only performance, never exceeds it. So it stays disabled by default (`config.MATCHUP_ADJUSTMENT_ENABLED = False`, §2, Stage 1) — this is the harness doing its job twice now: first catching a plausible-sounding adjustment that doesn't help, then catching a bug in its own ground-truth data before that conclusion could be trusted.
+- **Known limitation:** the injury/depth-chart overlay isn't backtested — the local players table only holds *current* injury/depth-chart state, so scoring it against a past week would leak information not available at the time. It's covered by unit tests + a live spot-check instead (Stage 1 DoD) until a historical injury feed exists.
 
 ### Stage 3 — Decision modules (thin consumers of Stage 1\)
 
