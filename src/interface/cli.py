@@ -4,6 +4,7 @@ Usage (from repo root):
     uv run python -m src.interface.cli sync
     uv run python -m src.interface.cli roster [--team "name"]
     uv run python -m src.interface.cli transactions [--limit N]
+    uv run python -m src.interface.cli projections [--week N] [--limit N]
 """
 
 import argparse
@@ -14,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 import config
 from src.ingestion import storage
 from src.ingestion.sleeper import SleeperClient, SleeperError, prompt_choose_league, resolve_league
+from src.projections.engine import build_projection_table
 
 
 def cmd_sync(_args: argparse.Namespace) -> None:
@@ -144,6 +146,28 @@ def cmd_transactions(args: argparse.Namespace) -> None:
             print(f"  - {storage.player_name(conn, pid)}")
 
 
+def cmd_projections(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    _league_id, _user_id, current_week = _require_synced_state(conn)
+    season = storage.get_state(conn, "active_season")
+    week = args.week or current_week
+
+    table = build_projection_table(conn, season, week)
+    if not table:
+        print("No projections available (try a different week, or run `sync` first).")
+        return
+
+    header = f"{'Player':<25}{'Pos':<5}{'Team':<6}{'Mean':>8}{'StdDev':>8}{'Matchup':>9}{'Injury':>8}{'Srcs':>6}"
+    print(header)
+    print("-" * len(header))
+    for row in table[: args.limit]:
+        std = row.variance**0.5
+        print(
+            f"{row.name:<25}{row.position or '':<5}{row.team or '':<6}{row.mean:>8.1f}"
+            f"{std:>8.1f}{row.matchup_multiplier:>9.2f}{row.injury_multiplier:>8.2f}{row.num_sources:>6}"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="fantasy-agent")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -156,6 +180,10 @@ def main() -> None:
     txn_p = sub.add_parser("transactions", help="List recent league transactions from local storage")
     txn_p.add_argument("--limit", type=int, default=10)
 
+    proj_p = sub.add_parser("projections", help="Print the adjusted projection table")
+    proj_p.add_argument("--week", type=int, help="Defaults to the current week")
+    proj_p.add_argument("--limit", type=int, default=30)
+
     args = parser.parse_args()
 
     try:
@@ -165,6 +193,8 @@ def main() -> None:
             cmd_roster(args)
         elif args.command == "transactions":
             cmd_transactions(args)
+        elif args.command == "projections":
+            cmd_projections(args)
     except SleeperError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

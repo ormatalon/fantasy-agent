@@ -51,6 +51,10 @@ CREATE TABLE IF NOT EXISTS players (
     position TEXT,
     team TEXT,
     status TEXT,
+    injury_status TEXT,
+    depth_chart_position TEXT,
+    depth_chart_order INTEGER,
+    gsis_id TEXT,
     synced_at TEXT
 );
 
@@ -185,16 +189,24 @@ def save_players(conn: sqlite3.Connection, players: dict) -> None:
             p.get("position"),
             p.get("team"),
             p.get("status"),
+            p.get("injury_status"),
+            p.get("depth_chart_position"),
+            p.get("depth_chart_order"),
+            p.get("gsis_id"),
             ts,
         )
         for pid, p in players.items()
     ]
     conn.executemany(
-        "INSERT INTO players (player_id, first_name, last_name, position, team, status, synced_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?) "
+        "INSERT INTO players (player_id, first_name, last_name, position, team, status, "
+        "injury_status, depth_chart_position, depth_chart_order, gsis_id, synced_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(player_id) DO UPDATE SET first_name=excluded.first_name, "
         "last_name=excluded.last_name, position=excluded.position, team=excluded.team, "
-        "status=excluded.status, synced_at=excluded.synced_at",
+        "status=excluded.status, injury_status=excluded.injury_status, "
+        "depth_chart_position=excluded.depth_chart_position, "
+        "depth_chart_order=excluded.depth_chart_order, gsis_id=excluded.gsis_id, "
+        "synced_at=excluded.synced_at",
         rows,
     )
     conn.commit()

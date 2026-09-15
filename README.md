@@ -17,6 +17,7 @@ uv run python -m src.interface.cli sync
 uv run python -m src.interface.cli roster
 uv run python -m src.interface.cli roster --team "some other team"
 uv run python -m src.interface.cli transactions
+uv run python -m src.interface.cli projections [--week N]
 ```
 
 ## Tests

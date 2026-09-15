@@ -19,3 +19,15 @@ SLEEPER_API_BASE = "https://api.sleeper.app/v1"
 # Players catalog is a large payload; Sleeper asks that it not be pulled
 # more than once a day. Re-sync only if the local copy is older than this.
 PLAYERS_CACHE_TTL_HOURS = 24
+
+# Weight of each registered projection source in the blend. A source with
+# weight 0 (or omitted here) is disabled without touching blend.py.
+SOURCE_WEIGHTS: dict[str, float] = {
+    "sleeper": 1.0,
+    "nflverse": 0.5,
+}
+
+# Trailing window (in weeks) used to compute each defense's points-allowed
+# baseline for the matchup adjustment.
+MATCHUP_TRAILING_WEEKS = 8
+
