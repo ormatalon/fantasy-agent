@@ -35,3 +35,10 @@ logs/
 .cache/
 .pytest_cache/
 .mypy_cache/
+
+# Local data store
+data/*
+!data/.gitkeep
+
+# uv
+.venv/

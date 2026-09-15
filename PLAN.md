@@ -17,11 +17,14 @@ I am the human-in-the-loop: for a long time, the agent **recommends** and I **ap
 ## 2\. Hard constraints & decisions (already made — do not relitigate)
 
 - **Platform: Sleeper.** Read API is public and keyless. Use it for all reads (league, roster, matchups, players, projections, scoring settings).  
+- **League discovery, not a hardcoded league ID.** The agent takes my Sleeper **username**, not a league ID. It resolves `username -> user_id` (`GET /v1/user/<username>`), then lists that user's leagues for the season (`GET /v1/user/<user_id>/leagues/nfl/<season>`). If there is exactly one league, use it. If there is more than one, **the agent must ask me which league to address** before doing anything else — never guess. Cache the resolved league ID for the session/local storage so it doesn't re-prompt every run.  
 - **Sleeper has NO write API.** Roster changes cannot be made via API. Execution must go through the Sleeper web UI via browser automation (Stage 5). Everything before Stage 5 is read-only.  
 - **Interface, for now: terminal CLI.** No web app, no chat app. The CLI is both the dev surface and the interactive surface.  
 - **Notifications: email.** A small `notify(subject, body)` module sends via Gmail SMTP (app password) or a transactional email API (Resend/SendGrid). Do NOT rely on the Gmail MCP connector for this — it is read/draft-only and cannot send.  
 - **Projections are a blend, not a single source, and the set of sources is open-ended.** Combine multiple source feeds into a baseline, then adjust for (a) opponent matchup and (b) injury/news. Output a mean AND a variance per player. Every source sits behind a common `ProjectionSource` interface so new sources — including **my own ML model** — can be added later just by implementing the interface and adding a weight in `config.py`. Do not hardcode a fixed source list; design for extension from day one.  
-- **The LLM agent is the orchestrator (central, not optional).** An LLM sits at the center and runs the operation: it decides which tools to call and when, parses news into structured signal, explains recommendations, and manages the interaction. The decision modules and projection engine are exposed to it as **callable tools**. Start with a hosted LLM API; do not self-host early. Keep deterministic math in the tools, never in LLM free-text.
+- **Start Stage 1 with two sources: Sleeper + FantasyPros consensus + nflverse-derived — all three, not a pick-one.** Each source's weight lives in `config.py`; a source with weight `0` (or simply commented out) is disabled without touching `blend.py` or any decision module. The blend must tolerate any subset of registered sources being active.  
+- **The LLM agent is the orchestrator (central, not optional).** An LLM sits at the center and runs the operation: it decides which tools to call and when, parses news into structured signal, explains recommendations, and manages the interaction. The decision modules and projection engine are exposed to it as **callable tools**. Access the model via **OpenRouter** (`OPENROUTER_API_KEY` in `.env`), model id `openai/gpt-oss-120b:free`; do not self-host early. Keep deterministic math in the tools, never in LLM free-text.  
+- **Agent framework: LangGraph.** Build the orchestrator (`agent/orchestrator.py`) as a LangGraph graph — nodes for plan/tool-call/observe/explain, tool nodes wrapping the modules in `agent/tools.py`, and explicit state for conversation + in-progress recommendation. Use LangGraph specifically for the stateful, multi-step, sometimes-long-running flows where it earns its keep — the draft assistant's poll-and-react loop (Stage 3) and any multi-turn tool-calling sequence (gather projections -> check injury news -> re-rank -> explain). For a single-shot tool call with no branching (e.g., a plain `lineup` CLI invocation), a direct SDK tool-call loop is fine — don't force LangGraph where a linear call suffices. Do not adopt a second agent framework alongside it.
 
 ---
 
@@ -55,7 +58,7 @@ nfl-fantasy-engine/
   data/                     # local cache / storage (gitignored)
   src/
     agent/
-      orchestrator.py       # LLM agent loop: plan -> call tools -> explain
+      orchestrator.py       # LangGraph graph: plan -> call tools -> explain
       tools.py              # tool registry: exposes decision modules + engine to the LLM
       prompts.py            # system prompt, tool descriptions, guardrails
     ingestion/
@@ -91,7 +94,7 @@ nfl-fantasy-engine/
 
 ### Suggested stack
 
-Python 3.11+, `requests`/`httpx` for Sleeper, `pandas` for data, `pulp` or `OR-Tools` for the lineup optimizer, `pytest` for tests, `nfl_data_py` (nflverse) for historical play-by-play. For the agent layer, a hosted LLM API with tool/function calling (e.g., Anthropic or OpenAI SDK) — expose each module as a tool; keep the agent framework thin. Keep dependencies minimal early.
+Python 3.11+, `requests`/`httpx` for Sleeper, `pandas` for data, `pulp` or `OR-Tools` for the lineup optimizer, `pytest` for tests, `nfl_data_py` (nflverse) for historical play-by-play. For the agent layer, **OpenRouter** (`openai/gpt-oss-120b:free`) with tool/function calling, orchestrated via **LangGraph** — expose each module as a tool node; keep the graph thin, one node per responsibility. Keep dependencies minimal early.
 
 ---
 
@@ -113,7 +116,7 @@ Never bundle two stages into one commit, and never commit an unapproved stage.
 
 ### Stage 0 — Data spine (read-only)
 
-- Sleeper read client: given a league ID, fetch league, scoring settings, all rosters, my roster, weekly matchups, and the players catalog.  
+- Sleeper read client: given my **username**, resolve `user_id` -> list leagues for the season -> if more than one, **prompt me to pick which league** -> then fetch league, scoring settings, all rosters, my roster, weekly matchups, and the players catalog for the chosen league.  
 - Player ID crosswalk across sources (Sleeper \<-\> nflverse \<-\> FantasyPros). This is unglamorous and everything depends on it — get it solid.  
 - **Local storage holds league-wide state, not just my team** (parquet/SQLite is fine). Persist:  
   - the full **players catalog** (ids, names, positions, teams, status);  
@@ -123,11 +126,11 @@ Never bundle two stages into one commit, and never commit an unapproved stage.
   - **draft data** (picks, order) when applicable;  
   - **weekly actual stats**, projections (per source), and pulled news.  
   - Snapshot with timestamps so history is queryable over time, not just the latest state.  
-- **DoD:** `cli.py` can print my current roster with names, positions, and this week's opponent, and can list another team's roster and the league's recent transactions from local storage.
+- **DoD:** given only my Sleeper username, `cli.py` resolves my league(s) (prompting me to choose if there's more than one), then prints my current roster with names, positions, and this week's opponent, and can list another team's roster and the league's recent transactions from local storage.
 
 ### Stage 1 — Projection engine (the core edge)
 
-- Pull base projections from Sleeper \+ at least one other source; reconcile via the crosswalk.  
+- Pull base projections from **all three sources**: Sleeper, FantasyPros consensus, and nflverse-derived; reconcile via the crosswalk.  
 - Implement each feed behind the `ProjectionSource` interface (`projections/sources/`) and blend all **registered** sources — never hardcode the source list. Adding a new source later (including **my own ML model**, `my_model_src.py`) must require only implementing the interface and adding a weight in `config.py`, with no changes to `blend.py` or any decision module.  
 - Weighted-average blend into a baseline (weights live in `config.py`).  
 - Matchup adjustment: compute each defense's points-allowed-by-position from nflverse, convert to a multiplier vs. league average, scale each player. (The "RB vs. worst run defense gets a bump" case must fall out of this.)  
@@ -183,14 +186,14 @@ Order: lineup \-\> waivers \-\> trades \-\> draft. (Move draft earlier only if m
 
 ## 6\. Open questions to confirm with me before/while building
 
-- Is my **draft imminent** — i.e., is my league's draft happening within the next few days/weeks? The draft assistant is normally built last (it's only useful seasonally), so if the draft is coming up soon, reorder Stage 3 to build the real-time draft assistant FIRST so it's ready in time. Tell me my draft date.  
-- My **Sleeper league ID / username** (needed to wire Stage 0 to my real roster).  
-- League **scoring format** (PPR / half-PPR / standard) and roster slots — pull from Sleeper settings, but confirm.  
-- Which **second projection source** to start with (FantasyPros vs. nflverse-derived).  
-- Hosted LLM API vs. none for the (optional, later) news-parsing / Q\&A layer.
+- ~~Is my draft imminent?~~ — **resolved:** already drafted, season underway. Keep the draft assistant last in Stage 3 as originally ordered (lineup -> waivers -> trades -> draft).  
+- ~~My Sleeper league ID / username~~ — **resolved:** no fixed ID. The agent takes my username and discovers the league(s) itself (§2), prompting me to pick if I'm in more than one.  
+- League **scoring format** (PPR / half-PPR / standard) and roster slots — pull from Sleeper settings automatically in Stage 0; I'll confirm once it prints.  
+- ~~Which second projection source to start with~~ — **resolved:** start with all three (Sleeper + FantasyPros + nflverse-derived), config-driven so any can be disabled or new ones added (§2).  
+- ~~Hosted LLM API~~ — **resolved:** OpenRouter (`openai/gpt-oss-120b:free`), orchestrated via LangGraph (§2, §3).
 
 ---
 
 ## 7\. First action for the agent
 
-Start **Stage 0**. Scaffold the repo layout above, implement `ingestion/sleeper.py` and `interface/cli.py`, and make the DoD command work: print my roster and this week's opponent, and persist league-wide state (all rosters, transactions, matchups, players) to local storage. Ask me for my Sleeper league ID (or build against a placeholder I can swap into `.env`). Then **honor the checkpoint protocol (§4a): stop, tell me how to test it, wait for my approval, commit Stage 0, and only then continue.**  
+Start **Stage 0**. Scaffold the repo layout above, implement `ingestion/sleeper.py` and `interface/cli.py`, and make the DoD command work: given my Sleeper **username**, discover and (if needed) let me pick my league, then print my roster and this week's opponent, and persist league-wide state (all rosters, transactions, matchups, players) to local storage. Ask me for my Sleeper username (`.env` holds it, not a league ID). Then **honor the checkpoint protocol (§4a): stop, tell me how to test it, wait for my approval, commit Stage 0, and only then continue.**  
