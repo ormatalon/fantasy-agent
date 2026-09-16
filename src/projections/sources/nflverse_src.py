@@ -10,7 +10,8 @@ import sys
 
 from src.ingestion.id_crosswalk import Crosswalk
 from src.ingestion.nflverse_client import import_weekly_stats
-from src.projections.positions import SKILL_POSITIONS
+from src.projections.idp_stats import compute_idp_points
+from src.projections.positions import IDP_POSITIONS, PROJECTED_POSITIONS
 from src.projections.sources.base import ProjectionSource, SourceProjection
 
 TRAILING_WEEKS = 4
@@ -35,14 +36,18 @@ class NflverseSource(ProjectionSource):
         df = df[
             (df["week"] < week_int)
             & (df["week"] >= max(1, week_int - TRAILING_WEEKS))
-            & (df["position"].isin(SKILL_POSITIONS))
+            & (df["position"].isin(PROJECTED_POSITIONS))
         ]
         if df.empty:
             return []
 
         rec_bonus = scoring_settings.get("rec", 0)
         df = df.copy()
-        df["league_points"] = df["fantasy_points"].fillna(0) + df["receptions"].fillna(0) * rec_bonus
+        is_idp = df["position"].isin(IDP_POSITIONS)
+        offense_points = df["fantasy_points"].fillna(0) + df["receptions"].fillna(0) * rec_bonus
+        idp_points = df[is_idp].apply(lambda row: compute_idp_points(row, scoring_settings), axis=1)
+        df["league_points"] = offense_points
+        df.loc[is_idp, "league_points"] = idp_points
 
         out = []
         for gsis_id, points in df.groupby("player_id")["league_points"].mean().items():

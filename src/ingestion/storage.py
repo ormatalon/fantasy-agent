@@ -284,6 +284,17 @@ def player_name(conn: sqlite3.Connection, player_id: str) -> str:
     return f"{name} ({tag})" if tag else name
 
 
+def find_player_id_by_name(conn: sqlite3.Connection, query: str) -> str | None:
+    """Fuzzy-match a player name (case-insensitive substring). Returns the
+    first match; ambiguous queries should be narrowed by the caller."""
+    like = f"%{query.lower()}%"
+    row = conn.execute(
+        "SELECT player_id FROM players WHERE LOWER(first_name || ' ' || last_name) LIKE ? LIMIT 1",
+        (like,),
+    ).fetchone()
+    return row["player_id"] if row else None
+
+
 def get_roster(conn: sqlite3.Connection, league_id: str, roster_id: int) -> sqlite3.Row | None:
     return conn.execute(
         "SELECT * FROM rosters WHERE league_id = ? AND roster_id = ?",

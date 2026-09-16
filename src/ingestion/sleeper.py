@@ -70,6 +70,15 @@ class SleeperClient:
         """Full NFL players catalog. Large payload — cache aggressively."""
         return self._get("/players/nfl") or {}
 
+    def get_league_drafts(self, league_id: str) -> list[dict]:
+        return self._get(f"/league/{league_id}/drafts") or []
+
+    def get_draft(self, draft_id: str) -> dict:
+        return self._get(f"/draft/{draft_id}")
+
+    def get_draft_picks(self, draft_id: str) -> list[dict]:
+        return self._get(f"/draft/{draft_id}/picks") or []
+
 
 def resolve_league(
     client: SleeperClient,
