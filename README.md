@@ -26,6 +26,29 @@ uv run python -m src.interface.cli trending [--drop] [--limit N]
 uv run python -m src.interface.cli results [--week N]
 ```
 
+Weekly digest (lineup + waiver board + watch list + last week's result):
+
+```
+uv run python -m src.interface.cli digest              # print only
+uv run python -m src.interface.cli digest --email      # also email it
+```
+
+Emailing needs `GMAIL_ADDRESS` and a 16-character Gmail **app password**
+(`GMAIL_APP_PASSWORD`) in `.env` — a normal account password will not work.
+Generate one at https://myaccount.google.com/apppasswords (requires 2-Step
+Verification).
+
+To run it every Sunday morning, schedule `sync` then `digest --email`:
+
+```
+# macOS/Linux - crontab -e
+0 9 * * 0 cd /path/to/fantasy-agent && uv run python -m src.interface.cli sync && uv run python -m src.interface.cli digest --email
+
+# Windows - Task Scheduler, weekly trigger, action:
+#   uv  run python -m src.interface.cli digest --email
+#   (Start in: C:\path\to\fantasy-agent)
+```
+
 Ask the agent in natural language (needs `OPENROUTER_API_KEY` in `.env`):
 
 ```

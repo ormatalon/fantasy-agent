@@ -50,3 +50,9 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
+# --- Email notifications (Stage 4) ---
+# A Gmail app password (16 chars), NOT the account password. The Gmail MCP
+# connector can't be used here - it is read/draft-only and cannot send.
+GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+

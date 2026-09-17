@@ -191,10 +191,12 @@ Strategy: **thin agent, fat tools.** The graph should be boring — plan, call a
 
 ### Stage 4 — Interface (CLI \+ email)
 
-- CLI subcommands: `lineup`, `waivers`, `trades`, `draft`, each printing recommendations \+ reasons.  
-- `notify.py`: `notify(subject, body)` via Gmail SMTP (app password) or transactional API.  
-- Optional scheduled run (e.g., Sunday AM) that emails the weekly lineup \+ waiver board.  
-- **DoD:** running the weekly command both prints to terminal and emails me a readable digest.
+- CLI subcommands: `lineup`, `waivers`, `trades`, `draft`, each printing recommendations \+ reasons. **Done in Stage 3**, along with `projections`, `backtest`, `news`, `trending`, `results`, `ask` and `chat`.  
+- `notify.py`: `notify(subject, body)` via Gmail SMTP (app password). Validates the app password's shape *before* opening an SMTP connection, so the common mistake (pasting an account password) produces an actionable message instead of an opaque auth failure; spaces are stripped since Google displays app passwords in four groups of four.  
+- `digest.py` \+ the `digest` command: recommended lineup, a **watch list**, the waiver board, and last week's result. **Deliberately deterministic** — this is what an unattended Sunday-morning job sends, so it must not depend on a flaky free-tier model being up. The agent narrates the same data on demand via `ask`; the digest is the version that has to work alone.  
+- **The watch list needed a real filter.** Listing starters "with news" produced a watch list containing the entire lineup, since every starter has news every week. It now flags only injury-adjusted players plus news whose headline suggests a decision (injury, practice status, role/snap change), biased toward false positives — one extra line in an email costs far less than missing a ruled-out starter. A test caught that the first keyword list matched "practice" but not "practi**cing**, which is how the status is actually reported.  
+- Scheduled run: documented in the README as a cron / Task Scheduler pairing of `sync` then `digest --email`.  
+- **DoD — half met.** `digest` prints a readable weekly report (verified against the live league). The email half is **blocked on credentials, not code**: `GMAIL_APP_PASSWORD` in `.env` is 8 characters and Gmail app passwords are 16, so `--email` stops at validation with an actionable error and sends nothing. Needs a real app password generated at myaccount.google.com/apppasswords to close out.
 
 ### Stage 5 — Execution (the "hands", LAST)
 

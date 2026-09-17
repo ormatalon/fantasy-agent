@@ -29,6 +29,8 @@ from src.decisions.waivers import suggest_waivers_by_position
 from src.evaluation.backtest import run_backtest
 from src.ingestion import storage
 from src.ingestion.news import fetch_player_news
+from src.interface.digest import build_digest
+from src.interface.notify import NotifyError, notify
 from src.ingestion.sleeper import SleeperClient, SleeperError, prompt_choose_league, resolve_league
 from src.projections.engine import build_projection_table, build_season_projection_table
 
@@ -481,6 +483,19 @@ def cmd_results(args: argparse.Namespace) -> None:
             print(f"  {name:<25}{pts:>7.1f}")
 
 
+def cmd_digest(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    league_id, user_id, current_week = _require_synced_state(conn)
+    season = storage.get_state(conn, "active_season")
+    week = args.week or current_week
+
+    body = build_digest(conn, league_id, user_id, season, week)
+    print(body)
+
+    if args.email:
+        notify(f"Fantasy digest - week {week}", body, to=args.to)
+
+
 def cmd_ask(args: argparse.Namespace) -> None:
     conn = storage.get_connection(config.DB_PATH)
     print(ask(conn, args.question))
@@ -538,6 +553,11 @@ def main() -> None:
     draft_p.add_argument("--draft-id", dest="draft_id", help="Target a specific draft (e.g. a mock) instead of your league's")
     draft_p.add_argument("--replay", action="store_true", help="Replay a completed draft instead of polling live")
 
+    digest_p = sub.add_parser("digest", help="Weekly digest: lineup, waiver board, news, last week's result")
+    digest_p.add_argument("--week", type=int, help="Defaults to the current week")
+    digest_p.add_argument("--email", action="store_true", help="Also send it by email")
+    digest_p.add_argument("--to", help="Recipient (defaults to GMAIL_ADDRESS)")
+
     news_p = sub.add_parser("news", help="Recent news for your roster, or one named player")
     news_p.add_argument("--player", help="Look up one player by name (fetched live)")
     news_p.add_argument("--limit", type=int, default=3, help="Items per player (default: 3)")
@@ -576,6 +596,8 @@ def main() -> None:
             cmd_trades(args)
         elif args.command == "draft":
             cmd_draft(args)
+        elif args.command == "digest":
+            cmd_digest(args)
         elif args.command == "news":
             cmd_news(args)
         elif args.command == "trending":
@@ -586,7 +608,7 @@ def main() -> None:
             cmd_ask(args)
         elif args.command == "chat":
             cmd_chat(args)
-    except (SleeperError, AgentError) as e:
+    except (SleeperError, AgentError, NotifyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
