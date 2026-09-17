@@ -41,3 +41,12 @@ MATCHUP_TRAILING_WEEKS = 8
 # so future attempts have an immediate answer on whether they helped.
 MATCHUP_ADJUSTMENT_ENABLED = False
 
+# --- Agent layer (Stage 3.5) ---
+# PLAN.md originally specified openai/gpt-oss-120b:free; OpenRouter has since
+# made that slug paid-only, so the default here is a pinned free model that
+# was verified to emit tool calls. Pinned rather than an auto-router so the
+# agent's behavior stays reproducible.
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+

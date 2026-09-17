@@ -10,6 +10,8 @@ Usage (from repo root):
     uv run python -m src.interface.cli waivers [--limit N]
     uv run python -m src.interface.cli trades --give "name,name" --receive "name,name"
     uv run python -m src.interface.cli draft [--draft-id ID] [--replay]
+    uv run python -m src.interface.cli ask "should I start X or Y?"
+    uv run python -m src.interface.cli chat
 """
 
 import argparse
@@ -18,17 +20,20 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 import config
+from src.agent.orchestrator import AgentError, ask, chat
 from src.decisions.draft import find_league_draft_id, run_draft_assistant, run_draft_replay
 from src.decisions.lineup import optimize_lineup
+from src.decisions.results import summarize_week
 from src.decisions.trades import evaluate_trade
 from src.decisions.waivers import suggest_waivers_by_position
 from src.evaluation.backtest import run_backtest
 from src.ingestion import storage
+from src.ingestion.news import fetch_player_news
 from src.ingestion.sleeper import SleeperClient, SleeperError, prompt_choose_league, resolve_league
-from src.projections.engine import build_projection_table
+from src.projections.engine import build_projection_table, build_season_projection_table
 
 
-def cmd_sync(_args: argparse.Namespace) -> None:
+def cmd_sync(args: argparse.Namespace) -> None:
     if not config.SLEEPER_USERNAME:
         print("Set SLEEPER_USERNAME in .env first (see .env.example).", file=sys.stderr)
         sys.exit(1)
@@ -78,7 +83,36 @@ def cmd_sync(_args: argparse.Namespace) -> None:
         storage.set_state(conn, "active_season", season)
         storage.set_state(conn, "current_week", str(current_week))
 
+    if not args.skip_news:
+        _sync_roster_news(conn, league_id, user["user_id"])
+
     print(f"Synced. Season {season}, week {current_week}.")
+
+
+def _sync_roster_news(conn, league_id: str, user_id: str) -> None:
+    """Cache news for my own roster only - one request per player, so pulling
+    the whole league's ~200 rostered players would make `sync` crawl."""
+    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
+    if roster_id is None:
+        return
+    row = storage.get_roster(conn, league_id, roster_id)
+    if not row:
+        return
+    player_ids = json.loads(row["players"])
+
+    print(f"Fetching news for {len(player_ids)} rostered players...")
+    fetched = 0
+    for pid in player_ids:
+        try:
+            items = fetch_player_news(pid, limit=3)
+        except Exception as e:
+            # Undocumented endpoint - a failure here must never fail the sync.
+            print(f"  news unavailable for {storage.player_name(conn, pid)}: {e}", file=sys.stderr)
+            continue
+        if items:
+            storage.save_player_news(conn, items)
+            fetched += len(items)
+    print(f"Cached {fetched} news items.")
 
 
 def _require_synced_state(conn) -> tuple[str, str, int]:
@@ -162,7 +196,11 @@ def cmd_projections(args: argparse.Namespace) -> None:
     season = storage.get_state(conn, "active_season")
     week = args.week or current_week
 
-    table = build_projection_table(conn, season, week)
+    if args.season_long:
+        table = build_season_projection_table(conn, season)
+        print(f"Season {season} full-season projections\n")
+    else:
+        table = build_projection_table(conn, season, week)
     if not table:
         print("No projections available (try a different week, or run `sync` first).")
         return
@@ -293,12 +331,17 @@ def cmd_trades(args: argparse.Namespace) -> None:
     give_ids = resolve_ids(args.give)
     receive_ids = resolve_ids(args.receive)
 
-    table = build_projection_table(conn, season, week)
+    if args.season_long:
+        table = build_season_projection_table(conn, season)
+        label = f"Season {season} (full-season)"
+    else:
+        table = build_projection_table(conn, season, week)
+        label = f"Week {week}"
     projections = {row.player_id: row for row in table}
 
     result = evaluate_trade(give_ids, receive_ids, projections)
 
-    print(f"Week {week} trade evaluation\n")
+    print(f"{label} trade evaluation\n")
     print("You give:")
     for p in result.give:
         print(f"  {p.name:<25}{p.mean:>6.1f}")
@@ -333,11 +376,134 @@ def cmd_draft(args: argparse.Namespace) -> None:
             run_draft_assistant(client, build_table, draft_id, user_id, roster_positions)
 
 
+def cmd_news(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    league_id, user_id, _week = _require_synced_state(conn)
+
+    if args.player:
+        pid = storage.find_player_id_by_name(conn, args.player)
+        if not pid:
+            print(f"No player matching '{args.player}'.", file=sys.stderr)
+            sys.exit(1)
+        player_ids = [pid]
+        # Ad-hoc lookups hit the API live so a player outside my roster
+        # (a waiver target, say) still works without a full re-sync.
+        try:
+            items = fetch_player_news(pid, limit=args.limit)
+            if items:
+                storage.save_player_news(conn, items)
+        except Exception as e:
+            print(f"Live news fetch failed ({e}); showing cached.", file=sys.stderr)
+    else:
+        roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
+        row = storage.get_roster(conn, league_id, roster_id) if roster_id is not None else None
+        if not row:
+            print("Could not find your roster in this league.", file=sys.stderr)
+            sys.exit(1)
+        player_ids = json.loads(row["players"])
+
+    printed = 0
+    for pid in player_ids:
+        items = storage.get_player_news(conn, pid, limit=args.limit)
+        if not items:
+            continue
+        print(f"\n{storage.player_name(conn, pid)}")
+        for item in items:
+            when = (
+                datetime.fromtimestamp(item["published"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+                if item["published"] else "?"
+            )
+            print(f"  [{when}] {item['title']}")
+            if item["analysis"]:
+                print(f"    {item['analysis']}")
+        printed += 1
+
+    if not printed:
+        print("No cached news. Run `sync` (or `news --player \"name\"`) to fetch some.")
+
+
+def cmd_trending(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    kind = "drop" if args.drop else "add"
+    with SleeperClient() as client:
+        trending = client.get_trending(kind, lookback_hours=args.hours, limit=args.limit)
+    if not trending:
+        print("No trending data returned.")
+        return
+
+    rostered = set()
+    league_id = storage.get_state(conn, "active_league_id")
+    if league_id:
+        for row in conn.execute("SELECT players FROM rosters WHERE league_id = ?", (league_id,)):
+            rostered.update(json.loads(row["players"]))
+
+    print(f"Most {kind}ed players across Sleeper (last {args.hours}h)\n")
+    print(f"{'Player':<28}{'Leagues':>10}   Status")
+    for entry in trending:
+        pid = entry["player_id"]
+        tag = "rostered in your league" if pid in rostered else "available"
+        print(f"{storage.player_name(conn, pid):<28}{entry['count']:>10,}   {tag}")
+
+
+def cmd_results(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    league_id, user_id, current_week = _require_synced_state(conn)
+    week = args.week or current_week
+
+    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
+    if roster_id is None:
+        print("Could not find your roster in this league.", file=sys.stderr)
+        sys.exit(1)
+    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
+    roster_positions = json.loads(league_row["roster_positions"])
+
+    result = summarize_week(conn, league_id, roster_id, week, roster_positions)
+    if not result:
+        print(f"No scored results stored for week {week}. Run `sync` (results appear once games are played).")
+        return
+
+    print(f"Week {week} results\n")
+    print("Started:")
+    for name, pts in result.started:
+        print(f"  {name:<25}{pts:>7.1f}")
+    print(f"\nActual total:  {result.actual_total:>7.1f}")
+    print(f"Best possible: {result.optimal_total:>7.1f}")
+    print(f"Left on bench: {result.points_left_on_bench:>7.1f}")
+
+    if result.points_left_on_bench > 0:
+        print("\nBest possible lineup was:")
+        for slot in result.optimal_lineup:
+            print(f"  {slot.slot:<12}{slot.name:<25}{slot.mean:>7.1f}")
+
+    if result.bench:
+        print("\nBench:")
+        for name, pts in result.bench:
+            print(f"  {name:<25}{pts:>7.1f}")
+
+
+def cmd_ask(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    print(ask(conn, args.question))
+
+
+def cmd_chat(_args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    chat(conn)
+
+
 def main() -> None:
+    # The agent prints model-generated text, which can contain any Unicode.
+    # Windows consoles default to cp1252 and raise on anything outside it, so
+    # force UTF-8 and degrade gracefully rather than crashing on a stray dash.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(prog="fantasy-agent")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("sync", help="Fetch latest league state from Sleeper into local storage")
+    sync_p = sub.add_parser("sync", help="Fetch latest league state from Sleeper into local storage")
+    sync_p.add_argument("--skip-news", action="store_true", help="Skip the per-player news fetch (faster)")
 
     roster_p = sub.add_parser("roster", help="Print a roster from local storage")
     roster_p.add_argument("--team", help="Team/owner name to look up (defaults to your own roster)")
@@ -348,6 +514,8 @@ def main() -> None:
     proj_p = sub.add_parser("projections", help="Print the adjusted projection table")
     proj_p.add_argument("--week", type=int, help="Defaults to the current week")
     proj_p.add_argument("--limit", type=int, default=30)
+    proj_p.add_argument("--season", dest="season_long", action="store_true",
+                        help="Full-season projected totals instead of a single week")
 
     backtest_p = sub.add_parser("backtest", help="Accuracy report vs. baseline over past weeks")
     backtest_p.add_argument("--season", default="2024", help="A completed season (default: 2024)")
@@ -363,10 +531,29 @@ def main() -> None:
     trades_p = sub.add_parser("trades", help="Evaluate a proposed trade")
     trades_p.add_argument("--give", required=True, help="Comma-separated player names you'd give")
     trades_p.add_argument("--receive", required=True, help="Comma-separated player names you'd receive")
+    trades_p.add_argument("--season", dest="season_long", action="store_true",
+                          help="Judge on full-season value instead of this week's")
 
     draft_p = sub.add_parser("draft", help="Real-time draft assistant (polls until it's your turn)")
     draft_p.add_argument("--draft-id", dest="draft_id", help="Target a specific draft (e.g. a mock) instead of your league's")
     draft_p.add_argument("--replay", action="store_true", help="Replay a completed draft instead of polling live")
+
+    news_p = sub.add_parser("news", help="Recent news for your roster, or one named player")
+    news_p.add_argument("--player", help="Look up one player by name (fetched live)")
+    news_p.add_argument("--limit", type=int, default=3, help="Items per player (default: 3)")
+
+    trending_p = sub.add_parser("trending", help="Most added/dropped players across all of Sleeper")
+    trending_p.add_argument("--drop", action="store_true", help="Show most-dropped instead of most-added")
+    trending_p.add_argument("--hours", type=int, default=24, help="Lookback window (default: 24)")
+    trending_p.add_argument("--limit", type=int, default=25)
+
+    results_p = sub.add_parser("results", help="Actual scored points for a week, and points left on your bench")
+    results_p.add_argument("--week", type=int, help="Defaults to the current week")
+
+    ask_p = sub.add_parser("ask", help="Ask the agent a question in natural language")
+    ask_p.add_argument("question", help="e.g. \"who should I start at flex?\"")
+
+    sub.add_parser("chat", help="Interactive multi-turn session with the agent")
 
     args = parser.parse_args()
 
@@ -389,7 +576,17 @@ def main() -> None:
             cmd_trades(args)
         elif args.command == "draft":
             cmd_draft(args)
-    except SleeperError as e:
+        elif args.command == "news":
+            cmd_news(args)
+        elif args.command == "trending":
+            cmd_trending(args)
+        elif args.command == "results":
+            cmd_results(args)
+        elif args.command == "ask":
+            cmd_ask(args)
+        elif args.command == "chat":
+            cmd_chat(args)
+    except (SleeperError, AgentError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

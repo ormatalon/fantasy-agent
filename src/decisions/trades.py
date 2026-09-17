@@ -1,10 +1,10 @@
 """Trade evaluator: scores a proposed trade by the change in projected value.
 
-Limitation (deliberate, MVP scope): value is the current week's adjusted
-projection, not a rest-of-season aggregate — the projection engine is
-weekly-only (Stage 1), so this is a snapshot proxy, not dynasty-grade trade
-value. Good enough for "is this a fair in-season trade" at a glance; a
-season-long value model would be a real future addition, not a quick fix.
+Horizon-agnostic: it sums whatever projection table the caller passes, so
+the same code evaluates a trade on this week's numbers or on full-season
+totals (`engine.build_season_projection_table`). Callers should say which
+horizon they used when reporting the verdict, since a trade that looks even
+this week can be lopsided across a season.
 """
 
 from dataclasses import dataclass
@@ -42,10 +42,7 @@ def evaluate_trade(
     else:
         verdict = "roughly even"
 
-    why = (
-        f"Give {give_total:.1f} proj pts, receive {receive_total:.1f} proj pts "
-        f"({delta:+.1f}) - based on this week's projections, not rest-of-season value."
-    )
+    why = f"Give {give_total:.1f} proj pts, receive {receive_total:.1f} proj pts ({delta:+.1f})."
     return TradeEvaluation(
         give=give, receive=receive, give_total=give_total, receive_total=receive_total, delta=delta, verdict=verdict, why=why
     )

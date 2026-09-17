@@ -1,7 +1,12 @@
-"""Sleeper's weekly player projections, scored under the league's own rules.
+"""Sleeper's player projections, scored under the league's own rules.
 
-Endpoint is public but lives outside /v1 (undocumented, confirmed working
-for past and upcoming seasons): /projections/nfl/<season>/<week>
+Endpoints are public but live outside /v1 (undocumented, confirmed working
+for past and upcoming seasons):
+  weekly: /projections/nfl/<season>/<week>
+  season: /projections/nfl/<season>          (no week segment)
+
+Both return the same stat-key namespace (`rush_yd`, `rec`, `pass_td`, ...),
+so `score_stats` applies the league's own scoring to either unchanged.
 """
 
 import httpx
@@ -21,25 +26,42 @@ QUERY_POSITIONS = ["QB", "RB", "WR", "TE", "K", "DEF", "DL", "LB", "DB"]
 ACCEPT_POSITIONS = set(PROJECTED_POSITIONS) | {"DEF"}
 
 
+def _get(url: str, timeout: float = 30.0) -> list[dict]:
+    params = [("season_type", "regular")] + [("position[]", p) for p in QUERY_POSITIONS]
+    resp = httpx.get(url, params=params, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json() or []
+
+
+def _to_projections(entries: list[dict], scoring_settings: dict[str, float]) -> list[SourceProjection]:
+    out = []
+    for entry in entries:
+        stats = entry.get("stats") or {}
+        if not stats:
+            continue
+        player = entry.get("player") or {}
+        if player.get("position") not in ACCEPT_POSITIONS:
+            continue
+        out.append(
+            SourceProjection(player_id=entry["player_id"], points=score_stats(stats, scoring_settings))
+        )
+    return out
+
+
 class SleeperSource(ProjectionSource):
     name = "sleeper"
 
     def fetch(
         self, season: str, week: int, scoring_settings: dict[str, float], crosswalk: Crosswalk
     ) -> list[SourceProjection]:
-        params = [("season_type", "regular")] + [("position[]", p) for p in QUERY_POSITIONS]
-        resp = httpx.get(f"{PROJECTIONS_BASE}/{season}/{week}", params=params, timeout=15.0)
-        resp.raise_for_status()
-        entries = resp.json() or []
+        return _to_projections(_get(f"{PROJECTIONS_BASE}/{season}/{week}", timeout=15.0), scoring_settings)
 
-        out = []
-        for entry in entries:
-            stats = entry.get("stats") or {}
-            if not stats:
-                continue
-            player = entry.get("player") or {}
-            if player.get("position") not in ACCEPT_POSITIONS:
-                continue
-            points = score_stats(stats, scoring_settings)
-            out.append(SourceProjection(player_id=entry["player_id"], points=points))
-        return out
+
+def fetch_season_projections(season: str, scoring_settings: dict[str, float]) -> list[SourceProjection]:
+    """Full-season projected totals, scored under the league's rules.
+
+    Not a `ProjectionSource` — that interface is weekly by contract (its
+    `fetch` takes a week). Kept as a plain function rather than contorting
+    the interface to carry a "no week" case.
+    """
+    return _to_projections(_get(f"{PROJECTIONS_BASE}/{season}"), scoring_settings)

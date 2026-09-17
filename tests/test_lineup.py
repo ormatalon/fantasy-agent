@@ -48,6 +48,20 @@ def test_idp_slot_accepts_granular_position():
     assert lineup[0].player_id == "cb1"
 
 
+def test_zero_projected_player_still_fills_an_otherwise_empty_slot():
+    # A 0.0 projection contributes nothing to the objective, so without a
+    # tie-break the solver is indifferent between starting him and leaving the
+    # slot empty - which misreports an available player as "(empty)".
+    roster_positions = ["QB"]
+    roster_player_ids = ["qb1"]
+    projections = {"qb1": make_proj("qb1", 0.0)}
+    player_meta = {"qb1": {"name": "Zero QB", "position": "QB"}}
+
+    lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta)
+
+    assert lineup[0].player_id == "qb1"
+
+
 def test_empty_slot_when_no_eligible_player():
     roster_positions = ["K"]
     roster_player_ids = ["qb1"]

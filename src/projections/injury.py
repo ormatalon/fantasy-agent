@@ -27,6 +27,20 @@ DESIGNATION_DISCOUNT: dict[str, float] = {
 BACKUP_BUMP = 1.20
 RULED_OUT_DESIGNATIONS = {"Out", "IR", "PUP", "Sus", "COV"}
 
+# Designations that keep a player out for an extended stretch rather than a
+# single game. Only these should touch a SEASON-long projection: a player
+# listed Questionable this week has no business losing 10% of his season
+# outlook, but one on IR plainly does.
+SEASON_LONG_DESIGNATIONS = {"IR", "PUP", "Sus", "NA"}
+
+
+def get_season_designation_multiplier(injury_status: str | None) -> float:
+    """Injury multiplier appropriate to a season-long projection (see
+    SEASON_LONG_DESIGNATIONS). Week-specific tags are ignored here."""
+    if injury_status in SEASON_LONG_DESIGNATIONS:
+        return DESIGNATION_DISCOUNT.get(injury_status, 1.0)
+    return 1.0
+
 
 def get_designation_multiplier(injury_status: str | None) -> float:
     if not injury_status:

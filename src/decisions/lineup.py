@@ -65,7 +65,13 @@ def optimize_lineup(
 
     proj_points = {pid: (projections[pid].mean if pid in projections else 0.0) for pid in roster_player_ids}
 
-    prob += pulp.lpSum(proj_points[pid] * var for (pid, _idx), var in x.items())
+    # The tiny per-assignment bonus breaks ties toward *filling* a slot. Without
+    # it, a player projected at 0.0 contributes nothing, so the solver is
+    # indifferent between starting him and leaving the slot empty - which
+    # reports "(empty)" even when an eligible player exists. Small enough never
+    # to outrank a real points difference.
+    FILL_BONUS = 1e-6
+    prob += pulp.lpSum((proj_points[pid] + FILL_BONUS) * var for (pid, _idx), var in x.items())
 
     for idx, _slot in slot_indices:
         vars_for_slot = [var for (_pid, i), var in x.items() if i == idx]

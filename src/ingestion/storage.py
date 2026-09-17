@@ -66,9 +66,24 @@ CREATE TABLE IF NOT EXISTS matchups (
     points REAL,
     starters TEXT,
     players TEXT,
+    players_points TEXT,
     synced_at TEXT,
     PRIMARY KEY (league_id, week, roster_id)
 );
+
+CREATE TABLE IF NOT EXISTS player_news (
+    news_id TEXT PRIMARY KEY,
+    player_id TEXT,
+    published INTEGER,
+    source TEXT,
+    title TEXT,
+    description TEXT,
+    analysis TEXT,
+    url TEXT,
+    synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_player_news_player ON player_news (player_id, published DESC);
 
 CREATE TABLE IF NOT EXISTS transactions (
     transaction_id TEXT PRIMARY KEY,
@@ -91,10 +106,35 @@ def now_iso() -> str:
 
 def get_connection(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
+    # check_same_thread=False: LangGraph runs tool nodes on worker threads, so
+    # the agent's tools touch this connection from a different thread than
+    # created it. Python's sqlite3 is in serialized threading mode by default,
+    # and our access is effectively one-at-a-time, so this is safe here.
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+# Columns added after a table already existed in the wild. CREATE TABLE IF
+# NOT EXISTS won't add them to an existing local DB, and making people delete
+# their database to pick up a new field is a bad trade.
+_ADDED_COLUMNS: list[tuple[str, str, str]] = [
+    ("matchups", "players_points", "TEXT"),
+    ("players", "injury_status", "TEXT"),
+    ("players", "depth_chart_position", "TEXT"),
+    ("players", "depth_chart_order", "INTEGER"),
+    ("players", "gsis_id", "TEXT"),
+]
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    for table, column, coltype in _ADDED_COLUMNS:
+        existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+    conn.commit()
 
 
 # --- app state (which league is active, etc.) ---
@@ -228,16 +268,17 @@ def save_matchups(conn: sqlite3.Connection, league_id: str, week: int, matchups:
             m.get("points"),
             json.dumps(m.get("starters") or []),
             json.dumps(m.get("players") or []),
+            json.dumps(m.get("players_points") or {}),
             ts,
         )
         for m in matchups
     ]
     conn.executemany(
-        "INSERT INTO matchups (league_id, week, roster_id, matchup_id, points, starters, players, synced_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+        "INSERT INTO matchups (league_id, week, roster_id, matchup_id, points, starters, players, "
+        "players_points, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(league_id, week, roster_id) DO UPDATE SET matchup_id=excluded.matchup_id, "
         "points=excluded.points, starters=excluded.starters, players=excluded.players, "
-        "synced_at=excluded.synced_at",
+        "players_points=excluded.players_points, synced_at=excluded.synced_at",
         rows,
     )
     conn.commit()
@@ -282,6 +323,30 @@ def player_name(conn: sqlite3.Connection, player_id: str) -> str:
     name = " ".join(p for p in [row["first_name"], row["last_name"]] if p)
     tag = "/".join(p for p in [row["position"], row["team"]] if p)
     return f"{name} ({tag})" if tag else name
+
+
+def save_player_news(conn: sqlite3.Connection, items) -> None:
+    """`items` are ingestion.news.NewsItem records."""
+    ts = now_iso()
+    rows = [
+        (i.news_id, i.player_id, i.published, i.source, i.title, i.description, i.analysis, i.url, ts)
+        for i in items
+    ]
+    conn.executemany(
+        "INSERT INTO player_news (news_id, player_id, published, source, title, description, "
+        "analysis, url, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(news_id) DO UPDATE SET title=excluded.title, description=excluded.description, "
+        "analysis=excluded.analysis, url=excluded.url, synced_at=excluded.synced_at",
+        rows,
+    )
+    conn.commit()
+
+
+def get_player_news(conn: sqlite3.Connection, player_id: str, limit: int = 3) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM player_news WHERE player_id = ? ORDER BY published DESC LIMIT ?",
+        (player_id, limit),
+    ).fetchall()
 
 
 def find_player_id_by_name(conn: sqlite3.Connection, query: str) -> str | None:

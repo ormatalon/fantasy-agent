@@ -70,6 +70,17 @@ class SleeperClient:
         """Full NFL players catalog. Large payload — cache aggressively."""
         return self._get("/players/nfl") or {}
 
+    def get_trending(self, kind: str = "add", lookback_hours: int = 24, limit: int = 25) -> list[dict]:
+        """Most-added or most-dropped players across all of Sleeper.
+
+        `kind` is "add" or "drop". Returns [{player_id, count}], where count is
+        the number of leagues site-wide - a market-sentiment signal our own
+        projections can't produce.
+        """
+        return self._get(
+            f"/players/nfl/trending/{kind}?lookback_hours={lookback_hours}&limit={limit}"
+        ) or []
+
     def get_league_drafts(self, league_id: str) -> list[dict]:
         return self._get(f"/league/{league_id}/drafts") or []
 

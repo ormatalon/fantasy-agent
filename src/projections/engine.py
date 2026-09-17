@@ -1,8 +1,10 @@
 """Orchestrates sources -> blend -> matchup adjustment -> injury adjustment
-into one artifact: adjusted mean + variance per player, for one week.
+into one artifact: adjusted mean + variance per player.
 
-This is the seam every decision module (Stage 3+) consumes — nothing
-downstream should need to touch a projection source or adjustment directly.
+`build_projection_table` produces the weekly artifact;
+`build_season_projection_table` the full-season one. Both are consumed by
+the decision modules (Stage 3+) — nothing downstream should need to touch a
+projection source or adjustment directly.
 """
 
 import json
@@ -14,6 +16,7 @@ from src.ingestion.id_crosswalk import build_crosswalk
 from src.projections import injury, matchup
 from src.projections.blend import blend
 from src.projections.sources import ALL_SOURCES
+from src.projections.sources.sleeper_src import fetch_season_projections
 
 # Variance floor (as a std-dev) when only one source projected a player, so
 # "no measurable disagreement" doesn't get misread as "no uncertainty".
@@ -95,6 +98,62 @@ def build_projection_table(conn: sqlite3.Connection, season: str, week: int) -> 
                 mean=mean,
                 variance=variance,
                 matchup_multiplier=mm,
+                injury_multiplier=im,
+                num_sources=bp.num_sources,
+            )
+        )
+
+    results.sort(key=lambda r: r.mean, reverse=True)
+    return results
+
+
+def build_season_projection_table(conn: sqlite3.Connection, season: str) -> list[AdjustedProjection]:
+    """Full-season projected totals per player, same artifact shape as the
+    weekly table so decision modules can consume either.
+
+    Two deliberate differences from the weekly build:
+    - **No matchup adjustment.** It's a per-opponent multiplier; there is no
+      single opponent across a season.
+    - **Only season-long injury designations apply.** Discounting a season
+      total because someone is Questionable *this week* would be wrong; an
+      IR/PUP designation plainly should count. See injury.SEASON_LONG_DESIGNATIONS.
+
+    Currently single-source (Sleeper) — nflverse is historical box scores and
+    has no forward-looking season projection — so `num_sources` is 1 and the
+    variance floor carries the uncertainty estimate.
+    """
+    league_row = conn.execute("SELECT scoring_settings FROM leagues LIMIT 1").fetchone()
+    if not league_row:
+        raise RuntimeError("No league synced yet - run `sync` first.")
+    scoring_settings = json.loads(league_row["scoring_settings"])
+
+    projections_by_source = {"sleeper": fetch_season_projections(season, scoring_settings)}
+    blended = blend(projections_by_source, {"sleeper": 1.0})
+
+    results = []
+    for player_id, bp in blended.items():
+        player = conn.execute(
+            "SELECT first_name, last_name, position, team, injury_status FROM players WHERE player_id = ?",
+            (player_id,),
+        ).fetchone()
+        if not player:
+            continue
+
+        name = " ".join(p for p in [player["first_name"], player["last_name"]] if p) or player_id
+        position, team = player["position"], player["team"]
+        im = injury.get_season_designation_multiplier(player["injury_status"])
+
+        variance = bp.variance if bp.variance is not None else _variance_floor(bp.mean, position)
+
+        results.append(
+            AdjustedProjection(
+                player_id=player_id,
+                name=name,
+                position=position,
+                team=team,
+                mean=bp.mean * im,
+                variance=variance * im**2,
+                matchup_multiplier=1.0,
                 injury_multiplier=im,
                 num_sources=bp.num_sources,
             )
