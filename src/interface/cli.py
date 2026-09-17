@@ -483,6 +483,17 @@ def cmd_results(args: argparse.Namespace) -> None:
             print(f"  {name:<25}{pts:>7.1f}")
 
 
+def cmd_login(args: argparse.Namespace) -> None:
+    # Imported lazily so the rest of the CLI works without playwright present.
+    from src.execution.browser import check_session, login
+
+    if args.check:
+        print("Saved session is valid." if check_session() else "No valid session - run `login`.")
+        return
+    if not login():
+        sys.exit(1)
+
+
 def cmd_digest(args: argparse.Namespace) -> None:
     conn = storage.get_connection(config.DB_PATH)
     league_id, user_id, current_week = _require_synced_state(conn)
@@ -553,6 +564,9 @@ def main() -> None:
     draft_p.add_argument("--draft-id", dest="draft_id", help="Target a specific draft (e.g. a mock) instead of your league's")
     draft_p.add_argument("--replay", action="store_true", help="Replay a completed draft instead of polling live")
 
+    login_p = sub.add_parser("login", help="Log in to Sleeper once in a browser; the session is saved")
+    login_p.add_argument("--check", action="store_true", help="Only report whether a saved session is still valid")
+
     digest_p = sub.add_parser("digest", help="Weekly digest: lineup, waiver board, news, last week's result")
     digest_p.add_argument("--week", type=int, help="Defaults to the current week")
     digest_p.add_argument("--email", action="store_true", help="Also send it by email")
@@ -596,6 +610,8 @@ def main() -> None:
             cmd_trades(args)
         elif args.command == "draft":
             cmd_draft(args)
+        elif args.command == "login":
+            cmd_login(args)
         elif args.command == "digest":
             cmd_digest(args)
         elif args.command == "news":

@@ -9,6 +9,7 @@ dependencies = [
     "pulp>=2.8",
     "langgraph>=1.2.11",
     "langchain-openai>=1.6.2",
+    "playwright>=1.63.0",
 ]
 
 [dependency-groups]
