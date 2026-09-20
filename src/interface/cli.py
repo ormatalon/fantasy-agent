@@ -271,35 +271,56 @@ def cmd_lineup(args: argparse.Namespace) -> None:
     lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta)
 
     if args.live or args.apply:
-        from src.execution.browser import read_lineup, set_lineup, surname
+        from src.execution.browser import probe_moves, read_lineup, set_lineup, surname
         from src.execution.approval import ApprovalDenied, ProposedWrite, require_approval
 
         print("Reading your current lineup from Sleeper...\n")
         # Slots repeat (two RB, two WR, two TE), so these must be matched
         # positionally - a dict keyed by slot name silently collapses them.
-        live_starters = [(s, n) for s, n in read_lineup(league_id) if s not in {"BN", "IR"}]
+        live_rows = read_lineup(league_id)
+        live_starters = [(s, n, lk) for s, n, lk in live_rows if s not in {"BN", "IR"}]
+        # A swap is blocked if EITHER side has kicked off: you can't bench
+        # someone who already played, and you can't start someone who has.
+        # The incoming player is usually on the bench, so this covers all rows.
+        locked_by_surname = {surname(n): lk for _s, n, lk in live_rows}
 
         # Two RBs swapping which RB slot they occupy is not a change. Compare
         # per slot *type* (surnames, since Sleeper abbreviates first names),
         # otherwise a reordering reads as work that needs doing.
         live_by_slot: dict[str, set[str]] = {}
-        for slot_name, player in live_starters:
+        for slot_name, player, _locked in live_starters:
             live_by_slot.setdefault(slot_name, set()).add(surname(player))
 
         print(f"Week {week}: current vs recommended\n")
         print(f"{'Slot':<12}{'Currently':<22}{'Recommended':<22}")
         moves = []          # (slot_row_index, player_name) for the browser
         descriptions = []
+        locked_out = []     # real differences that kickoff has put out of reach
         for i, slot in enumerate(lineup):
-            now = live_starters[i][1] if i < len(live_starters) else "?"
+            now, outgoing_locked = (live_starters[i][1], live_starters[i][2]) if i < len(live_starters) else ("?", False)
+            incoming_locked = locked_by_surname.get(surname(slot.name), False)
             already_starting = surname(slot.name) in live_by_slot.get(slot.slot, set())
-            if not already_starting:
+            if already_starting:
+                note = ""
+            elif incoming_locked or outgoing_locked:
+                who = slot.name if incoming_locked else now
+                locked_out.append(f"{slot.slot}: {now} -> {slot.name} ({who} already played)")
+                note = f"  <-- locked ({who} already played)"
+            else:
                 moves.append((i, slot.name))
                 descriptions.append(f"{slot.slot}: {now} -> {slot.name}")
-            print(f"{slot.slot:<12}{now:<22}{slot.name:<22}{'' if already_starting else '  <-- change'}")
+                note = "  <-- change"
+            print(f"{slot.slot:<12}{now:<22}{slot.name:<22}{note}")
 
         if not moves:
-            print("\nLineup already matches the recommendation.")
+            if locked_out:
+                # Not the same thing as matching - the difference is real, it
+                # just can't be acted on any more.
+                print(f"\nNothing actionable: {len(locked_out)} difference(s) locked by kickoff.")
+                for description in locked_out:
+                    print(f"  - {description}")
+            else:
+                print("\nLineup already matches the recommendation.")
             return
 
         print(f"\n{len(moves)} change(s) needed:")
@@ -310,12 +331,31 @@ def cmd_lineup(args: argparse.Namespace) -> None:
             print("\nRe-run with --apply to enact these (you'll be asked to confirm).")
             return
 
+        # Ask Sleeper which of these it will accept before proposing them - a
+        # player whose game has kicked off can't be moved, and that should be
+        # known now rather than after approval.
+        print("\nChecking which changes Sleeper will accept...")
+        actionable, blocked = probe_moves(league_id, moves)
+
+        if blocked:
+            print("\nCannot be changed:")
+            for slot_index, name, reason in blocked:
+                print(f"  - {lineup[slot_index].slot}: {name} ({reason})")
+
+        if not actionable:
+            print("\nNothing left to apply.")
+            return
+
+        descriptions = [f"{lineup[i].slot}: {name}" for i, name in actionable]
+        print(f"\nWill apply {len(actionable)} change(s).")
+
         write = ProposedWrite(
             action="set_lineup",
-            summary=f"Set your week {week} Sleeper lineup ({len(moves)} change(s)).",
+            summary=f"Set your week {week} Sleeper lineup ({len(actionable)} change(s)).",
             changes=descriptions,
-            payload={"week": week, "moves": [[i, name] for i, name in moves]},
+            payload={"week": week, "moves": [[i, name] for i, name in actionable]},
         )
+        moves = actionable
         try:
             approval = require_approval(write)
         except ApprovalDenied as e:
@@ -325,7 +365,7 @@ def cmd_lineup(args: argparse.Namespace) -> None:
         print("\nApplying...")
         final = set_lineup(league_id, moves, write, approval)
         print("\nLineup now set on Sleeper:")
-        for slot_name, player in final:
+        for slot_name, player, _locked in final:
             if slot_name not in {"BN", "IR"}:
                 print(f"  {slot_name:<12}{player}")
         return

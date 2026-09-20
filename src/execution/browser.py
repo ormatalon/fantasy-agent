@@ -194,6 +194,65 @@ def _open_page(context, league_id: str):
     return page
 
 
+def _lock_reason(row_text: str) -> str:
+    """Why a player can't be moved, in human terms. Sleeper shows a kickoff
+    time for upcoming games and a score once one has started."""
+    lowered = row_text.lower()
+    if "final" in lowered:
+        return "game already finished"
+    if any(q in lowered for q in ["q1", "q2", "q3", "q4", "half", "ot "]):
+        return "game in progress"
+    return "not offered by Sleeper (locked or ineligible)"
+
+
+def probe_moves(
+    league_id: str, desired: list[tuple[int, str]], headless: bool = True
+) -> tuple[list[tuple[int, str]], list[tuple[int, str, str]]]:
+    """Ask Sleeper which of these moves it will actually accept.
+
+    Selecting a slot makes Sleeper mark each row valid/invalid, which already
+    accounts for kickoff locks - a player whose game has started is never
+    offered. Probing first means an impossible move never reaches the
+    approval prompt, instead of failing after the human has confirmed it.
+
+    Returns (actionable, blocked) where blocked carries a reason.
+    """
+    actionable: list[tuple[int, str]] = []
+    blocked: list[tuple[int, str, str]] = []
+
+    with browser_context(headless=headless) as context:
+        page = _open_page(context, league_id)
+        for slot_index, target in desired:
+            slots = page.locator(SLOT_LABEL)
+            if slot_index >= slots.count():
+                blocked.append((slot_index, target, "slot not found on the page"))
+                continue
+            slots.nth(slot_index).click()
+            page.wait_for_timeout(1200)
+
+            rows = page.locator(ROSTER_ROW)
+            offered = False
+            target_text = ""
+            for i in range(rows.count()):
+                text = rows.nth(i).inner_text()
+                if surname(_row_player(rows.nth(i))) != surname(target):
+                    continue
+                target_text = text
+                if "valid" in (rows.nth(i).get_attribute("class") or "").split():
+                    offered = True
+                break
+
+            if offered:
+                actionable.append((slot_index, target))
+            else:
+                blocked.append((slot_index, target, _lock_reason(target_text)))
+
+            slots.nth(slot_index).click()  # deselect before the next probe
+            page.wait_for_timeout(500)
+
+    return actionable, blocked
+
+
 def set_lineup(
     league_id: str,
     moves: list[tuple[int, str]],
@@ -247,7 +306,16 @@ def set_lineup(
         return _scrape_lineup(page)
 
 
-def _scrape_lineup(page) -> list[tuple[str, str]]:
+def is_locked(row_text: str) -> bool:
+    """A player whose game has kicked off cannot be moved. Sleeper shows a
+    kickoff time before the game and a score once it starts, so the presence
+    of a score is the tell."""
+    lowered = row_text.lower()
+    return "final" in lowered or any(q in lowered for q in ["q1", "q2", "q3", "q4", "half", "ot "])
+
+
+def _scrape_lineup(page) -> list[tuple[str, str, bool]]:
+    """Returns [(slot, player, locked)]."""
     rows = page.locator(ROSTER_ROW)
     if rows.count() == 0:
         raise BrowserError(
@@ -256,18 +324,22 @@ def _scrape_lineup(page) -> list[tuple[str, str]]:
         )
     lineup = []
     for i in range(rows.count()):
-        lines = [ln.strip() for ln in rows.nth(i).inner_text().split("\n") if ln.strip()]
+        text = rows.nth(i).inner_text()
+        lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
         if not lines:
             continue
         slot_end = 1
         while slot_end < len(lines) and len(lines[slot_end - 1]) == 1 and len(lines[slot_end]) == 1:
             slot_end += 1
-        lineup.append((_normalise_slot("".join(lines[:slot_end])),
-                       lines[slot_end] if slot_end < len(lines) else "(empty)"))
+        lineup.append((
+            _normalise_slot("".join(lines[:slot_end])),
+            lines[slot_end] if slot_end < len(lines) else "(empty)",
+            is_locked(text),
+        ))
     return lineup
 
 
-def read_lineup(league_id: str, headless: bool = True) -> list[tuple[str, str]]:
+def read_lineup(league_id: str, headless: bool = True) -> list[tuple[str, str, bool]]:
     """Scrape the lineup Sleeper currently shows: [(slot, player), ...].
 
     Read-only. This is what verifies a write actually landed, which is half
