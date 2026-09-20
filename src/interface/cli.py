@@ -270,8 +270,9 @@ def cmd_lineup(args: argparse.Namespace) -> None:
 
     lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta)
 
-    if args.live:
-        from src.execution.browser import read_lineup
+    if args.live or args.apply:
+        from src.execution.browser import read_lineup, set_lineup, surname
+        from src.execution.approval import ApprovalDenied, ProposedWrite, require_approval
 
         print("Reading your current lineup from Sleeper...\n")
         # Slots repeat (two RB, two WR, two TE), so these must be matched
@@ -281,29 +282,52 @@ def cmd_lineup(args: argparse.Namespace) -> None:
         # Two RBs swapping which RB slot they occupy is not a change. Compare
         # per slot *type* (surnames, since Sleeper abbreviates first names),
         # otherwise a reordering reads as work that needs doing.
-        def surname(name: str) -> str:
-            return name.split()[-1].lower()
-
         live_by_slot: dict[str, set[str]] = {}
         for slot_name, player in live_starters:
             live_by_slot.setdefault(slot_name, set()).add(surname(player))
 
         print(f"Week {week}: current vs recommended\n")
         print(f"{'Slot':<12}{'Currently':<22}{'Recommended':<22}")
-        moves = []
+        moves = []          # (slot_row_index, player_name) for the browser
+        descriptions = []
         for i, slot in enumerate(lineup):
             now = live_starters[i][1] if i < len(live_starters) else "?"
             already_starting = surname(slot.name) in live_by_slot.get(slot.slot, set())
             if not already_starting:
-                moves.append(f"start {slot.name} at {slot.slot}")
+                moves.append((i, slot.name))
+                descriptions.append(f"{slot.slot}: {now} -> {slot.name}")
             print(f"{slot.slot:<12}{now:<22}{slot.name:<22}{'' if already_starting else '  <-- change'}")
 
-        if moves:
-            print(f"\n{len(moves)} change(s) needed:")
-            for move in moves:
-                print(f"  - {move}")
-        else:
+        if not moves:
             print("\nLineup already matches the recommendation.")
+            return
+
+        print(f"\n{len(moves)} change(s) needed:")
+        for description in descriptions:
+            print(f"  - {description}")
+
+        if not args.apply:
+            print("\nRe-run with --apply to enact these (you'll be asked to confirm).")
+            return
+
+        write = ProposedWrite(
+            action="set_lineup",
+            summary=f"Set your week {week} Sleeper lineup ({len(moves)} change(s)).",
+            changes=descriptions,
+            payload={"week": week, "moves": [[i, name] for i, name in moves]},
+        )
+        try:
+            approval = require_approval(write)
+        except ApprovalDenied as e:
+            print(f"\n{e}")
+            return
+
+        print("\nApplying...")
+        final = set_lineup(league_id, moves, write, approval)
+        print("\nLineup now set on Sleeper:")
+        for slot_name, player in final:
+            if slot_name not in {"BN", "IR"}:
+                print(f"  {slot_name:<12}{player}")
         return
 
     print(f"Week {week} lineup recommendation\n")
@@ -601,6 +625,8 @@ def main() -> None:
     lineup_p.add_argument("--week", type=int, help="Defaults to the current week")
     lineup_p.add_argument("--live", action="store_true",
                           help="Compare against what's actually set on Sleeper right now")
+    lineup_p.add_argument("--apply", action="store_true",
+                          help="Enact the changes on Sleeper (asks you to confirm first)")
 
     waivers_p = sub.add_parser("waivers", help="Ranked waiver/FAAB targets, grouped by position")
     waivers_p.add_argument("--week", type=int, help="Defaults to the current week")

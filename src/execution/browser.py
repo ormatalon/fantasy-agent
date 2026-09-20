@@ -168,6 +168,105 @@ def _normalise_slot(raw: str) -> str:
     return _FLEX_LABELS.get(collapsed, collapsed)
 
 
+def _row_player(row) -> str:
+    lines = [ln.strip() for ln in row.inner_text().split("\n") if ln.strip()]
+    slot_end = 1
+    while slot_end < len(lines) and len(lines[slot_end - 1]) == 1 and len(lines[slot_end]) == 1:
+        slot_end += 1
+    return lines[slot_end] if slot_end < len(lines) else "(empty)"
+
+
+def surname(name: str) -> str:
+    """Sleeper abbreviates first names ("D Swift"), so surnames are the only
+    reliable join between our projection names and what the UI shows."""
+    return name.split()[-1].lower().strip(".")
+
+
+def _open_page(context, league_id: str):
+    page = context.pages[0] if context.pages else context.new_page()
+    page.goto(
+        TEAM_PAGE.format(base=SLEEPER_URL, league_id=league_id),
+        wait_until="domcontentloaded",
+        timeout=60000,
+    )
+    page.wait_for_timeout(5000)
+    dismiss_overlays(page)
+    return page
+
+
+def set_lineup(
+    league_id: str,
+    moves: list[tuple[int, str]],
+    write: ProposedWrite,
+    approval: Approval,
+    headless: bool = True,
+) -> list[tuple[str, str]]:
+    """Enact lineup changes. `moves` is [(slot_row_index, player_surname)].
+
+    Selecting a slot makes Sleeper mark every row `valid` or `invalid`, so
+    eligibility is read off the page rather than reimplemented here - if a
+    target isn't marked valid, we refuse rather than click blindly.
+
+    Returns the lineup re-read from the page afterwards, so the caller can
+    confirm what actually landed.
+    """
+    _require_valid_approval(approval, write)
+
+    with browser_context(headless=headless) as context:
+        page = _open_page(context, league_id)
+
+        for slot_index, target in moves:
+            slots = page.locator(SLOT_LABEL)
+            if slot_index >= slots.count():
+                raise BrowserError(f"Slot index {slot_index} is out of range.")
+            slots.nth(slot_index).click()
+            page.wait_for_timeout(1200)
+
+            rows = page.locator(ROSTER_ROW)
+            chosen = None
+            for i in range(rows.count()):
+                classes = rows.nth(i).get_attribute("class") or ""
+                if "valid" not in classes.split():
+                    continue
+                if surname(_row_player(rows.nth(i))) == surname(target):
+                    chosen = i
+                    break
+
+            if chosen is None:
+                raise BrowserError(
+                    f"Sleeper did not offer '{target}' as an eligible swap for slot "
+                    f"index {slot_index} - refusing to click anything else."
+                )
+
+            rows.nth(chosen).click()
+            page.wait_for_timeout(2000)
+
+        page.reload(wait_until="domcontentloaded", timeout=60000)
+        page.wait_for_timeout(5000)
+        dismiss_overlays(page)
+        return _scrape_lineup(page)
+
+
+def _scrape_lineup(page) -> list[tuple[str, str]]:
+    rows = page.locator(ROSTER_ROW)
+    if rows.count() == 0:
+        raise BrowserError(
+            "No roster rows found - the session may have expired, or Sleeper's "
+            "markup changed. Try `login --check`."
+        )
+    lineup = []
+    for i in range(rows.count()):
+        lines = [ln.strip() for ln in rows.nth(i).inner_text().split("\n") if ln.strip()]
+        if not lines:
+            continue
+        slot_end = 1
+        while slot_end < len(lines) and len(lines[slot_end - 1]) == 1 and len(lines[slot_end]) == 1:
+            slot_end += 1
+        lineup.append((_normalise_slot("".join(lines[:slot_end])),
+                       lines[slot_end] if slot_end < len(lines) else "(empty)"))
+    return lineup
+
+
 def read_lineup(league_id: str, headless: bool = True) -> list[tuple[str, str]]:
     """Scrape the lineup Sleeper currently shows: [(slot, player), ...].
 
@@ -175,32 +274,4 @@ def read_lineup(league_id: str, headless: bool = True) -> list[tuple[str, str]]:
     of the Stage 5 DoD ("sets my lineup ... and confirms the result").
     """
     with browser_context(headless=headless) as context:
-        page = context.pages[0] if context.pages else context.new_page()
-        page.goto(
-            TEAM_PAGE.format(base=SLEEPER_URL, league_id=league_id),
-            wait_until="domcontentloaded",
-            timeout=60000,
-        )
-        page.wait_for_timeout(5000)
-        dismiss_overlays(page)
-
-        rows = page.locator(ROSTER_ROW)
-        if rows.count() == 0:
-            raise BrowserError(
-                "No roster rows found - the session may have expired, or Sleeper's "
-                "markup changed. Try `login --check`."
-            )
-
-        lineup = []
-        for i in range(rows.count()):
-            lines = [ln.strip() for ln in rows.nth(i).inner_text().split("\n") if ln.strip()]
-            if not lines:
-                continue
-            # Row text starts with the stacked slot letters, then the player name.
-            slot_end = 1
-            while slot_end < len(lines) and len(lines[slot_end - 1]) == 1 and len(lines[slot_end]) == 1:
-                slot_end += 1
-            slot = _normalise_slot("".join(lines[:slot_end]))
-            player = lines[slot_end] if slot_end < len(lines) else "(empty)"
-            lineup.append((slot, player))
-        return lineup
+        return _scrape_lineup(_open_page(context, league_id))
