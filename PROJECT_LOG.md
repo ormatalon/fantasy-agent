@@ -12,6 +12,17 @@ debugging detours that produced §5, is at
 carries the same reference in its `Claude-Session:` trailer, so any single
 change can be traced back to the conversation that produced it.
 
+**Models used:**
+
+| Stages | Model | Work |
+|---|---|---|
+| 0 – 3 | **Claude Sonnet 5** | Data spine, projection engine, evaluation harness, all four decision modules |
+| 3.5 – 5 | **Claude Opus 5** | LangGraph agent, season projections, news/trending/results, email digest, browser execution |
+
+The switch happened at the *end* of Stage 3, while it was still uncommitted —
+so the Stage 3 commit carries an Opus trailer although Sonnet wrote the code.
+Each commit's `Co-Authored-By:` trailer records which model made it.
+
 ---
 
 ## 1. Starting point
