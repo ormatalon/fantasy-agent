@@ -270,6 +270,42 @@ def cmd_lineup(args: argparse.Namespace) -> None:
 
     lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta)
 
+    if args.live:
+        from src.execution.browser import read_lineup
+
+        print("Reading your current lineup from Sleeper...\n")
+        # Slots repeat (two RB, two WR, two TE), so these must be matched
+        # positionally - a dict keyed by slot name silently collapses them.
+        live_starters = [(s, n) for s, n in read_lineup(league_id) if s not in {"BN", "IR"}]
+
+        # Two RBs swapping which RB slot they occupy is not a change. Compare
+        # per slot *type* (surnames, since Sleeper abbreviates first names),
+        # otherwise a reordering reads as work that needs doing.
+        def surname(name: str) -> str:
+            return name.split()[-1].lower()
+
+        live_by_slot: dict[str, set[str]] = {}
+        for slot_name, player in live_starters:
+            live_by_slot.setdefault(slot_name, set()).add(surname(player))
+
+        print(f"Week {week}: current vs recommended\n")
+        print(f"{'Slot':<12}{'Currently':<22}{'Recommended':<22}")
+        moves = []
+        for i, slot in enumerate(lineup):
+            now = live_starters[i][1] if i < len(live_starters) else "?"
+            already_starting = surname(slot.name) in live_by_slot.get(slot.slot, set())
+            if not already_starting:
+                moves.append(f"start {slot.name} at {slot.slot}")
+            print(f"{slot.slot:<12}{now:<22}{slot.name:<22}{'' if already_starting else '  <-- change'}")
+
+        if moves:
+            print(f"\n{len(moves)} change(s) needed:")
+            for move in moves:
+                print(f"  - {move}")
+        else:
+            print("\nLineup already matches the recommendation.")
+        return
+
     print(f"Week {week} lineup recommendation\n")
     total = 0.0
     for slot in lineup:
@@ -485,11 +521,25 @@ def cmd_results(args: argparse.Namespace) -> None:
 
 def cmd_login(args: argparse.Namespace) -> None:
     # Imported lazily so the rest of the CLI works without playwright present.
-    from src.execution.browser import check_session, login
+    from src.execution.browser import CHROME_CDP_HINT, cdp_available, check_session, login
 
     if args.check:
-        print("Saved session is valid." if check_session() else "No valid session - run `login`.")
+        via = "your running Chrome" if cdp_available() else "the saved profile"
+        if check_session():
+            print(f"Session is valid (via {via}).")
+        else:
+            print(f"No valid session (checked {via}).")
+            if not cdp_available():
+                print(f"\nSleeper's login blocks automated browsers. {CHROME_CDP_HINT}")
         return
+
+    if cdp_available():
+        print("Attached to your running Chrome - no separate login needed.")
+        print("Session is valid." if check_session() else "That Chrome isn't logged in to Sleeper.")
+        return
+
+    print(f"Sleeper's login blocks automated browsers.\n\n{CHROME_CDP_HINT}\n")
+    print("Attempting the isolated-profile login anyway (may be blocked)...")
     if not login():
         sys.exit(1)
 
@@ -549,6 +599,8 @@ def main() -> None:
 
     lineup_p = sub.add_parser("lineup", help="Optimal start/sit recommendation for your roster")
     lineup_p.add_argument("--week", type=int, help="Defaults to the current week")
+    lineup_p.add_argument("--live", action="store_true",
+                          help="Compare against what's actually set on Sleeper right now")
 
     waivers_p = sub.add_parser("waivers", help="Ranked waiver/FAAB targets, grouped by position")
     waivers_p.add_argument("--week", type=int, help="Defaults to the current week")
