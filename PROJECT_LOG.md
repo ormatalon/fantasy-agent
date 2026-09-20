@@ -3,7 +3,14 @@
 A record of what was built, what broke, and what changed along the way.
 Companion to `PLAN.md` (the build directive) — this is the retrospective.
 
-**At a glance:** ~4,000 lines across 40 modules, 93 tests, 11 commits, stages 0–5 complete.
+**At a glance:** ~4,000 lines across 40 modules, 93 tests, 12 commits, stages 0–5 complete.
+
+**Build session:** the whole project was built in one Claude Code session —
+`session_01XHXQJnXDWzip55FVspzyAU`. The full transcript, including the
+debugging detours that produced §5, is at
+<https://claude.ai/code/session_01XHXQJnXDWzip55FVspzyAU>. Every commit
+carries the same reference in its `Claude-Session:` trailer, so any single
+change can be traced back to the conversation that produced it.
 
 ---
 
