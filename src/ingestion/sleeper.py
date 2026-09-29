@@ -4,8 +4,6 @@ Sleeper's read API is public and keyless: https://docs.sleeper.com/
 No writes are possible through it (see PLAN.md Stage 5 for execution).
 """
 
-from typing import Callable
-
 import httpx
 
 from config import SLEEPER_API_BASE
@@ -89,38 +87,6 @@ class SleeperClient:
 
     def get_draft_picks(self, draft_id: str) -> list[dict]:
         return self._get(f"/draft/{draft_id}/picks") or []
-
-
-def resolve_league(
-    client: SleeperClient,
-    username: str,
-    season: str,
-    choose: Callable[[list[dict]], dict] | None = None,
-) -> tuple[dict, dict]:
-    """Resolve username -> the league to operate on.
-
-    Returns (user, league). If the user is in more than one league for the
-    season, `choose` is called with the candidate list and must return the
-    selected one — never guess which league to use.
-    """
-    user = client.get_user(username)
-    leagues = client.get_user_leagues(user["user_id"], season)
-
-    if not leagues:
-        raise SleeperError(
-            f"No leagues found for '{username}' in season {season}. "
-            "Check SLEEPER_USERNAME/SLEEPER_SEASON in .env."
-        )
-
-    if len(leagues) == 1:
-        return user, leagues[0]
-
-    if choose is None:
-        raise SleeperError(
-            f"'{username}' is in {len(leagues)} leagues for {season}; "
-            "a `choose` callback is required to disambiguate."
-        )
-    return user, choose(leagues)
 
 
 def prompt_choose_league(leagues: list[dict]) -> dict:

@@ -9,9 +9,10 @@ actually started is the cost of the start/sit decisions.
 
 import json
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.decisions.lineup import LineupSlot, optimize_lineup
+from src.ingestion import storage
 from src.projections.engine import AdjustedProjection
 
 
@@ -24,6 +25,42 @@ class WeekResult:
     started: list[tuple[str, float]]
     bench: list[tuple[str, float]]
     optimal_lineup: list[LineupSlot]
+    opponent_name: str | None = None
+    opponent_total: float | None = None
+    opponent_top: list[tuple[str, float]] = field(default_factory=list)
+
+    @property
+    def outcome(self) -> str | None:
+        """'win' / 'loss' / 'tie' against this week's opponent, None on a bye."""
+        if self.opponent_total is None:
+            return None
+        if self.actual_total > self.opponent_total:
+            return "win"
+        return "loss" if self.actual_total < self.opponent_total else "tie"
+
+
+def last_completed_week(current_week: int) -> int:
+    """Sleeper's `week` flips to the next week once the previous one's games
+    are done, so the week before the current one is the last finished one."""
+    return max(1, current_week - 1)
+
+
+def _name(conn: sqlite3.Connection, player_id: str) -> str:
+    p = conn.execute("SELECT first_name, last_name FROM players WHERE player_id = ?", (player_id,)).fetchone()
+    return (" ".join(x for x in [p["first_name"], p["last_name"]] if x) if p else "") or player_id
+
+
+def _opponent(conn: sqlite3.Connection, league_id: str, roster_id: int, week: int):
+    opp = storage.get_opponent_roster(conn, league_id, week, roster_id)
+    if not opp:
+        return None, None, []
+    roster = storage.get_roster(conn, league_id, opp["roster_id"])
+    name = storage.team_label(conn, league_id, roster["owner_id"]) if roster else f"roster {opp['roster_id']}"
+    points = json.loads(opp["players_points"] or "{}")
+    starters = json.loads(opp["starters"] or "[]")
+    top = sorted(((_name(conn, pid), points.get(pid, 0.0)) for pid in starters), key=lambda t: t[1], reverse=True)
+    total = opp["points"] if opp["points"] is not None else sum(points.get(pid, 0.0) for pid in starters)
+    return name, float(total), top[:3]
 
 
 def _as_projection(player_id: str, name: str, position: str | None, points: float) -> AdjustedProjection:
@@ -73,7 +110,12 @@ def summarize_week(
         players_points.get(pid, 0.0) for pid in starters
     )
 
+    opponent_name, opponent_total, opponent_top = _opponent(conn, league_id, roster_id, week)
+
     return WeekResult(
+        opponent_name=opponent_name,
+        opponent_total=opponent_total,
+        opponent_top=opponent_top,
         week=week,
         actual_total=float(actual_total),
         optimal_total=optimal_total,

@@ -1,25 +1,26 @@
-"""LangGraph orchestrator: plan -> call tools -> observe -> explain.
+"""Agent runtime: context, model wiring, retries, and the ask/chat loops.
 
-Deliberately thin. The graph's only job is routing; all computation lives
-in the tools (see agent/tools.py). Per PLAN.md §2, LangGraph is here for
-the stateful multi-turn case — the deterministic CLI subcommands still
-call the modules directly and do not route through this graph.
+Deliberately thin. The graph itself lives in agent/graph.py and only routes;
+all computation lives in the tools (see agent/tools.py). Per PLAN.md §2,
+LangGraph is here for the stateful multi-turn case — the deterministic CLI
+subcommands still call the modules directly and do not route through this.
 """
 
 import sqlite3
 import sys
 import time
 
-from langchain_core.messages import HumanMessage, SystemMessage
+import openai
+from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import START, MessagesState, StateGraph
-from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 import config
-from src.agent.prompts import SYSTEM_PROMPT
+from src.agent.graph import build_graph
+from src.agent.prompts import build_system_prompt
 from src.agent.tools import AgentContext, build_tools
 from src.ingestion import storage
+from src.ingestion.sync import sync_if_stale
 
 
 class AgentError(RuntimeError):
@@ -47,9 +48,16 @@ def _invoke_with_retry(llm, messages, attempts: int = 5):
     for attempt in range(attempts):
         try:
             return llm.invoke(messages)
-        except ValueError as e:
+        except (ValueError, openai.APIError) as e:
             text = str(e).lower()
-            if not any(marker in text for marker in _TRANSIENT_MARKERS):
+            # A daily quota won't recover within any retry window - say so now.
+            if "per-day" in text or "per day" in text:
+                raise AgentError(
+                    f"The daily request limit for {config.OPENROUTER_MODEL} is used up. It resets daily; "
+                    "adding OpenRouter credits raises it, or set OPENROUTER_MODEL in .env to another model. "
+                    "The non-agent commands (lineup, waivers, results, digest...) still work."
+                ) from e
+            if not isinstance(e, openai.RateLimitError) and not any(marker in text for marker in _TRANSIENT_MARKERS):
                 raise
             if attempt == attempts - 1:
                 raise AgentError(
@@ -73,13 +81,26 @@ def build_context(conn: sqlite3.Connection) -> AgentContext:
     )
 
 
-def build_agent(conn: sqlite3.Connection):
+def system_prompt_for(ctx: AgentContext) -> str:
+    return build_system_prompt(
+        season=ctx.season,
+        week=ctx.current_week,
+        league_name=ctx.league_name(),
+        team_name=ctx.team_name(),
+        roster_positions=ctx.roster_positions(),
+        scoring_settings=ctx.scoring_settings(),
+        other_league_names=ctx.other_league_names(),
+        preferences=storage.get_preferences(ctx.conn),
+    )
+
+
+def build_agent(conn: sqlite3.Connection, ctx: AgentContext | None = None, checkpointer=None):
     """Returns (compiled_graph, tools). Tools are returned too so callers
     (and tests) can inspect what was exposed."""
     if not config.OPENROUTER_API_KEY:
         raise AgentError("Set OPENROUTER_API_KEY in .env first (see .env.example).")
 
-    ctx = build_context(conn)
+    ctx = ctx or build_context(conn)
     tools = build_tools(ctx)
 
     llm = ChatOpenAI(
@@ -90,23 +111,11 @@ def build_agent(conn: sqlite3.Connection):
         timeout=120,
     ).bind_tools(tools)
 
-    def plan(state: MessagesState) -> dict:
-        """Decide whether to answer or call a tool."""
-        messages = state["messages"]
-        if not any(isinstance(m, SystemMessage) for m in messages):
-            messages = [SystemMessage(content=SYSTEM_PROMPT), *messages]
-        return {"messages": [_invoke_with_retry(llm, messages)]}
-
-    graph = StateGraph(MessagesState)
-    graph.add_node("plan", plan)
-    graph.add_node("tools", ToolNode(tools))
-    graph.add_edge(START, "plan")
-    # tools_condition routes to "tools" when the model emitted tool calls,
-    # otherwise to END - which is the "explain" exit of the loop.
-    graph.add_conditional_edges("plan", tools_condition)
-    graph.add_edge("tools", "plan")
-
-    return graph.compile(checkpointer=MemorySaver()), tools
+    graph = build_graph(
+        lambda messages: _invoke_with_retry(llm, messages), tools, lambda: system_prompt_for(ctx),
+        checkpointer, history_limit=config.AGENT_HISTORY_MESSAGES,
+    )
+    return graph, tools
 
 
 def _run(agent, question: str, thread: dict, show_progress: bool = True) -> str:
@@ -133,17 +142,35 @@ def _run(agent, question: str, thread: dict, show_progress: bool = True) -> str:
 
 
 def ask(conn: sqlite3.Connection, question: str, thread_id: str = "cli", show_progress: bool = True) -> str:
-    """One-shot question. Returns the agent's final answer."""
+    """One-shot question. Re-syncs first if local data is stale, so the
+    answer doesn't come from yesterday's rosters and injury designations."""
+    sync_if_stale(conn)
     agent, _tools = build_agent(conn)
     return _run(agent, question, {"configurable": {"thread_id": thread_id}}, show_progress)
 
 
-def chat(conn: sqlite3.Connection) -> None:
-    """Interactive multi-turn session; conversation state persists across turns
-    via the graph's checkpointer."""
-    agent, _tools = build_agent(conn)
-    thread = {"configurable": {"thread_id": "chat"}}
-    print("Fantasy agent. Ask a question, or Ctrl+C / 'exit' to quit.\n")
+CHAT_THREAD = "chat"
+
+
+def chat(conn: sqlite3.Connection, new: bool = False) -> None:
+    """Interactive multi-turn session. The conversation is saved to
+    config.CONVERSATIONS_DB_PATH, so the next `chat` picks up where this one
+    left off (`new=True` starts over). Staleness is re-checked every turn,
+    since a session can stay open for hours."""
+    sync_if_stale(conn)
+    ctx = build_context(conn)
+    config.CONVERSATIONS_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    checkpointer = SqliteSaver(sqlite3.connect(config.CONVERSATIONS_DB_PATH, check_same_thread=False))
+    if new:
+        checkpointer.delete_thread(CHAT_THREAD)
+    agent, _tools = build_agent(conn, ctx=ctx, checkpointer=checkpointer)
+    thread = {"configurable": {"thread_id": CHAT_THREAD}}
+
+    earlier = len(agent.get_state(thread).values.get("messages", []))
+    print("Fantasy agent. Ask a question, or Ctrl+C / 'exit' to quit.")
+    if earlier:
+        print(f"Resuming your conversation ({earlier} earlier messages). `chat --new` starts fresh.")
+    print()
     while True:
         try:
             question = input("> ").strip()
@@ -154,5 +181,7 @@ def chat(conn: sqlite3.Connection) -> None:
             continue
         if question.lower() in {"exit", "quit"}:
             return
+        if sync_if_stale(conn):
+            ctx.reload_state()
         answer = _run(agent, question, thread)
         print(f"\n{answer}\n")

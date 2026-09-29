@@ -154,6 +154,15 @@ Never bundle two stages into one commit, and never commit an unapproved stage.
   | + blend + matchup | 4.86 | -2.9% | 4.63 | -3.5% |
 
   Blending clearly beats the single-source baseline in both seasons. The matchup adjustment beats the naive baseline too, but consistently underperforms plain blend — i.e. it adds noise on top of an already-better signal. Confirmed with a 24-combination shrinkage/trailing-window sweep across both seasons: heavier shrinkage monotonically approaches (but in 2024 never quite reaches) blend-only performance, never exceeds it. So it stays disabled by default (`config.MATCHUP_ADJUSTMENT_ENABLED = False`, §2, Stage 1) — this is the harness doing its job twice now: first catching a plausible-sounding adjustment that doesn't help, then catching a bug in its own ground-truth data before that conclusion could be trusted.
+- **Update: the table above covered only ~15% of players.** The crosswalk matched nflverse players to Sleeper by `gsis_id` alone, and Sleeper's catalog carries one for a minority of players (26 of 187 active RBs in 2026), so both the backtest sample (~76 players/week) and the live nflverse source skewed to veterans. With name-based fallback matching (`id_crosswalk.resolve`: gsis, then name+team+position, then a name unique among active players), coverage is ~98% and the same windows give:
+
+  | Tier | 2024 MAE | 2024 vs. baseline | 2025 MAE | 2025 vs. baseline |
+  |---|---|---|---|---|
+  | Sleeper only (baseline) | 4.56 | — | 4.35 | — |
+  | + blend (Sleeper + nflverse) | 4.40 | -3.6% | 4.19 | -3.7% |
+  | + blend + matchup | 4.58 | +0.4% | 4.34 | -0.2% |
+
+  (N ≈ 4,800-5,200 per tier, up from ~1,150.) The conclusions hold in both seasons: blending beats the single source, by about half the margin first reported, and matchup still doesn't earn its place.
 - **Known limitation:** the injury/depth-chart overlay isn't backtested — the local players table only holds *current* injury/depth-chart state, so scoring it against a past week would leak information not available at the time. It's covered by unit tests + a live spot-check instead (Stage 1 DoD) until a historical injury feed exists.
 
 ### Stage 3 — Decision modules (thin consumers of Stage 1\)

@@ -45,7 +45,8 @@ def _watch_list(conn, slots, projections, news_limit: int) -> list[str]:
             continue
         proj = projections.get(slot.player_id)
         if proj and proj.injury_multiplier != 1.0:
-            flagged.append(f"  {slot.name}: injury adjustment x{proj.injury_multiplier:.2f}")
+            status = f" ({proj.injury_status})" if proj.injury_status else ""
+            flagged.append(f"  {slot.name}{status}: injury adjustment x{proj.injury_multiplier:.2f}")
         for item in storage.get_player_news(conn, slot.player_id, limit=news_limit):
             if _is_actionable(item["title"]):
                 flagged.append(f"  {slot.name}: {item['title']}")
@@ -80,7 +81,7 @@ def build_digest(
         if opp_roster:
             parts.append(f"Opponent: {storage.team_label(conn, league_id, opp_roster['owner_id'])}")
 
-    table = build_projection_table(conn, season, week)
+    table = build_projection_table(conn, season, week, league_id)
     projections = {row.player_id: row for row in table}
 
     player_meta = {}
@@ -120,6 +121,10 @@ def build_digest(
         last = summarize_week(conn, league_id, roster_id, week - 1, roster_positions)
         if last:
             parts.append(_section(f"Week {last.week} result"))
+            if last.opponent_name:
+                parts.append(
+                    f"  {last.outcome.upper()} {last.actual_total:.1f} - {last.opponent_total:.1f} vs. {last.opponent_name}"
+                )
             parts.append(f"  Scored {last.actual_total:.1f}, best possible {last.optimal_total:.1f}")
             parts.append(f"  Points left on bench: {last.points_left_on_bench:.1f}")
 

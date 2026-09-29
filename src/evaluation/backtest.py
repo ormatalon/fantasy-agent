@@ -24,7 +24,7 @@ import sqlite3
 
 import config
 from src.evaluation.metrics import AccuracyReport, compute_metrics
-from src.ingestion.id_crosswalk import build_crosswalk
+from src.ingestion.id_crosswalk import build_crosswalk, map_nflverse_ids
 from src.ingestion.nflverse_client import import_weekly_stats
 from src.projections import matchup
 from src.projections.blend import blend
@@ -68,9 +68,10 @@ def run_backtest(conn: sqlite3.Connection, season: str, weeks: list[int]) -> dic
         team_opponents = dict(zip(actual_df["recent_team"], actual_df["opponent_team"]))
 
         sleeper_by_id = {p.player_id: p.points for p in sleeper_proj}
+        to_sleeper = map_nflverse_ids(crosswalk, actual_df)
 
         for _, row in actual_df.iterrows():
-            sleeper_id = crosswalk.from_gsis(row["player_id"])
+            sleeper_id = to_sleeper.get(row["player_id"])
             if not sleeper_id:
                 continue
             actual_points = row["actual_points"]
