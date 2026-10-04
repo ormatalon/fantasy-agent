@@ -6,6 +6,7 @@ timestamp so later syncs simply overwrite the latest state.
 """
 
 import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -151,6 +152,30 @@ def set_state(conn: sqlite3.Connection, key: str, value: str) -> None:
 def get_state(conn: sqlite3.Connection, key: str) -> str | None:
     row = conn.execute("SELECT value FROM app_state WHERE key = ?", (key,)).fetchone()
     return row["value"] if row else None
+
+
+# --- remembered user preferences (the agent's long-term memory) ---
+
+def get_preferences(conn: sqlite3.Connection) -> list[str]:
+    return json.loads(get_state(conn, "preferences") or "[]")
+
+
+def add_preference(conn: sqlite3.Connection, note: str) -> list[str]:
+    prefs = get_preferences(conn)
+    if note not in prefs:
+        prefs.append(note)
+        set_state(conn, "preferences", json.dumps(prefs))
+    return prefs
+
+
+def remove_preference(conn: sqlite3.Connection, number: int) -> str | None:
+    """Remove the 1-based `number`th preference; returns it, or None."""
+    prefs = get_preferences(conn)
+    if not 1 <= number <= len(prefs):
+        return None
+    removed = prefs.pop(number - 1)
+    set_state(conn, "preferences", json.dumps(prefs))
+    return removed
 
 
 # --- writes ---
@@ -325,6 +350,13 @@ def player_name(conn: sqlite3.Connection, player_id: str) -> str:
     return f"{name} ({tag})" if tag else name
 
 
+def get_injury_status(conn: sqlite3.Connection, player_id: str | None) -> str | None:
+    if not player_id:
+        return None
+    row = conn.execute("SELECT injury_status FROM players WHERE player_id = ?", (player_id,)).fetchone()
+    return row["injury_status"] if row else None
+
+
 def save_player_news(conn: sqlite3.Connection, items) -> None:
     """`items` are ingestion.news.NewsItem records."""
     ts = now_iso()
@@ -349,15 +381,66 @@ def get_player_news(conn: sqlite3.Connection, player_id: str, limit: int = 3) ->
     ).fetchall()
 
 
-def find_player_id_by_name(conn: sqlite3.Connection, query: str) -> str | None:
-    """Fuzzy-match a player name (case-insensitive substring). Returns the
-    first match; ambiguous queries should be narrowed by the caller."""
-    like = f"%{query.lower()}%"
-    row = conn.execute(
-        "SELECT player_id FROM players WHERE LOWER(first_name || ' ' || last_name) LIKE ? LIMIT 1",
-        (like,),
-    ).fetchone()
-    return row["player_id"] if row else None
+def _tags(conn: sqlite3.Connection, player_id: str) -> set[str]:
+    row = conn.execute("SELECT position, team FROM players WHERE player_id = ?", (player_id,)).fetchone()
+    return {t.upper() for t in (row["position"], row["team"]) if t} if row else set()
+
+
+def _full_name(conn: sqlite3.Connection, player_id: str) -> str:
+    row = conn.execute("SELECT first_name, last_name FROM players WHERE player_id = ?", (player_id,)).fetchone()
+    return " ".join(p for p in [row["first_name"], row["last_name"]] if p) if row else ""
+
+
+def find_players_by_name(
+    conn: sqlite3.Connection, query: str, league_id: str | None = None, limit: int = 5
+) -> list[str]:
+    """Candidate player ids for a name, best first: exact full-name matches
+    before substring ones, then rostered in `league_id`, then players on an
+    NFL team (the catalog also holds retired players and free agents)."""
+    q = query.strip().lower()
+    if not q:
+        return []
+    rows = conn.execute(
+        "SELECT player_id, LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) AS full_name, "
+        "team FROM players WHERE LOWER(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) LIKE ?",
+        (f"%{q}%",),
+    ).fetchall()
+    rostered: set[str] = set()
+    if league_id:
+        for r in conn.execute("SELECT players FROM rosters WHERE league_id = ?", (league_id,)):
+            rostered.update(json.loads(r["players"]))
+
+    def rank(r) -> tuple:
+        return (r["full_name"] != q, r["player_id"] not in rostered, not r["team"], r["full_name"])
+
+    return [r["player_id"] for r in sorted(rows, key=rank)[:limit]]
+
+
+def resolve_player(
+    conn: sqlite3.Connection, query: str, league_id: str | None = None
+) -> tuple[str | None, list[str]]:
+    """(player_id, candidates). player_id is set only when the name is
+    unambiguous: a single match, or a single exact full-name match. Otherwise
+    the caller must ask which one was meant - never guess.
+
+    Accepts the "Name (POS/TEAM)" form that `player_name` prints, so a
+    candidate list can be answered with an exact pick."""
+    tags: set[str] = set()
+    m = re.match(r"^(.*?)\s*\(([^)]*)\)\s*$", query)
+    if m:
+        query, tags = m.group(1), {t.strip().upper() for t in m.group(2).split("/") if t.strip()}
+    candidates = find_players_by_name(conn, query, league_id, limit=25 if tags else 5)
+    if tags:
+        candidates = [pid for pid in candidates if tags <= _tags(conn, pid)][:5]
+    if len(candidates) == 1:
+        return candidates[0], candidates
+    q = query.strip().lower()
+    exact = [pid for pid in candidates if _full_name(conn, pid).lower() == q]
+    if len(exact) == 1:
+        return exact[0], candidates
+    if len(exact) > 1:
+        return None, exact
+    return None, candidates
 
 
 def get_roster(conn: sqlite3.Connection, league_id: str, roster_id: int) -> sqlite3.Row | None:
@@ -408,6 +491,26 @@ def get_opponent_roster(conn: sqlite3.Connection, league_id: str, week: int, ros
         "SELECT * FROM matchups WHERE league_id = ? AND week = ? AND matchup_id = ? AND roster_id != ?",
         (league_id, week, mine["matchup_id"], roster_id),
     ).fetchone()
+
+
+def list_leagues(conn: sqlite3.Connection, season: str | None = None) -> list[sqlite3.Row]:
+    if season:
+        return conn.execute(
+            "SELECT league_id, name, season FROM leagues WHERE season = ? ORDER BY name", (season,)
+        ).fetchall()
+    return conn.execute("SELECT league_id, name, season FROM leagues ORDER BY season DESC, name").fetchall()
+
+
+def find_league(conn: sqlite3.Connection, query: str, season: str | None = None) -> sqlite3.Row | None:
+    """Match a league by exact id, else by case-insensitive name substring.
+    None when nothing or more than one league matches."""
+    leagues = list_leagues(conn, season)
+    by_id = [lg for lg in leagues if lg["league_id"] == query]
+    if by_id:
+        return by_id[0]
+    q = query.strip().lower()
+    matches = [lg for lg in leagues if q in (lg["name"] or "").lower()]
+    return matches[0] if len(matches) == 1 else None
 
 
 def get_recent_transactions(conn: sqlite3.Connection, league_id: str, limit: int = 10) -> list[sqlite3.Row]:

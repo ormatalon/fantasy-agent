@@ -74,7 +74,76 @@ def test_expected_tools_are_registered():
         "get_trending_players",
         "get_week_results",
         "sync_league",
+        "switch_league",
+        "get_injured_stash_candidates",
     } <= names
+
+
+def ctx_with_cached_projections(conn, projections=()) -> AgentContext:
+    ctx = make_ctx(conn)
+    ctx._cache[("week", 2)] = list(projections)
+    return ctx
+
+
+def test_roster_shows_injury_designation_and_ir_slot_hint():
+    conn = seeded_conn()
+    storage.save_players(conn, {"p1": {"first_name": "Alpha", "last_name": "One", "position": "QB",
+                                       "team": "BUF", "injury_status": "IR"}})
+    tools = {t.name: t for t in build_tools(ctx_with_cached_projections(conn))}
+
+    result = tools["get_my_roster"].invoke({})
+
+    assert "[IR]" in result
+    assert "IR slot" in result
+
+
+def test_week_results_default_to_last_completed_week_with_opponent():
+    conn = seeded_conn()
+    storage.save_matchups(conn, "L1", 1, [
+        {"roster_id": 1, "matchup_id": 3, "points": 101.2, "starters": ["p1"], "players": ["p1"],
+         "players_points": {"p1": 101.2}},
+        {"roster_id": 2, "matchup_id": 3, "points": 88.0, "starters": ["p2"], "players": ["p2"],
+         "players_points": {"p2": 88.0}},
+    ])
+    tools = tools_by_name(conn)  # current week is 2 -> last completed is 1
+
+    result = tools["get_week_results"].invoke({})
+
+    assert "Week 1" in result
+    assert "WIN 101.2 - 88.0 vs. Their Team" in result
+
+
+def test_ambiguous_player_name_returns_candidates_instead_of_guessing():
+    conn = seeded_conn()
+    storage.save_players(conn, {"p3": {"first_name": "Alpha", "last_name": "Onesie", "position": "WR", "team": "KC"}})
+    tools = tools_by_name(conn)
+
+    result = tools["get_player_news"].invoke({"player_name": "alpha"})
+
+    assert "ambiguous" in result
+    assert "Alpha One (QB/BUF)" in result
+    assert "Alpha Onesie (WR/KC)" in result
+
+
+def test_graph_rebuilds_the_system_prompt_on_every_model_turn():
+    from langchain_core.messages import AIMessage, HumanMessage
+
+    from src.agent.graph import build_graph
+
+    week = {"n": 3}
+    seen = []
+
+    def fake_llm(messages):
+        seen.append(messages[0].content)
+        return AIMessage(content="ok")
+
+    graph = build_graph(fake_llm, [], lambda: f"week {week['n']}")
+    thread = {"configurable": {"thread_id": "t"}}
+    graph.invoke({"messages": [HumanMessage(content="hi")]}, config=thread)
+    week["n"] = 4  # e.g. an auto-sync rolled the week over mid-chat
+    graph.invoke({"messages": [HumanMessage(content="again")]}, config=thread)
+
+    assert seen == ["week 3", "week 4"]
 
 
 def test_every_tool_has_a_description_the_model_can_route_on():

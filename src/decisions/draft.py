@@ -19,9 +19,10 @@ draft-day decisions (see run_draft_replay docstring).
 import time
 from dataclasses import dataclass
 
-from src.decisions.vorp import compute_replacement_levels, rank_by_vorp
+from src.decisions.vorp import NON_STARTING_SLOTS, compute_replacement_levels, rank_by_vorp
 from src.ingestion.sleeper import SleeperClient
 from src.projections.engine import AdjustedProjection
+from src.projections.positions import ROSTER_SLOT_ELIGIBILITY
 
 
 @dataclass
@@ -68,20 +69,63 @@ def is_my_turn(state: DraftState, picks_made: int) -> bool:
     return pick_number_to_slot(picks_made + 1, state.teams, state.is_snake) == state.my_slot
 
 
+# A player who can only ride the bench behind starters already drafted is
+# worth this share of his VOR: depth has value (injuries, byes), but less
+# than filling an empty starting slot.
+DEPTH_VOR_WEIGHT = 0.5
+
+
+def unfilled_starting_slots(roster_positions: list[str], my_positions: list[str | None]) -> list[str]:
+    """Starting slots my drafted players don't cover yet. Players are placed
+    most-specific slot first (RB before FLEX), so a flex slot stays open for
+    whoever fits it best."""
+    open_slots = sorted(
+        (s for s in roster_positions if s not in NON_STARTING_SLOTS and ROSTER_SLOT_ELIGIBILITY.get(s)),
+        key=lambda s: len(ROSTER_SLOT_ELIGIBILITY[s]),
+    )
+    for position in my_positions:
+        for slot in open_slots:
+            if position in ROSTER_SLOT_ELIGIBILITY[slot]:
+                open_slots.remove(slot)
+                break
+    return open_slots
+
+
 def suggest_pick(
     available: list[AdjustedProjection],
     roster_positions: list[str],
     num_teams: int,
     drafted_ids: set[str],
     limit: int = 10,
+    my_positions: list[str | None] | None = None,
 ) -> list[tuple[AdjustedProjection, float]]:
+    """Ranked (player, VOR) suggestions. With `my_positions` (positions I've
+    already drafted), players who'd fill an unfilled starting slot keep
+    their full VOR and those who'd only add depth are weighted by
+    DEPTH_VOR_WEIGHT - so a 4th RB no longer outranks a first QB."""
     candidates = [p for p in available if p.player_id not in drafted_ids]
     projections_by_position: dict[str, list[float]] = {}
     for p in candidates:
         if p.position:
             projections_by_position.setdefault(p.position, []).append(p.mean)
     replacement_levels = compute_replacement_levels(roster_positions, num_teams, projections_by_position)
-    return rank_by_vorp(candidates, replacement_levels)[:limit]
+    ranked = rank_by_vorp(candidates, replacement_levels)
+    if my_positions is None:
+        return ranked[:limit]
+
+    open_slots = unfilled_starting_slots(roster_positions, my_positions)
+
+    def fills_need(p: AdjustedProjection) -> bool:
+        return any(p.position in ROSTER_SLOT_ELIGIBILITY[s] for s in open_slots)
+
+    weighted = [(p, vor if fills_need(p) or vor <= 0 else vor * DEPTH_VOR_WEIGHT) for p, vor in ranked]
+    weighted.sort(key=lambda pair: pair[1], reverse=True)
+    return weighted[:limit]
+
+
+def _pick_positions(picks: list[dict], table: list[AdjustedProjection]) -> list[str | None]:
+    by_id = {p.player_id: p.position for p in table}
+    return [(p.get("metadata") or {}).get("position") or by_id.get(p.get("player_id")) for p in picks]
 
 
 def run_draft_assistant(
@@ -113,8 +157,11 @@ def run_draft_assistant(
             seen_picks = picks_made
             if is_my_turn(state, picks_made):
                 drafted_ids = {p["player_id"] for p in picks}
+                mine = [p for p in picks if pick_number_to_slot(p["pick_no"], state.teams, state.is_snake) == state.my_slot]
                 table = build_table()
-                suggestions = suggest_pick(table, roster_positions, state.teams, drafted_ids)
+                suggestions = suggest_pick(
+                    table, roster_positions, state.teams, drafted_ids, my_positions=_pick_positions(mine, table)
+                )
                 print(f"\nYour turn - pick {picks_made + 1}:")
                 for proj, vor in suggestions:
                     print(f"  {proj.name:<25}{(proj.position or ''):<5}{proj.mean:>6.1f}  VOR {vor:+.1f}")
@@ -160,13 +207,16 @@ def run_draft_replay(
     print("not a fair grade of draft-day decisions (hindsight bias).\n")
 
     drafted_ids: set[str] = set()
-    my_picks_seen = 0
+    my_picks: list[dict] = []
     for pick in picks:
         pick_no = pick["pick_no"]
         if pick_number_to_slot(pick_no, state.teams, state.is_snake) == state.my_slot:
-            my_picks_seen += 1
             available = [p for p in table if p.player_id not in drafted_ids]
-            suggestions = suggest_pick(available, roster_positions, state.teams, drafted_ids=set(), limit=limit_per_pick)
+            suggestions = suggest_pick(
+                available, roster_positions, state.teams, drafted_ids=set(), limit=limit_per_pick,
+                my_positions=_pick_positions(my_picks, table),
+            )
+            my_picks.append(pick)
 
             actual_id = pick.get("player_id")
             meta = pick.get("metadata") or {}
@@ -184,5 +234,5 @@ def run_draft_replay(
 
         drafted_ids.add(pick.get("player_id"))
 
-    if my_picks_seen == 0:
+    if not my_picks:
         print("You had no picks in this draft (slot mismatch?).")

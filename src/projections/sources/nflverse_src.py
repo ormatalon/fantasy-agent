@@ -8,13 +8,25 @@ blend tolerates a source returning no data for a player/week).
 
 import sys
 
-from src.ingestion.id_crosswalk import Crosswalk
+from src.ingestion.id_crosswalk import Crosswalk, map_nflverse_ids
 from src.ingestion.nflverse_client import import_weekly_stats
 from src.projections.idp_stats import compute_idp_points
 from src.projections.positions import IDP_POSITIONS, PROJECTED_POSITIONS
 from src.projections.sources.base import ProjectionSource, SourceProjection
 
 TRAILING_WEEKS = 4
+
+
+def with_league_points(df, scoring_settings: dict[str, float]):
+    """Copy of nflverse weekly rows with a `league_points` column: the points
+    each row actually scored under this league's rules."""
+    rec_bonus = scoring_settings.get("rec", 0)
+    df = df.copy()
+    is_idp = df["position"].isin(IDP_POSITIONS)
+    df["league_points"] = df["fantasy_points"].fillna(0) + df["receptions"].fillna(0) * rec_bonus
+    if is_idp.any():
+        df.loc[is_idp, "league_points"] = df[is_idp].apply(lambda row: compute_idp_points(row, scoring_settings), axis=1)
+    return df
 
 
 class NflverseSource(ProjectionSource):
@@ -41,17 +53,12 @@ class NflverseSource(ProjectionSource):
         if df.empty:
             return []
 
-        rec_bonus = scoring_settings.get("rec", 0)
-        df = df.copy()
-        is_idp = df["position"].isin(IDP_POSITIONS)
-        offense_points = df["fantasy_points"].fillna(0) + df["receptions"].fillna(0) * rec_bonus
-        idp_points = df[is_idp].apply(lambda row: compute_idp_points(row, scoring_settings), axis=1)
-        df["league_points"] = offense_points
-        df.loc[is_idp, "league_points"] = idp_points
+        df = with_league_points(df, scoring_settings)
+        to_sleeper = map_nflverse_ids(crosswalk, df)
 
         out = []
         for gsis_id, points in df.groupby("player_id")["league_points"].mean().items():
-            sleeper_id = crosswalk.from_gsis(gsis_id)
+            sleeper_id = to_sleeper.get(gsis_id)
             if sleeper_id:
                 out.append(SourceProjection(player_id=sleeper_id, points=float(points)))
         return out

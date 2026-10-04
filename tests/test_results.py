@@ -1,6 +1,6 @@
 import sqlite3
 
-from src.decisions.results import summarize_week
+from src.decisions.results import last_completed_week, summarize_week
 from src.ingestion import storage
 
 
@@ -67,6 +67,35 @@ def test_returns_none_before_any_points_are_scored():
     )
 
     assert summarize_week(conn, "L1", 1, 3, ["QB"]) is None
+
+
+def test_opponent_score_and_result_are_included():
+    conn = seeded_conn(starters=["qb1"], players=["qb1"], players_points={"qb1": 20.0}, points=20.0)
+    storage.save_league_users(conn, "L1", [{"user_id": "u2", "display_name": "Rival", "metadata": {"team_name": "Rival FC"}}])
+    storage.save_rosters(conn, "L1", [{"roster_id": 2, "owner_id": "u2", "players": ["rb1"], "starters": ["rb1"]}])
+    storage.save_matchups(conn, "L1", 3, [{
+        "roster_id": 2, "matchup_id": 1, "points": 31.5,
+        "starters": ["rb1"], "players": ["rb1"], "players_points": {"rb1": 31.5},
+    }])
+
+    result = summarize_week(conn, "L1", 1, 3, ["QB"])
+
+    assert result.opponent_name == "Rival FC"
+    assert result.opponent_total == 31.5
+    assert result.outcome == "loss"
+    assert result.opponent_top == [("Some RB", 31.5)]
+
+
+def test_no_opponent_means_no_outcome():
+    conn = seeded_conn(starters=["qb1"], players=["qb1"], players_points={"qb1": 20.0}, points=20.0)
+    result = summarize_week(conn, "L1", 1, 3, ["QB"])
+    assert result.opponent_name is None
+    assert result.outcome is None
+
+
+def test_last_completed_week():
+    assert last_completed_week(5) == 4
+    assert last_completed_week(1) == 1
 
 
 def test_migration_adds_missing_columns_to_an_existing_db(tmp_path):

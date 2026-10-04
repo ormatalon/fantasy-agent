@@ -12,6 +12,7 @@ import sqlite3
 from dataclasses import dataclass
 
 import config
+from src.ingestion import storage
 from src.ingestion.id_crosswalk import build_crosswalk
 from src.projections import injury, matchup
 from src.projections.blend import blend
@@ -38,6 +39,34 @@ class AdjustedProjection:
     matchup_multiplier: float
     injury_multiplier: float
     num_sources: int
+    injury_status: str | None = None
+
+
+# NFL regular season length in weeks (17 games + a bye).
+REGULAR_SEASON_WEEKS = 18
+
+
+def weeks_remaining(from_week: int) -> int:
+    """Regular-season weeks still ahead, counting `from_week` itself."""
+    return max(0, REGULAR_SEASON_WEEKS - from_week + 1)
+
+
+def rest_of_season_fraction(from_week: int) -> float:
+    """Share of the regular season still ahead, counting `from_week` itself.
+    A uniform proration - it ignores where each team's bye falls, which is
+    at most one week of error per player."""
+    return weeks_remaining(from_week) / REGULAR_SEASON_WEEKS
+
+
+def _scoring_settings(conn: sqlite3.Connection, league_id: str | None) -> dict[str, float]:
+    league_id = league_id or storage.get_state(conn, "active_league_id")
+    if league_id:
+        row = conn.execute("SELECT scoring_settings FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
+    else:
+        row = conn.execute("SELECT scoring_settings FROM leagues LIMIT 1").fetchone()
+    if not row:
+        raise RuntimeError("No league synced yet - run `sync` first.")
+    return json.loads(row["scoring_settings"])
 
 
 def _variance_floor(mean: float, position: str | None) -> float:
@@ -45,11 +74,11 @@ def _variance_floor(mean: float, position: str | None) -> float:
     return std_floor**2
 
 
-def build_projection_table(conn: sqlite3.Connection, season: str, week: int) -> list[AdjustedProjection]:
-    league_row = conn.execute("SELECT scoring_settings FROM leagues LIMIT 1").fetchone()
-    if not league_row:
-        raise RuntimeError("No league synced yet — run `sync` first.")
-    scoring_settings = json.loads(league_row["scoring_settings"])
+def build_projection_table(
+    conn: sqlite3.Connection, season: str, week: int, league_id: str | None = None
+) -> list[AdjustedProjection]:
+    """`league_id` picks whose scoring rules apply; defaults to the active league."""
+    scoring_settings = _scoring_settings(conn, league_id)
 
     crosswalk = build_crosswalk(conn)
 
@@ -100,6 +129,7 @@ def build_projection_table(conn: sqlite3.Connection, season: str, week: int) -> 
                 matchup_multiplier=mm,
                 injury_multiplier=im,
                 num_sources=bp.num_sources,
+                injury_status=player["injury_status"],
             )
         )
 
@@ -107,9 +137,20 @@ def build_projection_table(conn: sqlite3.Connection, season: str, week: int) -> 
     return results
 
 
-def build_season_projection_table(conn: sqlite3.Connection, season: str) -> list[AdjustedProjection]:
-    """Full-season projected totals per player, same artifact shape as the
+def build_season_projection_table(
+    conn: sqlite3.Connection,
+    season: str,
+    league_id: str | None = None,
+    from_week: int | None = None,
+    apply_injury: bool = True,
+) -> list[AdjustedProjection]:
+    """Season projected totals per player, same artifact shape as the
     weekly table so decision modules can consume either.
+
+    `from_week` turns full-season totals into rest-of-season ones (see
+    rest_of_season_fraction); mid-season, a full-season total over-credits
+    games already played. `apply_injury=False` gives the healthy outlook,
+    which is what an injured stash should be judged on.
 
     Two deliberate differences from the weekly build:
     - **No matchup adjustment.** It's a per-opponent multiplier; there is no
@@ -122,10 +163,8 @@ def build_season_projection_table(conn: sqlite3.Connection, season: str) -> list
     has no forward-looking season projection — so `num_sources` is 1 and the
     variance floor carries the uncertainty estimate.
     """
-    league_row = conn.execute("SELECT scoring_settings FROM leagues LIMIT 1").fetchone()
-    if not league_row:
-        raise RuntimeError("No league synced yet - run `sync` first.")
-    scoring_settings = json.loads(league_row["scoring_settings"])
+    scoring_settings = _scoring_settings(conn, league_id)
+    scale = rest_of_season_fraction(from_week) if from_week else 1.0
 
     projections_by_source = {"sleeper": fetch_season_projections(season, scoring_settings)}
     blended = blend(projections_by_source, {"sleeper": 1.0})
@@ -141,9 +180,10 @@ def build_season_projection_table(conn: sqlite3.Connection, season: str) -> list
 
         name = " ".join(p for p in [player["first_name"], player["last_name"]] if p) or player_id
         position, team = player["position"], player["team"]
-        im = injury.get_season_designation_multiplier(player["injury_status"])
+        im = injury.get_season_designation_multiplier(player["injury_status"]) if apply_injury else 1.0
+        mean = bp.mean * scale
 
-        variance = bp.variance if bp.variance is not None else _variance_floor(bp.mean, position)
+        variance = bp.variance if bp.variance is not None else _variance_floor(mean, position)
 
         results.append(
             AdjustedProjection(
@@ -151,11 +191,12 @@ def build_season_projection_table(conn: sqlite3.Connection, season: str) -> list
                 name=name,
                 position=position,
                 team=team,
-                mean=bp.mean * im,
+                mean=mean * im,
                 variance=variance * im**2,
                 matchup_multiplier=1.0,
                 injury_multiplier=im,
                 num_sources=bp.num_sources,
+                injury_status=player["injury_status"],
             )
         )
 
