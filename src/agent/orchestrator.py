@@ -18,9 +18,9 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 import config
 from src.agent.graph import build_graph
 from src.agent.prompts import build_system_prompt
-from src.agent.tools import AgentContext, build_tools
+from src.agent.tools import ROSTER_TOOLS, AgentContext, build_tools, format_lineup, my_lineup
 from src.ingestion import storage
-from src.ingestion.sync import sync_if_stale
+from src.ingestion.sync import refresh_before_question
 
 
 class AgentError(RuntimeError):
@@ -81,7 +81,14 @@ def build_context(conn: sqlite3.Connection) -> AgentContext:
     )
 
 
+def roster_changed_at(ctx: AgentContext) -> str | None:
+    return storage.get_state(ctx.conn, f"roster_changed_at:{ctx.league_id}")
+
+
 def system_prompt_for(ctx: AgentContext) -> str:
+    lineup = my_lineup(ctx)
+    changed_at = roster_changed_at(ctx)
+    change = storage.get_state(ctx.conn, f"roster_change:{ctx.league_id}")
     return build_system_prompt(
         season=ctx.season,
         week=ctx.current_week,
@@ -91,6 +98,9 @@ def system_prompt_for(ctx: AgentContext) -> str:
         scoring_settings=ctx.scoring_settings(),
         other_league_names=ctx.other_league_names(),
         preferences=storage.get_preferences(ctx.conn),
+        my_roster=format_lineup(ctx.conn, lineup) if lineup else None,
+        roster_refreshed_at=storage.get_state(ctx.conn, "rosters_synced_at"),
+        roster_change=(changed_at, change) if changed_at and change else None,
     )
 
 
@@ -114,6 +124,7 @@ def build_agent(conn: sqlite3.Connection, ctx: AgentContext | None = None, check
     graph = build_graph(
         lambda messages: _invoke_with_retry(llm, messages), tools, lambda: system_prompt_for(ctx),
         checkpointer, history_limit=config.AGENT_HISTORY_MESSAGES,
+        roster_changed_at=lambda: roster_changed_at(ctx), roster_tools=ROSTER_TOOLS,
     )
     return graph, tools
 
@@ -128,7 +139,10 @@ def _run(agent, question: str, thread: dict, show_progress: bool = True) -> str:
     """
     final = ""
     for chunk in agent.stream(
-        {"messages": [HumanMessage(content=question)]}, config=thread, stream_mode="updates"
+        # asked_at lets the graph tell which earlier results predate a roster
+        # change. additional_kwargs on a user message aren't sent to the model.
+        {"messages": [HumanMessage(content=question, additional_kwargs={"asked_at": storage.now_iso()})]},
+        config=thread, stream_mode="updates",
     ):
         for update in chunk.values():
             for message in (update or {}).get("messages", []) or []:
@@ -142,9 +156,9 @@ def _run(agent, question: str, thread: dict, show_progress: bool = True) -> str:
 
 
 def ask(conn: sqlite3.Connection, question: str, thread_id: str = "cli", show_progress: bool = True) -> str:
-    """One-shot question. Re-syncs first if local data is stale, so the
-    answer doesn't come from yesterday's rosters and injury designations."""
-    sync_if_stale(conn)
+    """One-shot question. Re-syncs first if local data is stale, otherwise
+    re-pulls rosters, so the answer reflects moves just made in Sleeper."""
+    refresh_before_question(conn)
     agent, _tools = build_agent(conn)
     return _run(agent, question, {"configurable": {"thread_id": thread_id}}, show_progress)
 
@@ -155,9 +169,10 @@ CHAT_THREAD = "chat"
 def chat(conn: sqlite3.Connection, new: bool = False) -> None:
     """Interactive multi-turn session. The conversation is saved to
     config.CONVERSATIONS_DB_PATH, so the next `chat` picks up where this one
-    left off (`new=True` starts over). Staleness is re-checked every turn,
-    since a session can stay open for hours."""
-    sync_if_stale(conn)
+    left off (`new=True` starts over). Staleness is re-checked and rosters
+    re-pulled every turn, since a session can stay open for hours and moves
+    are made in Sleeper between questions."""
+    refresh_before_question(conn)
     ctx = build_context(conn)
     config.CONVERSATIONS_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     checkpointer = SqliteSaver(sqlite3.connect(config.CONVERSATIONS_DB_PATH, check_same_thread=False))
@@ -181,7 +196,9 @@ def chat(conn: sqlite3.Connection, new: bool = False) -> None:
             continue
         if question.lower() in {"exit", "quit"}:
             return
-        if sync_if_stale(conn):
+        # Only a full sync can change league, season or week. A roster refresh
+        # leaves the (league-wide) projection caches valid.
+        if refresh_before_question(conn):
             ctx.reload_state()
         answer = _run(agent, question, thread)
         print(f"\n{answer}\n")

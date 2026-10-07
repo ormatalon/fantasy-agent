@@ -25,6 +25,33 @@ class LineupSlot:
     why: str
 
 
+@dataclass
+class SleeperLineup:
+    """A roster as it is set in Sleeper right now (not as it should be)."""
+
+    starters: list[tuple[str, str | None]]  # (slot, player_id); None = empty slot
+    bench: list[str]
+    ir: list[str]
+
+
+def sleeper_lineup(players: list[str], starters: list[str], reserve: list[str], roster_positions: list[str]) -> SleeperLineup:
+    """Sleeper's `starters` lists one player per starting slot, in the order
+    of the league's `roster_positions` (bench/IR/taxi slots excluded); "0"
+    marks an empty slot. `players` includes starters and IR players."""
+    slots = [s for s in roster_positions if s not in NON_STARTING_SLOTS]
+    # A starters list longer than the slots (settings changed mid-season)
+    # still shows every starter rather than silently dropping one.
+    slots += ["?"] * (len(starters) - len(slots))
+    started = [(slot, pid if pid and pid != "0" else None) for slot, pid in zip(slots, starters)]
+    started += [(slot, None) for slot in slots[len(starters):]]
+    placed = set(starters) | set(reserve)
+    return SleeperLineup(
+        starters=started,
+        bench=[pid for pid in players if pid not in placed],
+        ir=[pid for pid in reserve if pid],
+    )
+
+
 def _explain(proj: AdjustedProjection | None) -> str:
     if proj is None:
         return "no current projection available"

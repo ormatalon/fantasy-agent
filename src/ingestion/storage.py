@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS rosters (
     owner_id TEXT,
     players TEXT,
     starters TEXT,
+    reserve TEXT,
     synced_at TEXT,
     PRIMARY KEY (league_id, roster_id)
 );
@@ -127,6 +128,7 @@ _ADDED_COLUMNS: list[tuple[str, str, str]] = [
     ("players", "depth_chart_position", "TEXT"),
     ("players", "depth_chart_order", "INTEGER"),
     ("players", "gsis_id", "TEXT"),
+    ("rosters", "reserve", "TEXT"),
 ]
 
 
@@ -230,15 +232,18 @@ def save_rosters(conn: sqlite3.Connection, league_id: str, rosters: list[dict]) 
             r.get("owner_id"),
             json.dumps(r.get("players") or []),
             json.dumps(r.get("starters") or []),
+            # Players in IR slots. Sleeper also lists them in `players`.
+            json.dumps(r.get("reserve") or []),
             ts,
         )
         for r in rosters
     ]
     conn.executemany(
-        "INSERT INTO rosters (league_id, roster_id, owner_id, players, starters, synced_at) "
-        "VALUES (?, ?, ?, ?, ?, ?) "
+        "INSERT INTO rosters (league_id, roster_id, owner_id, players, starters, reserve, synced_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(league_id, roster_id) DO UPDATE SET owner_id=excluded.owner_id, "
-        "players=excluded.players, starters=excluded.starters, synced_at=excluded.synced_at",
+        "players=excluded.players, starters=excluded.starters, reserve=excluded.reserve, "
+        "synced_at=excluded.synced_at",
         rows,
     )
     conn.commit()
