@@ -4,7 +4,7 @@ Usage (from repo root):
     uv run python -m src.interface.cli sync [--league NAME] [--all]
     uv run python -m src.interface.cli leagues
     uv run python -m src.interface.cli use "league name"
-    uv run python -m src.interface.cli roster [--team "name"]
+    uv run python -m src.interface.cli roster [--fantasy-team "name"]
     uv run python -m src.interface.cli transactions [--limit N]
     uv run python -m src.interface.cli projections [--week N] [--limit N]
     uv run python -m src.interface.cli backtest [--season YYYY] [--weeks START-END]
@@ -97,7 +97,7 @@ def _require_synced_state(conn) -> tuple[str, str, int]:
 
 
 def _print_roster(conn, league_id: str, roster_row, week: int) -> None:
-    owner_label = storage.team_label(conn, league_id, roster_row["owner_id"])
+    owner_label = storage.fantasy_team_label(conn, league_id, roster_row["owner_id"])
     print(f"\n{owner_label}")
     print("-" * len(owner_label))
 
@@ -116,7 +116,7 @@ def _print_roster(conn, league_id: str, roster_row, week: int) -> None:
     opponent = storage.get_opponent_roster(conn, league_id, week, roster_row["roster_id"])
     if opponent:
         opp_roster = storage.get_roster(conn, league_id, opponent["roster_id"])
-        opp_label = storage.team_label(conn, league_id, opp_roster["owner_id"]) if opp_roster else f"roster {opponent['roster_id']}"
+        opp_label = storage.fantasy_team_label(conn, league_id, opp_roster["owner_id"]) if opp_roster else f"roster {opponent['roster_id']}"
         print(f"\nWeek {week} opponent: {opp_label}")
     else:
         print(f"\nWeek {week} opponent: none found (bye or not yet scheduled)")
@@ -126,10 +126,10 @@ def cmd_roster(args: argparse.Namespace) -> None:
     conn = storage.get_connection(config.DB_PATH)
     league_id, user_id, week = _require_synced_state(conn)
 
-    if args.team:
-        roster_row = storage.find_roster_by_team_query(conn, league_id, args.team)
+    if args.fantasy_team:
+        roster_row = storage.find_roster_by_fantasy_team(conn, league_id, args.fantasy_team)
         if not roster_row:
-            print(f"No team matching '{args.team}' found.", file=sys.stderr)
+            print(f"No fantasy team matching '{args.fantasy_team}' found.", file=sys.stderr)
             sys.exit(1)
     else:
         roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
@@ -644,7 +644,7 @@ def main() -> None:
     sub.add_parser("graph", help="Print the agent's LangGraph as Mermaid")
 
     roster_p = sub.add_parser("roster", help="Print a roster from local storage")
-    roster_p.add_argument("--team", help="Team/owner name to look up (defaults to your own roster)")
+    roster_p.add_argument("--fantasy-team", help="Fantasy team or manager name in this league (defaults to yours). Not an NFL team.")
 
     txn_p = sub.add_parser("transactions", help="List recent league transactions from local storage")
     txn_p.add_argument("--limit", type=int, default=10)

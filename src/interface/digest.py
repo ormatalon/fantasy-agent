@@ -73,13 +73,13 @@ def build_digest(
     roster_row = storage.get_roster(conn, league_id, roster_id)
     player_ids = json.loads(roster_row["players"])
 
-    parts = [f"Fantasy digest - {storage.team_label(conn, league_id, user_id)}, week {week} ({season})"]
+    parts = [f"Fantasy digest - {storage.fantasy_team_label(conn, league_id, user_id)}, week {week} ({season})"]
 
     opponent = storage.get_opponent_roster(conn, league_id, week, roster_id)
     if opponent:
         opp_roster = storage.get_roster(conn, league_id, opponent["roster_id"])
         if opp_roster:
-            parts.append(f"Opponent: {storage.team_label(conn, league_id, opp_roster['owner_id'])}")
+            parts.append(f"Opponent: {storage.fantasy_team_label(conn, league_id, opp_roster['owner_id'])}")
 
     table = build_projection_table(conn, season, week, league_id)
     projections = {row.player_id: row for row in table}

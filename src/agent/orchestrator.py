@@ -93,7 +93,7 @@ def system_prompt_for(ctx: AgentContext) -> str:
         season=ctx.season,
         week=ctx.current_week,
         league_name=ctx.league_name(),
-        team_name=ctx.team_name(),
+        fantasy_team_name=ctx.fantasy_team_name(),
         roster_positions=ctx.roster_positions(),
         scoring_settings=ctx.scoring_settings(),
         other_league_names=ctx.other_league_names(),

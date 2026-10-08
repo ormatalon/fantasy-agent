@@ -19,7 +19,7 @@ from src.decisions.lineup import SleeperLineup, optimize_lineup, sleeper_lineup
 from src.decisions.results import last_completed_week, summarize_week
 from src.decisions.trades import evaluate_trade
 from src.decisions.waivers import get_rostered_player_ids, suggest_waivers_by_position, unavailable_this_week
-from src.ingestion import schedule, storage
+from src.ingestion import nfl_teams, schedule, storage
 from src.ingestion.news import fetch_player_news
 from src.ingestion.sleeper import SleeperClient, SleeperError
 from src.ingestion.sync import log_to_stderr, run_sync
@@ -29,7 +29,7 @@ from src.projections.engine import (
     build_season_projection_table,
     weeks_remaining,
 )
-from src.projections.positions import GRANULAR_TO_GROUP
+from src.projections.positions import GRANULAR_TO_GROUP, IDP_POSITIONS, ROSTER_SLOT_ELIGIBILITY, SKILL_POSITIONS
 
 # Designations that make a player a stash candidate rather than a start.
 STASH_DESIGNATIONS = {"IR", "PUP", "Out", "Doubtful", "Sus", "NA", "COV"}
@@ -100,8 +100,8 @@ class AgentContext:
         row = self._league_row()
         return (row["name"] if row else None) or self.league_id
 
-    def team_name(self) -> str:
-        return storage.team_label(self.conn, self.league_id, self.user_id)
+    def fantasy_team_name(self) -> str:
+        return storage.fantasy_team_label(self.conn, self.league_id, self.user_id)
 
     def other_league_names(self) -> list[str]:
         known = json.loads(storage.get_state(self.conn, "user_leagues") or "[]")
@@ -138,7 +138,8 @@ def _ir_hint(status: str | None) -> str:
 # changes, their earlier results are hidden from the model (see graph.py).
 ROSTER_TOOLS = frozenset({
     "get_my_roster",
-    "get_team_roster",
+    "get_fantasy_team_roster",
+    "get_nfl_team_roster",
     "recommend_lineup",
     "get_waiver_targets",
     "get_injured_stash_candidates",
@@ -214,10 +215,10 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         if opponent:
             opp_roster = storage.get_roster(ctx.conn, ctx.league_id, opponent["roster_id"])
             if opp_roster:
-                opp_label = storage.team_label(ctx.conn, ctx.league_id, opp_roster["owner_id"])
+                opp_label = storage.fantasy_team_label(ctx.conn, ctx.league_id, opp_roster["owner_id"])
         return (
             f"Season {ctx.season}, week {ctx.current_week}. League: {ctx.league_name()}. "
-            f"Your team: {ctx.team_name()}. Week {ctx.current_week} opponent: {opp_label}. "
+            f"Your fantasy team: {ctx.fantasy_team_name()}. Week {ctx.current_week} opponent: {opp_label}. "
             f"Roster slots: {', '.join(ctx.roster_positions())}"
         )
 
@@ -235,20 +236,100 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         return "\n".join(["My lineup as set in Sleeper:", *format_lineup(ctx.conn, lineup, by_id)])
 
     @tool
-    def get_team_roster(team_name: str) -> str:
-        """List another manager's roster in my league (with injury designations
-        and this week's projections). `team_name` is matched loosely against team
-        and display names."""
-        row = storage.find_roster_by_team_query(ctx.conn, ctx.league_id, team_name)
+    def get_fantasy_team_roster(fantasy_team: str) -> str:
+        """List a fantasy team's roster: another manager's team in my league
+        (with injury designations and this week's projections). `fantasy_team`
+        is matched loosely against the league's fantasy team names and manager
+        display names. Not for NFL teams (Seattle, Chiefs, ...): use
+        get_nfl_team_roster for those."""
+        row = storage.find_roster_by_fantasy_team(ctx.conn, ctx.league_id, fantasy_team)
         if not row:
-            return f"No team matching '{team_name}'."
-        label = storage.team_label(ctx.conn, ctx.league_id, row["owner_id"])
+            if nfl_teams.resolve_nfl_team(fantasy_team):
+                return (
+                    f"No fantasy team in my league matches '{fantasy_team}'. It names an NFL team: "
+                    "call get_nfl_team_roster for that roster."
+                )
+            return f"No fantasy team matching '{fantasy_team}'."
+        label = storage.fantasy_team_label(ctx.conn, ctx.league_id, row["owner_id"])
         by_id = {p.player_id: p for p in ctx.projections(ctx.current_week)}
         lines = [f"{label}:"]
         for pid in json.loads(row["players"]):
             proj = by_id.get(pid)
             status = storage.get_injury_status(ctx.conn, pid)
             lines.append("  " + (_fmt_player(proj) if proj else storage.player_name(ctx.conn, pid) + _status_tag(status)))
+        return "\n".join(lines)
+
+    @tool
+    def get_nfl_team_roster(team: str) -> str:
+        """Who plays for an NFL team right now, from the synced Sleeper player
+        catalog: fantasy-relevant positions in depth-chart order, with injury
+        designations, this week's projection, and whether each player is on my
+        roster, another manager's roster, or a free agent. `team` can be an
+        abbreviation, city or nickname ('SEA', 'Seattle', 'Seahawks'). Use for
+        'who is on <NFL team>', 'who is <team>'s WR1', or which team a player
+        is on. Never answer these from memory: players change teams."""
+        matches = nfl_teams.resolve_nfl_team(team)
+        if not matches:
+            return f"No NFL team matching '{team}'."
+        if len(matches) > 1:
+            options = "; ".join(nfl_teams.nfl_team_label(a) for a in matches)
+            return f"'{team}' is ambiguous: {options}. Ask the user which one, then retry."
+        abbr = matches[0]
+        slots = set(ctx.roster_positions())
+        eligible = set().union(*(ROSTER_SLOT_ELIGIBILITY.get(s, set()) for s in slots))
+        positions = [p for p in [*SKILL_POSITIONS, "DEF", *IDP_POSITIONS] if p in eligible]
+        players = storage.players_on_nfl_team(ctx.conn, abbr, positions)
+        if not players:
+            return f"No players listed for {nfl_teams.nfl_team_label(abbr)}. Try sync_league."
+
+        # player_id -> owner label; my players also carry their slot, so the
+        # model never has to guess whether one of mine starts.
+        owners: dict[str, str] = {}
+        for r in ctx.conn.execute("SELECT roster_id, owner_id, players FROM rosters WHERE league_id = ?", (ctx.league_id,)):
+            if r["owner_id"] != ctx.user_id:
+                label = (
+                    storage.fantasy_team_label(ctx.conn, ctx.league_id, r["owner_id"]) if r["owner_id"]
+                    else f"unclaimed fantasy team (roster {r['roster_id']})"
+                )
+                owners.update({pid: label for pid in json.loads(r["players"] or "[]")})
+        my_slots: dict[str, str] = {}
+        lineup = my_lineup(ctx)
+        if lineup:
+            my_slots.update({pid: "starter" for _, pid in lineup.starters if pid})
+            my_slots.update({pid: "bench" for pid in lineup.bench})
+            my_slots.update({pid: "IR" for pid in lineup.ir})
+        owners.update({pid: "MY ROSTER" for pid in my_slots})
+        by_id = {p.player_id: p for p in ctx.projections(ctx.current_week)}
+
+        # One ownership line per fantasy team, mine first: per-player labels
+        # alone get dropped when the model summarizes a long list.
+        rostered: dict[str, list[str]] = {}
+        for p in players:
+            pid = p["player_id"]
+            if pid in owners:
+                slot = f" ({my_slots[pid]})" if pid in my_slots else ""
+                rostered.setdefault(owners[pid], []).append(f"{p['first_name']} {p['last_name']}{slot}")
+        summary = "; ".join(
+            f"{owner}: {', '.join(names)}" for owner, names in sorted(rostered.items(), key=lambda kv: kv[0] != "MY ROSTER")
+        )
+        lines = [
+            f"{nfl_teams.nfl_team_label(abbr)}, from the Sleeper player catalog "
+            f"(synced {storage.players_last_synced(ctx.conn)}). Depth-chart order within each position.",
+            f"Rostered in my league: {summary or 'none'}. Everyone else is a free agent.",
+        ]
+        for pos in positions:
+            group = [p for p in players if p["position"] == pos]
+            if not group:
+                continue
+            lines.append(f"{pos}:")
+            for p in group:
+                proj = by_id.get(p["player_id"])
+                text = _fmt_player(proj) if proj else storage.player_name(ctx.conn, p["player_id"]) + _status_tag(p["injury_status"])
+                if p["status"] and p["status"] != "Active" and not p["injury_status"]:
+                    text += f" (status: {p['status']})"
+                pid = p["player_id"]
+                owner = owners.get(pid, "free agent") + (f" ({my_slots[pid]})" if pid in my_slots else "")
+                lines.append(f"  {text} - {owner}")
         return "\n".join(lines)
 
     @tool
@@ -617,7 +698,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         except SleeperError as e:
             return f"Could not switch: {e}"
         ctx.reload_state()
-        return f"Now using {ctx.league_name()} (your team: {ctx.team_name()}), week {ctx.current_week}."
+        return f"Now using {ctx.league_name()} (your fantasy team: {ctx.fantasy_team_name()}), week {ctx.current_week}."
 
     @tool
     def remember_preference(note: str) -> str:
@@ -640,7 +721,8 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         forget_preference,
         get_league_state,
         get_my_roster,
-        get_team_roster,
+        get_fantasy_team_roster,
+        get_nfl_team_roster,
         get_recent_transactions,
         get_projections,
         get_season_projections,

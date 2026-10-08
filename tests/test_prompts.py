@@ -8,7 +8,7 @@ STANDARD_SLOTS = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF", "BN", 
 
 def prompt(slots, scoring=None, others=None):
     return build_system_prompt(
-        season="2026", week=4, league_name="Test League", team_name="My Team",
+        season="2026", week=4, league_name="Test League", fantasy_team_name="My Team",
         roster_positions=slots, scoring_settings=scoring or {"rec": 1.0},
         other_league_names=others, today=date(2026, 9, 29),
     )
@@ -50,7 +50,7 @@ def test_other_leagues_are_named_with_how_to_switch():
 
 def test_my_roster_section_renders_with_refresh_time_and_last_change():
     text = build_system_prompt(
-        season="2026", week=4, league_name="Test League", team_name="My Team",
+        season="2026", week=4, league_name="Test League", fantasy_team_name="My Team",
         roster_positions=STANDARD_SLOTS, scoring_settings={"rec": 1.0}, today=date(2026, 9, 29),
         my_roster=["Starters:", "  QB: Josh Allen (QB/BUF)", "Bench:", "  Drake Maye (QB/NE)", "IR:", "  X (WR/KC) [IR]"],
         roster_refreshed_at="2026-09-29T14:05:00+00:00",
@@ -64,3 +64,15 @@ def test_my_roster_section_renders_with_refresh_time_and_last_change():
 
 def test_no_roster_section_without_a_roster():
     assert "MY ROSTER right now" not in prompt(STANDARD_SLOTS)
+
+
+def test_nfl_team_roster_questions_are_routed_to_the_tool_not_memory():
+    text = prompt(STANDARD_SLOTS)
+    assert "get_nfl_team_roster" in text
+    assert "Never list a team's players from memory" in text
+
+
+def test_prompt_defines_fantasy_team_and_nfl_team():
+    text = prompt(STANDARD_SLOTS)
+    assert "Fantasy team: a manager's roster in this Sleeper league (mine is\n  My Team)" in text
+    assert "NFL team: a real NFL franchise" in text

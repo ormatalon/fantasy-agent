@@ -16,7 +16,7 @@ uv run python -m src.interface.cli sync [--league "name"] [--all]
 uv run python -m src.interface.cli leagues                 # your leagues; which is active
 uv run python -m src.interface.cli use "league name"       # switch the active league
 uv run python -m src.interface.cli roster
-uv run python -m src.interface.cli roster --team "some other team"
+uv run python -m src.interface.cli roster --fantasy-team "another fantasy team in the league"
 uv run python -m src.interface.cli transactions
 uv run python -m src.interface.cli projections [--week N] [--season]
 uv run python -m src.interface.cli lineup [--week N]
