@@ -1,3 +1,12 @@
+## Terminology: two kinds of team
+
+This project has exactly two kinds of team. Never write a bare "team" where it could mean either: in code, docs, prompts, tool names, CLI flags or answers.
+
+- **Fantasy team**: a manager's roster in a Sleeper league (mine, or another manager's). Code: `fantasy_team_*` names, `storage.fantasy_team_label`, `storage.find_roster_by_fantasy_team`, `AgentContext.fantasy_team_name`, tool `get_fantasy_team_roster`, CLI `roster --fantasy-team`. Sleeper's own field `league_users.team_name` holds a fantasy team's name.
+- **NFL team**: a real NFL franchise (SEA, "Seattle", "Seahawks"). Code: `src/ingestion/nfl_teams.py` (`resolve_nfl_team`, `nfl_team_label`), `storage.players_on_nfl_team`, tool `get_nfl_team_roster`. A player's NFL team is `players.team` (an abbreviation).
+
+The agent's system prompt (`src/agent/prompts.py`, TERMINOLOGY) gives the model the same rule. Keep the two in sync.
+
 ## Technical Decisions if Creating an app
 
 - use NextJS frontend

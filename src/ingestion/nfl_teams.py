@@ -48,12 +48,12 @@ _ALIASES = {
 }
 
 
-def team_label(abbr: str) -> str:
+def nfl_team_label(abbr: str) -> str:
     city, nickname = NFL_TEAMS[abbr]
     return f"{city} {nickname} ({abbr})"
 
 
-def resolve_team(query: str) -> list[str]:
+def resolve_nfl_team(query: str) -> list[str]:
     """Abbreviations matching `query`: one when it's clear, several when
     ambiguous ("New York"), none when unknown. Matches an abbreviation,
     city, nickname or "city nickname", case-insensitive."""

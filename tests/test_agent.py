@@ -62,7 +62,7 @@ def test_expected_tools_are_registered():
     assert {
         "get_league_state",
         "get_my_roster",
-        "get_team_roster",
+        "get_fantasy_team_roster",
         "get_nfl_team_roster",
         "get_recent_transactions",
         "get_projections",
@@ -165,7 +165,7 @@ def test_league_state_tool_reports_week_and_opponent():
 def test_team_roster_tool_matches_loosely_on_name():
     tools = tools_by_name(seeded_conn())
 
-    result = tools["get_team_roster"].invoke({"team_name": "their"})
+    result = tools["get_fantasy_team_roster"].invoke({"fantasy_team": "their"})
 
     assert "Beta Two" in result
 
@@ -173,9 +173,9 @@ def test_team_roster_tool_matches_loosely_on_name():
 def test_team_roster_tool_reports_miss_rather_than_guessing():
     tools = tools_by_name(seeded_conn())
 
-    result = tools["get_team_roster"].invoke({"team_name": "nonexistent team"})
+    result = tools["get_fantasy_team_roster"].invoke({"fantasy_team": "nonexistent team"})
 
-    assert "No team matching" in result
+    assert "No fantasy team matching" in result
 
 
 def test_build_context_requires_a_synced_league():

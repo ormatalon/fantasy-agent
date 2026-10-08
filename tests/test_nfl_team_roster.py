@@ -1,22 +1,22 @@
 import pytest
 
 from src.ingestion import storage
-from src.ingestion.nfl_teams import resolve_team
+from src.ingestion.nfl_teams import resolve_nfl_team
 from tests.test_agent import ctx_with_cached_projections, seeded_conn
 from src.agent.tools import build_tools
 
 
 @pytest.mark.parametrize("query", ["SEA", "sea", "Seattle", "seahawks", "Seattle Seahawks", "the Seahawks"])
 def test_team_resolves_from_abbreviation_city_or_nickname(query):
-    assert resolve_team(query) == ["SEA"]
+    assert resolve_nfl_team(query) == ["SEA"]
 
 
 def test_shared_city_is_ambiguous_and_unknown_is_empty():
-    assert sorted(resolve_team("New York")) == ["NYG", "NYJ"]
-    assert sorted(resolve_team("los angeles")) == ["LAC", "LAR"]
-    assert resolve_team("Rams") == ["LAR"]
-    assert resolve_team("OAK") == ["LV"]
-    assert resolve_team("Their Team") == []
+    assert sorted(resolve_nfl_team("New York")) == ["NYG", "NYJ"]
+    assert sorted(resolve_nfl_team("los angeles")) == ["LAC", "LAR"]
+    assert resolve_nfl_team("Rams") == ["LAR"]
+    assert resolve_nfl_team("OAK") == ["LV"]
+    assert resolve_nfl_team("Their Team") == []
 
 
 def nfl_conn(roster_positions=("QB", "WR", "FLEX", "BN")):
@@ -70,7 +70,7 @@ def test_ambiguous_and_unknown_teams_are_reported_not_guessed():
 
 
 def test_fantasy_team_lookup_points_nfl_team_names_to_the_nfl_tool():
-    result = nfl_tool(nfl_conn(), "get_team_roster").invoke({"team_name": "Seattle"})
+    result = nfl_tool(nfl_conn(), "get_fantasy_team_roster").invoke({"fantasy_team": "Seattle"})
     assert "get_nfl_team_roster" in result
 
 
@@ -79,3 +79,13 @@ def test_ownership_summary_lists_my_players_with_slot_first():
 
     assert ("Rostered in my league: MY ROSTER: Sam Darnold (starter), Cooper Kupp (bench); "
             "Their Team: Jaxon Smith-Njigba. Everyone else is a free agent.") in result
+
+
+def test_players_on_an_unclaimed_fantasy_team_are_rostered_not_free_agents():
+    conn = nfl_conn()
+    storage.save_rosters(conn, "L1", [{"roster_id": 3, "owner_id": None, "players": ["new"], "starters": []}])
+
+    result = nfl_tool(conn).invoke({"team": "SEA"})
+
+    assert "Practice Guy (WR/SEA) - unclaimed fantasy team (roster 3)" in result
+    assert "Unknown owner" not in result

@@ -41,6 +41,8 @@ in one sitting on a day you haven't otherwise used the agent much.
 | 17 | Remove a player from the local copy of my roster (below), then ask about that player. | Roster freshness | The refresh before the question restores him, and the answer includes him. | **pass** 2026-10-07 (same run as 16) |
 | 18 | "Who is on the Seattle roster?" | NFL team roster | Calls `get_nfl_team_roster`. No DK Metcalf (PIT since 2025). Any of my players is labeled starter/bench exactly as in Sleeper. | **pass** 2026-10-08, Or Test League: Metcalf absent, Jones bench / Love starter. (Before round 2, it called Jones a starter.) |
 | 19 | "What NFL team is DK Metcalf on, and who are the Seahawks' top wide receivers?" | NFL team roster | PIT, from a tool, not memory. WRs from `get_nfl_team_roster`. | **pass** 2026-10-08: PIT via `get_player_news`; Smith-Njigba, Shaheed, Kupp |
+| 20 | "Show me [another manager]'s roster." then "Who is on the Steelers?" | Terminology | First uses `get_fantasy_team_roster`, second `get_nfl_team_roster`. Each answer says "fantasy team" or "NFL team" where it matters. | not yet run: free-model daily limit reached 2026-10-08. Tools checked directly against live data: pass |
+| 21 | "Which team is [a player on another fantasy team] on?" | Terminology | Either asks which kind of team is meant, or answers both (NFL team and fantasy team) and labels each. | not yet run (same reason) |
 
 ### Backdating the last sync (for question 11)
 

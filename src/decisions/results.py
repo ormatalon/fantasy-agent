@@ -55,7 +55,7 @@ def _opponent(conn: sqlite3.Connection, league_id: str, roster_id: int, week: in
     if not opp:
         return None, None, []
     roster = storage.get_roster(conn, league_id, opp["roster_id"])
-    name = storage.team_label(conn, league_id, roster["owner_id"]) if roster else f"roster {opp['roster_id']}"
+    name = storage.fantasy_team_label(conn, league_id, roster["owner_id"]) if roster else f"roster {opp['roster_id']}"
     points = json.loads(opp["players_points"] or "{}")
     starters = json.loads(opp["starters"] or "[]")
     top = sorted(((_name(conn, pid), points.get(pid, 0.0)) for pid in starters), key=lambda t: t[1], reverse=True)

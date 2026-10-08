@@ -137,3 +137,22 @@ Implemented. 180 tests pass (1 live test skipped by default). Live:
 - Detecting memory-based answers in general (e.g. checking every player name
   in an answer against the catalog). That's worth considering if this happens
   again on a different question type.
+
+## Follow-up: terminology (2026-10-08)
+
+Decision: there are two kinds of team, **fantasy team** and **NFL team**
+(see `AGENT.md`). Renamed to match: `get_team_roster` ->
+`get_fantasy_team_roster(fantasy_team)`, `storage.team_label` ->
+`fantasy_team_label`, `find_roster_by_team_query` ->
+`find_roster_by_fantasy_team`, `AgentContext.team_name` ->
+`fantasy_team_name`, `nfl_teams.team_label` / `resolve_team` ->
+`nfl_team_label` / `resolve_nfl_team`, CLI `roster --team` ->
+`--fantasy-team`. The system prompt has a TERMINOLOGY section. Older
+mentions of `get_team_roster` above are left as written.
+
+Test after the rename (2026-10-08): 182 tests pass. The live model was out of
+daily free requests, so the tools and system prompt were run directly against
+synced data. One bug found and fixed: players on an unclaimed fantasy team
+(roster with no owner, as in Or Test League) showed as `Unknown owner (None)`.
+They now show as `unclaimed fantasy team (roster N)`, still counted as rostered.
+Live questions 20-21 in `TEST_QUESTIONS.md` are pending.

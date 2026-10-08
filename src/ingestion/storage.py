@@ -474,7 +474,7 @@ def get_roster_id_for_user(conn: sqlite3.Connection, league_id: str, user_id: st
     return row["roster_id"] if row else None
 
 
-def find_roster_by_team_query(conn: sqlite3.Connection, league_id: str, query: str) -> sqlite3.Row | None:
+def find_roster_by_fantasy_team(conn: sqlite3.Connection, league_id: str, query: str) -> sqlite3.Row | None:
     """Fuzzy-match a team/display name to a roster (case-insensitive substring)."""
     like = f"%{query.lower()}%"
     row = conn.execute(
@@ -486,7 +486,7 @@ def find_roster_by_team_query(conn: sqlite3.Connection, league_id: str, query: s
     return row
 
 
-def team_label(conn: sqlite3.Connection, league_id: str, owner_id: str) -> str:
+def fantasy_team_label(conn: sqlite3.Connection, league_id: str, owner_id: str) -> str:
     row = conn.execute(
         "SELECT display_name, team_name FROM league_users WHERE league_id = ? AND user_id = ?",
         (league_id, owner_id),

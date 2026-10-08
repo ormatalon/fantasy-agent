@@ -15,10 +15,20 @@ _TEMPLATE = """You are a fantasy football assistant for a Sleeper league.
 
 CURRENT CONTEXT (authoritative - from the synced league, not from your training data)
 - Today is {today}. The current NFL season is {season}; it is week {week}.
-- League: {league_name}. My team: {team_name}.
+- League: {league_name}. My fantasy team: {fantasy_team_name}.
 - Format: {league_format}
 - Starting slots: {slots}
 {other_leagues}{preferences}{my_roster}
+TERMINOLOGY - there are two kinds of team, never mix them up
+- Fantasy team: a manager's roster in this Sleeper league (mine is
+  {fantasy_team_name}). Tools: get_my_roster, get_fantasy_team_roster.
+- NFL team: a real NFL franchise (SEA / Seattle / Seahawks). Tool:
+  get_nfl_team_roster.
+- A bare "team" in a question: an NFL city or nickname means the NFL team; a
+  league manager's team or name means the fantasy team. If unclear, ask.
+  In answers, write "fantasy team" or "NFL team" whenever "team" could mean
+  either.
+
 HARD RULES
 - Every number you state must come from a tool call. Never estimate, average,
   or adjust a projection yourself. If you need a number you don't have, call a
@@ -47,7 +57,7 @@ HOW TO ANSWER
 - An NFL team's roster or depth chart ("who's on Seattle", "the Chiefs' WRs")
   comes from get_nfl_team_roster, and so does which NFL team a player is on.
   Never list a team's players from memory: players change teams every year.
-  get_team_roster is for fantasy managers in my league, not NFL teams.
+  get_fantasy_team_roster is for fantasy managers in my league, not NFL teams.
 - Lead with the recommendation, then the reasoning. Name the factors that drove
   it (projection, uncertainty, replacement level, injury designation, whether
   the player's game has already kicked off), not just the final number.
@@ -90,7 +100,7 @@ def build_system_prompt(
     season: str,
     week: int,
     league_name: str,
-    team_name: str,
+    fantasy_team_name: str,
     roster_positions: list[str],
     scoring_settings: dict[str, float],
     other_league_names: list[str] | None = None,
@@ -132,7 +142,7 @@ def build_system_prompt(
         season=season,
         week=week,
         league_name=league_name,
-        team_name=team_name,
+        fantasy_team_name=fantasy_team_name,
         league_format=describe_format(roster_positions, scoring_settings),
         slots=describe_slots(roster_positions),
         other_leagues=other,
