@@ -51,3 +51,22 @@ def test_player_name_formats_position_and_team():
     )
 
     assert storage.player_name(conn, "123") == "Josh Allen (QB/BUF)"
+
+
+def test_ir_slots_are_saved():
+    conn = make_conn()
+    storage.save_rosters(conn, "L1", [{"roster_id": 1, "owner_id": "u1", "players": ["a", "b"],
+                                       "starters": ["a"], "reserve": ["b"]}])
+
+    assert storage.get_roster(conn, "L1", 1)["reserve"] == '["b"]'
+
+
+def test_migrate_adds_the_ir_slot_column_to_an_old_database():
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(storage.SCHEMA.replace("    reserve TEXT,\n", ""))
+    assert "reserve" not in {r["name"] for r in conn.execute("PRAGMA table_info(rosters)")}
+
+    storage._migrate(conn)
+
+    assert "reserve" in {r["name"] for r in conn.execute("PRAGMA table_info(rosters)")}

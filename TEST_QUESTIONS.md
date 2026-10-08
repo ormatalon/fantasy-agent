@@ -36,6 +36,9 @@ in one sitting on a day you haven't otherwise used the agent much.
 | 12 | In one `chat` session: get a lineup, then "Why did you bench [a starter-quality player]?" (asking about a player who actually *starts* makes a good trap) | general | Consistent with the lineup it gave, names the factor (projection, injury, matchup), and invents no numbers. | **partial**: caught the trap ("Kelce is not benched"), but its reasoning contradicted itself (13.2 vs 11.9) and it did prose arithmetic ("edges out by 0.2") |
 | 13 | `chat --new`: "Remember that I'm risk-averse at FLEX." Exit. Then `chat`: "What do you remember about how I play?" | Upgrade 1 | First run calls `remember_preference`. Second run prints "Resuming your conversation" and recalls it. Afterwards, clean up with "forget preference 1". | **pass** |
 | 14 | "Who are the top 5 WRs in actual points so far, and who are the top 5 projected for the rest of the season?" | New F, New G | Two tools (`get_season_to_date_leaders`, `get_season_projections`), two different lists, and young players (rookies, second-years) present in both. | **pass** (JSN leads actual; Nacua [Out] leads rest-of-season) |
+| 15 | "Who are my starters?" | Roster freshness | Lists the lineup set in Sleeper by slot (QB / SUPER_FLEX match the app), from MY ROSTER or `get_my_roster`, **not** `recommend_lineup`. | **pass** 2026-10-07, Or Test League: only `get_my_roster`; QB Allen, SUPER_FLEX empty, matching Sleeper |
+| 16 | In one `chat`: get a waiver recommendation, make a **free-agent** add/drop in Sleeper (not a waiver claim: claims stay pending until the waiver run and the API doesn't show them), then "Who's on my roster?" | Roster freshness | The answer reflects the move without being asked to sync. | **pass**, simulated 2026-10-07 (pre-move roster restored locally, then the refresh pulled the real one): answered with Goff, without Maye, and named the change |
+| 17 | Remove a player from the local copy of my roster (below), then ask about that player. | Roster freshness | The refresh before the question restores him, and the answer includes him. | **pass** 2026-10-07 (same run as 16) |
 
 ### Backdating the last sync (for question 11)
 
@@ -58,3 +61,12 @@ auto-sync staleness rules, league selection, kickoff and bye detection, the
 waiver exclusions and replacement-level fix, opponent recap, rest-of-season
 proration, crosswalk fallbacks, season-to-date scoring, and chat persistence
 and history trimming. See `tests/`.
+
+### Removing a player from the local roster (for question 17)
+
+Replace `NAME` with a player on your roster. The next `ask`/`chat` question
+re-pulls rosters from Sleeper, which puts him back.
+
+```
+uv run python -c "import json, config; from src.ingestion import storage; c = storage.get_connection(config.DB_PATH); lg, u = storage.get_state(c, 'active_league_id'), storage.get_state(c, 'active_user_id'); r = storage.get_roster(c, lg, storage.get_roster_id_for_user(c, lg, u)); pid = storage.resolve_player(c, 'NAME', lg)[0]; c.execute('UPDATE rosters SET players = ? WHERE league_id = ? AND roster_id = ?', (json.dumps([p for p in json.loads(r['players']) if p != pid]), lg, r['roster_id'])); c.commit()"
+```

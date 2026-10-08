@@ -32,6 +32,11 @@ PLAYERS_CACHE_TTL_HOURS = 6
 # so answers don't silently come from yesterday's rosters and injuries.
 AUTO_SYNC_HOURS = 2
 
+# Rosters alone (3 small requests) are re-pulled before a question once
+# they're older than this, so a move just made in Sleeper is seen at once.
+# 0 = before every question; raise it to rate-limit.
+ROSTER_REFRESH_SECONDS = 0
+
 # Weight of each registered projection source in the blend. A source with
 # weight 0 (or omitted here) is disabled without touching blend.py.
 SOURCE_WEIGHTS: dict[str, float] = {

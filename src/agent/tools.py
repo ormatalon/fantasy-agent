@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from langchain_core.tools import BaseTool, tool
 
 from src.decisions.leaders import season_to_date
-from src.decisions.lineup import optimize_lineup
+from src.decisions.lineup import SleeperLineup, optimize_lineup, sleeper_lineup
 from src.decisions.results import last_completed_week, summarize_week
 from src.decisions.trades import evaluate_trade
 from src.decisions.waivers import get_rostered_player_ids, suggest_waivers_by_position, unavailable_this_week
@@ -134,6 +134,53 @@ def _ir_hint(status: str | None) -> str:
     return ""
 
 
+# Tools whose output depends on who is on which roster. After my roster
+# changes, their earlier results are hidden from the model (see graph.py).
+ROSTER_TOOLS = frozenset({
+    "get_my_roster",
+    "get_team_roster",
+    "recommend_lineup",
+    "get_waiver_targets",
+    "get_injured_stash_candidates",
+    "get_trending_players",
+})
+
+
+def my_lineup(ctx: AgentContext) -> SleeperLineup | None:
+    roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
+    row = storage.get_roster(ctx.conn, ctx.league_id, roster_id) if roster_id is not None else None
+    if not row:
+        return None
+    return sleeper_lineup(
+        json.loads(row["players"]), json.loads(row["starters"]), json.loads(row["reserve"] or "[]"),
+        ctx.roster_positions(),
+    )
+
+
+def format_lineup(conn: sqlite3.Connection, lineup: SleeperLineup, projections: dict | None = None) -> list[str]:
+    """The lineup as set in Sleeper, grouped Starters / Bench / IR. One
+    formatter for both get_my_roster and the system prompt, so the two never
+    disagree. Without `projections` (the prompt), no numbers are shown."""
+
+    def line(pid: str, hint: bool = True) -> str:
+        status = storage.get_injury_status(conn, pid)
+        if projections is None:
+            text = storage.player_name(conn, pid) + _status_tag(status)
+        else:
+            proj = projections.get(pid)
+            text = _fmt_player(proj) if proj else f"{storage.player_name(conn, pid)}{_status_tag(status)}: no projection"
+        return text + (_ir_hint(status) if hint else "")
+
+    lines = ["Starters:"]
+    lines += [f"  {slot}: {line(pid) if pid else '(empty)'}" for slot, pid in lineup.starters]
+    lines.append("Bench:" if lineup.bench else "Bench: (none)")
+    lines += [f"  {line(pid)}" for pid in lineup.bench]
+    if lineup.ir:
+        lines.append("IR:")
+        lines += [f"  {line(pid, hint=False)}" for pid in lineup.ir]
+    return lines
+
+
 def build_tools(ctx: AgentContext) -> list[BaseTool]:
     def resolve(name: str) -> tuple[str | None, str | None]:
         """(player_id, None) or (None, message explaining the miss/ambiguity)."""
@@ -176,21 +223,16 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
 
     @tool
     def get_my_roster() -> str:
-        """Every player on my roster with position, team, injury designation in
-        [brackets] (e.g. [Questionable], [IR]) and this week's projected points.
-        Also flags players who can move to an IR slot. Use for 'who's on my team',
-        'is anyone hurt', and before any roster-management advice."""
-        player_ids = my_roster_ids()
-        if player_ids is None:
+        """My roster exactly as set in Sleeper: starters by slot, bench, and IR
+        slots, each with position, team, injury designation in [brackets] and
+        this week's projected points. Flags players who can move to an IR slot. Use for 'who are my starters', 'what's my lineup', 'who's on my
+        team', 'is anyone hurt', and before any roster-management advice. For
+        what the lineup SHOULD be, use recommend_lineup instead."""
+        lineup = my_lineup(ctx)
+        if lineup is None:
             return "Could not find your roster in this league."
         by_id = {p.player_id: p for p in ctx.projections(ctx.current_week)}
-        lines = []
-        for pid in player_ids:
-            proj = by_id.get(pid)
-            status = storage.get_injury_status(ctx.conn, pid)
-            line = _fmt_player(proj) if proj else f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}: no projection"
-            lines.append(line + _ir_hint(status))
-        return "\n".join(lines)
+        return "\n".join(["My lineup as set in Sleeper:", *format_lineup(ctx.conn, lineup, by_id)])
 
     @tool
     def get_team_roster(team_name: str) -> str:
@@ -286,11 +328,15 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         """The optimal start/sit for my roster, solved against my league's roster
         slots from projections (which already discount injured players). Returns
         each starting slot, who fills it, and why, plus injured bench players who
-        could move to IR. Defaults to the current week."""
+        could move to IR. This is what the lineup SHOULD be; for the lineup
+        currently set in Sleeper use get_my_roster. Players in IR slots are not
+        considered. Defaults to the current week."""
         target_week = week or ctx.current_week
-        player_ids = my_roster_ids()
-        if player_ids is None:
+        lineup = my_lineup(ctx)
+        if lineup is None:
             return "Could not find your roster in this league."
+        # Sleeper won't start a player sitting in an IR slot.
+        player_ids = [pid for pid in my_roster_ids() if pid not in lineup.ir]
 
         projections = {p.player_id: p for p in ctx.projections(target_week)}
         player_meta = {}
@@ -313,6 +359,11 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
             status = storage.get_injury_status(ctx.conn, pid)
             if pid not in started and _ir_hint(status):
                 lines.append(f"Bench: {storage.player_name(ctx.conn, pid)} [{status}]{_ir_hint(status)}")
+        for pid in lineup.ir:
+            status = storage.get_injury_status(ctx.conn, pid)
+            if status not in IR_SLOT_DEFINITE | IR_SLOT_MAYBE:
+                lines.append(f"IR slot: {storage.player_name(ctx.conn, pid)}{_status_tag(status)} no longer has "
+                             "an IR-eligible designation - move him out of IR to be able to start him.")
         return "\n".join(lines)
 
     @tool

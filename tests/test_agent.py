@@ -206,3 +206,134 @@ def test_live_agent_routes_a_lineup_question_to_the_lineup_tool():
         for tc in (getattr(m, "tool_calls", None) or [])
     ]
     assert "recommend_lineup" in called
+
+
+def superflex_conn(reserve=("hurt",)) -> sqlite3.Connection:
+    conn = make_conn()
+    storage.save_league(conn, {"league_id": "L1", "season": "2026", "name": "Test League",
+                               "scoring_settings": {"rec": 1.0},
+                               "roster_positions": ["QB", "SUPER_FLEX", "BN", "IR"]})
+    storage.save_league_users(conn, "L1", [{"user_id": "u1", "display_name": "Me", "metadata": {}}])
+    storage.save_players(conn, {
+        "allen": {"first_name": "Josh", "last_name": "Allen", "position": "QB", "team": "BUF"},
+        "maye": {"first_name": "Drake", "last_name": "Maye", "position": "QB", "team": "NE"},
+        "hurt": {"first_name": "Star", "last_name": "Hurt", "position": "QB", "team": "KC"},
+    })
+    storage.save_rosters(conn, "L1", [{"roster_id": 1, "owner_id": "u1", "players": ["maye", "allen", "hurt"],
+                                       "starters": ["allen", "maye"], "reserve": list(reserve)}])
+    return conn
+
+
+def proj(pid: str, name: str, mean: float):
+    from src.projections.engine import AdjustedProjection
+
+    return AdjustedProjection(player_id=pid, name=name, position="QB", team="X", mean=mean, variance=1.0,
+                              matchup_multiplier=1.0, injury_multiplier=1.0, num_sources=1)
+
+
+def test_my_roster_shows_the_lineup_set_in_sleeper_by_slot():
+    conn = superflex_conn()
+    tools = {t.name: t for t in build_tools(ctx_with_cached_projections(conn, [proj("allen", "Josh Allen", 24.0)]))}
+
+    result = tools["get_my_roster"].invoke({})
+
+    assert "QB: Josh Allen (QB/X): 24.0 pts" in result
+    assert "SUPER_FLEX: Drake Maye (QB/NE)" in result
+    assert "Bench: (none)" in result
+    assert result.index("IR:") < result.index("Star Hurt")
+
+
+def test_recommended_lineup_never_starts_a_player_in_an_ir_slot():
+    conn = superflex_conn()
+    projections = [proj("allen", "Josh Allen", 20.0), proj("maye", "Drake Maye", 15.0), proj("hurt", "Star Hurt", 30.0)]
+    tools = {t.name: t for t in build_tools(ctx_with_cached_projections(conn, projections))}
+
+    result = tools["recommend_lineup"].invoke({})
+
+    assert "Star Hurt" not in result.split("Total projected")[0]
+    # Healthy again but still in the IR slot: say so.
+    assert "move him out of IR" in result
+
+
+def test_system_prompt_carries_my_roster_and_follows_the_stored_roster():
+    from src.agent.orchestrator import system_prompt_for
+
+    conn = superflex_conn(reserve=())
+    ctx = make_ctx(conn)
+    storage.set_state(conn, "rosters_synced_at", "2026-10-06T12:00:00+00:00")
+
+    text = system_prompt_for(ctx)
+    assert "MY ROSTER right now" in text
+    assert "QB: Josh Allen (QB/BUF)" in text
+
+    storage.save_rosters(conn, "L1", [{"roster_id": 1, "owner_id": "u1", "players": ["maye", "allen"],
+                                       "starters": ["maye", "allen"], "reserve": []}])
+    storage.set_state(conn, "roster_changed_at:L1", "2026-10-06T12:01:00+00:00")
+    storage.set_state(conn, "roster_change:L1", "lineup changed")
+
+    text = system_prompt_for(ctx)
+    assert "QB: Drake Maye (QB/NE)" in text
+    assert "Last change detected 2026-10-06 12:01 UTC: lineup changed." in text
+
+
+def _history(tool_name="get_my_roster"):
+    from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
+    return [
+        HumanMessage(content="who's on my team?", additional_kwargs={"asked_at": "2026-10-06T12:00:00+00:00"}),
+        AIMessage(content="", tool_calls=[{"name": tool_name, "args": {}, "id": "c1"}]),
+        ToolMessage(content="old roster", name=tool_name, tool_call_id="c1"),
+        AIMessage(content="You have Charbonnet."),
+        HumanMessage(content="and now?", additional_kwargs={"asked_at": "2026-10-06T12:10:00+00:00"}),
+        AIMessage(content="", tool_calls=[{"name": tool_name, "args": {}, "id": "c2"}]),
+        ToolMessage(content="new roster", name=tool_name, tool_call_id="c2"),
+    ]
+
+
+def _tool_contents(messages):
+    return [m.content for m in messages if m.type == "tool"]
+
+
+def test_earlier_roster_results_are_hidden_only_after_a_roster_change():
+    from src.agent.graph import OUTDATED_RESULT, hide_outdated_results
+    from src.agent.tools import ROSTER_TOOLS
+
+    changed = "2026-10-06T12:05:00+00:00"
+    assert _tool_contents(hide_outdated_results(_history(), changed, ROSTER_TOOLS)) == [OUTDATED_RESULT, "new roster"]
+    # No change since: follow-ups keep the numbers they need.
+    assert _tool_contents(hide_outdated_results(_history(), None, ROSTER_TOOLS)) == ["old roster", "new roster"]
+    # A change before the earlier question doesn't outdate it.
+    before = "2026-10-06T11:00:00+00:00"
+    assert _tool_contents(hide_outdated_results(_history(), before, ROSTER_TOOLS)) == ["old roster", "new roster"]
+    # Tools that don't depend on rosters are left alone.
+    league = _history("get_league_state")
+    assert _tool_contents(hide_outdated_results(league, changed, ROSTER_TOOLS)) == ["old roster", "new roster"]
+
+
+def test_the_current_questions_results_are_never_hidden():
+    from src.agent.graph import hide_outdated_results
+    from src.agent.tools import ROSTER_TOOLS
+
+    after_everything = "2026-10-06T13:00:00+00:00"
+    assert _tool_contents(hide_outdated_results(_history(), after_everything, ROSTER_TOOLS))[-1] == "new roster"
+
+
+def test_graph_sends_hidden_results_but_keeps_the_stored_ones():
+    from langchain_core.messages import AIMessage
+
+    from src.agent.graph import OUTDATED_RESULT, build_graph
+    from src.agent.tools import ROSTER_TOOLS
+
+    sent = []
+
+    def fake_llm(messages):
+        sent.append(messages)
+        return AIMessage(content="ok")
+
+    graph = build_graph(fake_llm, [], lambda: "sys", roster_changed_at=lambda: "2026-10-06T12:05:00+00:00",
+                        roster_tools=ROSTER_TOOLS)
+    thread = {"configurable": {"thread_id": "t"}}
+    graph.invoke({"messages": _history()[:5]}, config=thread)
+
+    assert _tool_contents(sent[0]) == [OUTDATED_RESULT]
+    assert _tool_contents(graph.get_state(thread).values["messages"]) == ["old roster"]

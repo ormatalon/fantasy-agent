@@ -1,4 +1,4 @@
-from src.decisions.lineup import optimize_lineup
+from src.decisions.lineup import optimize_lineup, sleeper_lineup
 from src.projections.engine import AdjustedProjection
 
 
@@ -87,3 +87,22 @@ def test_optimizer_maximizes_total_over_greedy_trap():
 
     assert {s.player_id for s in lineup} == {"rb1", "rb2", "rb3"}
     assert sum(s.mean for s in lineup) == 45.0
+
+
+def test_sleeper_lineup_maps_starters_to_slots_in_order():
+    positions = ["QB", "RB", "FLEX", "SUPER_FLEX", "BN", "BN", "IR"]
+    view = sleeper_lineup(
+        players=["allen", "rb", "maye", "bench1", "hurt"],
+        starters=["allen", "rb", "0", "maye"],
+        reserve=["hurt"],
+        roster_positions=positions,
+    )
+
+    assert view.starters == [("QB", "allen"), ("RB", "rb"), ("FLEX", None), ("SUPER_FLEX", "maye")]
+    assert view.bench == ["bench1"]
+    assert view.ir == ["hurt"]
+
+
+def test_sleeper_lineup_pads_missing_starters_as_empty():
+    view = sleeper_lineup(players=["a"], starters=["a"], reserve=[], roster_positions=["QB", "RB", "BN"])
+    assert view.starters == [("QB", "a"), ("RB", None)]

@@ -7,7 +7,7 @@ comes from the league's own roster slots and scoring.
 """
 
 from collections import Counter
-from datetime import date
+from datetime import date, datetime, timezone
 
 IDP_SLOTS = {"DL", "LB", "DB", "IDP_FLEX"}
 
@@ -18,7 +18,7 @@ CURRENT CONTEXT (authoritative - from the synced league, not from your training 
 - League: {league_name}. My team: {team_name}.
 - Format: {league_format}
 - Starting slots: {slots}
-{other_leagues}{preferences}
+{other_leagues}{preferences}{my_roster}
 HARD RULES
 - Every number you state must come from a tool call. Never estimate, average,
   or adjust a projection yourself. If you need a number you don't have, call a
@@ -41,6 +41,9 @@ HARD RULES
 
 HOW TO ANSWER
 - Call the tools you need first, then answer from what they returned.
+- "Who are my starters" / "what's my lineup" means the lineup currently set
+  in Sleeper: answer from MY ROSTER, or get_my_roster when projections are
+  wanted. recommend_lineup is only for what the lineup SHOULD be.
 - Lead with the recommendation, then the reasoning. Name the factors that drove
   it (projection, uncertainty, replacement level, injury designation, whether
   the player's game has already kicked off), not just the final number.
@@ -89,7 +92,24 @@ def build_system_prompt(
     other_league_names: list[str] | None = None,
     today: date | None = None,
     preferences: list[str] | None = None,
+    my_roster: list[str] | None = None,
+    roster_refreshed_at: str | None = None,
+    roster_change: tuple[str, str] | None = None,
 ) -> str:
+    """`my_roster` is the formatted lineup as set in Sleeper (tools.format_lineup),
+    `roster_refreshed_at` an ISO time, and `roster_change` the last detected
+    change of my roster as (ISO time, description)."""
+    roster = ""
+    if my_roster:
+        refreshed = f" (refreshed {_utc(roster_refreshed_at)})" if roster_refreshed_at else ""
+        roster = (
+            f"\nMY ROSTER right now, from Sleeper{refreshed}. Authoritative: it overrides any roster, "
+            "lineup or player availability mentioned earlier in this conversation, including your own "
+            "earlier answers.\n"
+        )
+        if roster_change:
+            roster += f"Last change detected {_utc(roster_change[0])}: {roster_change[1]}.\n"
+        roster += "".join(f"{line}\n" for line in my_roster)
     prefs = ""
     if preferences:
         prefs = (
@@ -113,4 +133,9 @@ def build_system_prompt(
         slots=describe_slots(roster_positions),
         other_leagues=other,
         preferences=prefs,
+        my_roster=roster,
     )
+
+
+def _utc(iso_ts: str) -> str:
+    return datetime.fromisoformat(iso_ts).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
