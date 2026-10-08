@@ -64,3 +64,9 @@ def test_my_roster_section_renders_with_refresh_time_and_last_change():
 
 def test_no_roster_section_without_a_roster():
     assert "MY ROSTER right now" not in prompt(STANDARD_SLOTS)
+
+
+def test_nfl_team_roster_questions_are_routed_to_the_tool_not_memory():
+    text = prompt(STANDARD_SLOTS)
+    assert "get_nfl_team_roster" in text
+    assert "Never list a team's players from memory" in text

@@ -282,6 +282,17 @@ def save_players(conn: sqlite3.Connection, players: dict) -> None:
     conn.commit()
 
 
+def players_on_nfl_team(conn: sqlite3.Connection, team: str, positions: list[str]) -> list[sqlite3.Row]:
+    """Players Sleeper lists on NFL team `team` at `positions`, in
+    depth-chart order (unranked players last)."""
+    marks = ",".join("?" * len(positions))
+    return conn.execute(
+        f"SELECT * FROM players WHERE team = ? AND position IN ({marks}) "
+        "ORDER BY depth_chart_order IS NULL, depth_chart_order, last_name",
+        (team, *positions),
+    ).fetchall()
+
+
 def players_last_synced(conn: sqlite3.Connection) -> str | None:
     row = conn.execute("SELECT MAX(synced_at) AS ts FROM players").fetchone()
     return row["ts"] if row else None

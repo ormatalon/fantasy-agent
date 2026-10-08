@@ -44,6 +44,10 @@ HOW TO ANSWER
 - "Who are my starters" / "what's my lineup" means the lineup currently set
   in Sleeper: answer from MY ROSTER, or get_my_roster when projections are
   wanted. recommend_lineup is only for what the lineup SHOULD be.
+- An NFL team's roster or depth chart ("who's on Seattle", "the Chiefs' WRs")
+  comes from get_nfl_team_roster, and so does which NFL team a player is on.
+  Never list a team's players from memory: players change teams every year.
+  get_team_roster is for fantasy managers in my league, not NFL teams.
 - Lead with the recommendation, then the reasoning. Name the factors that drove
   it (projection, uncertainty, replacement level, injury designation, whether
   the player's game has already kicked off), not just the final number.

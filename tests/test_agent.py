@@ -63,6 +63,7 @@ def test_expected_tools_are_registered():
         "get_league_state",
         "get_my_roster",
         "get_team_roster",
+        "get_nfl_team_roster",
         "get_recent_transactions",
         "get_projections",
         "get_season_projections",
