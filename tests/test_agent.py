@@ -338,3 +338,24 @@ def test_graph_sends_hidden_results_but_keeps_the_stored_ones():
 
     assert _tool_contents(sent[0]) == [OUTDATED_RESULT]
     assert _tool_contents(graph.get_state(thread).values["messages"]) == ["old roster"]
+
+
+def test_pending_claims_are_listed_with_names_and_bid(monkeypatch):
+    from src.agent import tools as tools_mod
+
+    monkeypatch.setattr(tools_mod.sleeper_writes, "pending_claims", lambda league_id, roster_id: [
+        {"transaction_id": "t9", "adds": {"p2": 1}, "drops": {"p1": 1}, "settings": {"waiver_bid": 12}},
+    ])
+    out = tools_by_name(seeded_conn())["get_pending_claims"].invoke({})
+    assert "Beta Two" in out and "drop Alpha One" in out and "$12" in out and "t9" in out
+
+
+def test_pending_claims_report_a_missing_token_instead_of_failing(monkeypatch):
+    from src.agent import tools as tools_mod
+    from src.ingestion.sleeper_graphql import SleeperError
+
+    def no_token(league_id, roster_id):
+        raise SleeperError("Set SLEEPER_TOKEN in .env first")
+
+    monkeypatch.setattr(tools_mod.sleeper_writes, "pending_claims", no_token)
+    assert "SLEEPER_TOKEN" in tools_by_name(seeded_conn())["get_pending_claims"].invoke({})

@@ -72,23 +72,39 @@ def optimize_lineup(
     roster_player_ids: list[str],
     projections: dict[str, AdjustedProjection],
     player_meta: dict[str, dict],
+    current_starters: list[str] | None = None,
+    locked: set[str] = frozenset(),
 ) -> list[LineupSlot]:
-    """`player_meta` maps player_id -> {"name": str, "position": str}."""
+    """`player_meta` maps player_id -> {"name": str, "position": str}.
+
+    `current_starters` is the lineup set in Sleeper (one id per starting
+    slot, in order). Given it, ties go to keeping each player where he is,
+    so swapping two RBs between the RB slots never shows up as a change.
+    `locked` players (game already started) can't move: a locked starter
+    stays in his slot and a locked bench player can't come in."""
     starting_slots = [s for s in roster_positions if s not in NON_STARTING_SLOTS]
     slot_indices = list(enumerate(starting_slots))
+    current = current_starters or []
+    fixed = {idx: current[idx] for idx, _slot in slot_indices if idx < len(current) and current[idx] in locked}
 
     prob = pulp.LpProblem("lineup", pulp.LpMaximize)
 
     x: dict[tuple[str, int], pulp.LpVariable] = {}
     for pid in roster_player_ids:
         meta = player_meta.get(pid)
-        if not meta:
+        if not meta or (pid in locked and pid not in fixed.values()):
             continue
         pos = meta["position"]
         for idx, slot in slot_indices:
-            eligible = ROSTER_SLOT_ELIGIBILITY.get(slot, set())
-            if pos in eligible:
+            if idx in fixed:
+                eligible_here = fixed[idx] == pid
+            else:
+                eligible_here = pid not in fixed.values() and pos in ROSTER_SLOT_ELIGIBILITY.get(slot, set())
+            if eligible_here:
                 x[(pid, idx)] = pulp.LpVariable(f"x_{pid}_{idx}", cat="Binary")
+    for idx, pid in fixed.items():
+        if (pid, idx) in x:
+            prob += x[(pid, idx)] == 1
 
     proj_points = {pid: (projections[pid].mean if pid in projections else 0.0) for pid in roster_player_ids}
 
@@ -98,7 +114,14 @@ def optimize_lineup(
     # reports "(empty)" even when an eligible player exists. Small enough never
     # to outrank a real points difference.
     FILL_BONUS = 1e-6
-    prob += pulp.lpSum((proj_points[pid] + FILL_BONUS) * var for (pid, _idx), var in x.items())
+    # Same idea, one notch up: between equal lineups, prefer the one already
+    # set, so only real changes are proposed.
+    KEEP_BONUS = 1e-4
+
+    def bonus(pid: str, idx: int) -> float:
+        return FILL_BONUS + (KEEP_BONUS if idx < len(current) and current[idx] == pid else 0.0)
+
+    prob += pulp.lpSum((proj_points[pid] + bonus(pid, idx)) * var for (pid, idx), var in x.items())
 
     for idx, _slot in slot_indices:
         vars_for_slot = [var for (_pid, i), var in x.items() if i == idx]

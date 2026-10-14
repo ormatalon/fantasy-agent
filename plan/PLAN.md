@@ -18,7 +18,7 @@ I am the human-in-the-loop: for a long time, the agent **recommends** and I **ap
 
 - **Platform: Sleeper.** Read API is public and keyless. Use it for all reads (league, roster, matchups, players, projections, scoring settings).  
 - **League discovery, not a hardcoded league ID.** The agent takes my Sleeper **username**, not a league ID. It resolves `username -> user_id` (`GET /v1/user/<username>`), then lists that user's leagues for the season (`GET /v1/user/<user_id>/leagues/nfl/<season>`). If there is exactly one league, use it. If there is more than one, **the agent must ask me which league to address** before doing anything else — never guess. Cache the resolved league ID for the session/local storage so it doesn't re-prompt every run.  
-- **Sleeper has NO write API.** Roster changes cannot be made via API. Execution must go through the Sleeper web UI via browser automation (Stage 5). Everything before Stage 5 is read-only.  
+- **Sleeper has no *documented* write API.** Writes go through the undocumented GraphQL API the Sleeper web app itself uses (`src/ingestion/sleeper_graphql.py`), authenticated with the user's own token (`SLEEPER_TOKEN`), always behind the human-approve gate (Stage 5). This replaced the original browser automation, see `plan/sleeper-api.md`. Everything before Stage 5 is read-only.  
 - **Interface, for now: terminal CLI.** No web app, no chat app. The CLI is both the dev surface and the interactive surface.  
 - **Notifications: email.** A small `notify(subject, body)` module sends via Gmail SMTP (app password) or a transactional email API (Resend/SendGrid). Do NOT rely on the Gmail MCP connector for this — it is read/draft-only and cannot send.  
 - **Projections are a blend, not a single source, and the set of sources is open-ended.** Combine multiple source feeds into a baseline, then adjust for (a) opponent matchup and (b) injury/news. Output a mean AND a variance per player. Every source sits behind a common `ProjectionSource` interface so new sources — including **my own ML model** — can be added later just by implementing the interface and adding a weight in `config.py`. Do not hardcode a fixed source list; design for extension from day one.  
@@ -209,9 +209,9 @@ Strategy: **thin agent, fat tools.** The graph should be boring — plan, call a
 
 ### Stage 5 — Execution (the "hands", LAST)
 
-- Browser automation drives the Sleeper web UI to enact an **approved** move (set lineup, add/drop, place waiver claim).  
+- Enact an **approved** move (set lineup, IR, add/drop, waiver claim) through Sleeper's GraphQL API (`src/execution/sleeper_writes.py`), and read it back to confirm. Originally built as browser automation of the Sleeper web UI; replaced once the GraphQL mutations were known (`plan/sleeper-api.md`).  
 - Keep a mandatory human-approve gate before ANY write for a long while.  
-- **DoD:** given an approved recommendation, the agent sets my Sleeper lineup in the browser and confirms the result; the approve gate cannot be bypassed.
+- **DoD:** given an approved recommendation, the agent sets my Sleeper lineup and confirms the result; the approve gate cannot be bypassed.
 
 ---
 

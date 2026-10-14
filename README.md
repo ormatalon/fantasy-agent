@@ -29,6 +29,19 @@ uv run python -m src.interface.cli results [--week N]      # defaults to last co
 uv run python -m src.interface.cli graph                   # the agent's LangGraph, as Mermaid
 ```
 
+Enact moves on Sleeper (needs `SLEEPER_TOKEN` in `.env`, see `.env.example`).
+Each one shows exactly what will change and waits for you to type `APPROVE`:
+
+```
+uv run python -m src.interface.cli lineup --live            # set in Sleeper vs recommended
+uv run python -m src.interface.cli lineup --apply           # set it
+uv run python -m src.interface.cli ir [--set "name,name"]   # show or set your IR slots
+uv run python -m src.interface.cli add "name" [--drop "name"]
+uv run python -m src.interface.cli claim "name" [--drop "name"] [--bid N]
+uv run python -m src.interface.cli claim --cancel <id>
+uv run python -m src.interface.cli claims                   # pending waiver claims
+```
+
 `--season` means rest-of-season (from the current week on). Weekly `waivers`
 leave out players whose game has already kicked off or who are on bye.
 

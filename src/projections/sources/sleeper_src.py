@@ -1,12 +1,15 @@
-"""Sleeper's player projections, scored under the league's own rules.
+"""Sleeper's player projections (and actual stats), scored under the
+league's own rules.
 
 Endpoints are public but live outside /v1 (undocumented, confirmed working
 for past and upcoming seasons):
   weekly: /projections/nfl/<season>/<week>
   season: /projections/nfl/<season>          (no week segment)
+  actual: /stats/nfl/<season>/<week>
 
-Both return the same stat-key namespace (`rush_yd`, `rec`, `pass_td`, ...),
-so `score_stats` applies the league's own scoring to either unchanged.
+All return the same stat-key namespace (`rush_yd`, `rec`, `pass_td`,
+`idp_tkl`, ...) keyed by Sleeper player id, so `score_stats` applies the
+league's own scoring to any of them unchanged.
 """
 
 import httpx
@@ -17,6 +20,7 @@ from src.projections.scoring import score_stats
 from src.projections.sources.base import ProjectionSource, SourceProjection
 
 PROJECTIONS_BASE = "https://api.sleeper.app/projections/nfl"
+STATS_BASE = "https://api.sleeper.app/stats/nfl"
 # What we ask the API for — it expects the broad IDP categories (DL/LB/DB),
 # not the granular positions it actually returns under them (e.g. CB, S).
 QUERY_POSITIONS = ["QB", "RB", "WR", "TE", "K", "DEF", "DL", "LB", "DB"]
@@ -31,6 +35,15 @@ def _get(url: str, timeout: float = 30.0) -> list[dict]:
     resp = httpx.get(url, params=params, timeout=timeout)
     resp.raise_for_status()
     return resp.json() or []
+
+
+def fetch_week_stats(season: str, week: int) -> list[dict]:
+    """One week's actual box-score stats: [{player_id, player, stats}],
+    limited to the positions projections cover."""
+    return [
+        e for e in _get(f"{STATS_BASE}/{season}/{week}")
+        if e.get("stats") and (e.get("player") or {}).get("position") in ACCEPT_POSITIONS
+    ]
 
 
 def _to_projections(entries: list[dict], scoring_settings: dict[str, float]) -> list[SourceProjection]:

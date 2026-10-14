@@ -202,3 +202,39 @@ uv run python -m src.interface.cli lineup --live   # current vs recommended
 uv run python -m src.interface.cli lineup --apply  # enact it, after typing APPROVE
 uv run python -m src.interface.cli ask "any injury news I should act on?"
 ```
+
+---
+
+## 10. Sleeper's GraphQL API (2026-10-08)
+
+Sleeper's documented API did not change, but its undocumented GraphQL API
+(the one its web app uses) was mapped publicly in September 2026, writes
+included. Plan: `plan/sleeper-api.md`.
+
+- **Rosters were up to ~10 minutes stale.** The REST API is Cloudflare-cached
+  (`s-maxage=300, stale-while-revalidate=300` on rosters), so the roster
+  refresh before each question could save the pre-move roster. Rosters now
+  come from GraphQL `league_rosters` (public, live), REST as fallback.
+- **Writes without a browser.** `execution/browser.py` (Playwright, CSS
+  selectors, surname matching) is gone. `execution/sleeper_writes.py` sets the
+  lineup, IR, free-agent add/drop and waiver claims, each behind the same
+  approval gate and read back over GraphQL. New CLI: `ir`, `add`, `claim`,
+  `claims`; `login` removed. The agent gained only a read, `get_pending_claims`.
+- **Locks inside the optimizer.** Instead of probing the page, the lineup ILP
+  takes the current lineup and the locked players: locked starters stay,
+  locked bench players can't come in, and a tiny keep-bonus stops equal
+  reorderings from showing up as changes.
+- **Game state from Sleeper's schedule** (`pre_game` / started) instead of
+  nflverse kickoff times compared to the clock.
+- **Season-to-date leaders from Sleeper's stats**, same keys and ids as the
+  projections, no crosswalk. Checked against the league's own
+  `players_points`: 807 of 807 player-weeks match exactly.
+- **Found in review:** Sleeper's schedule keeps a canceled game listed next to
+  its rescheduled replacement (SEA, week 6), which read as "game started"; it
+  is now skipped. `lineup --live/--apply` are limited to the current week,
+  since the roster write sets this week's lineup whatever week was asked.
+  Every lineup recommendation now starts from the lineup set in Sleeper, so
+  equal-points reorderings never show up as moves.
+- **Open:** two public reverse-engineerings disagree on which lineup mutation
+  Sleeper scores from, so `set_lineup` sends both with the same list and
+  reads both back. Test question 23 settles it.

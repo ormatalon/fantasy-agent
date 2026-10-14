@@ -106,3 +106,31 @@ def test_sleeper_lineup_maps_starters_to_slots_in_order():
 def test_sleeper_lineup_pads_missing_starters_as_empty():
     view = sleeper_lineup(players=["a"], starters=["a"], reserve=[], roster_positions=["QB", "RB", "BN"])
     assert view.starters == [("QB", "a"), ("RB", None)]
+
+
+RB_LEAGUE = ["RB", "RB", "FLEX", "BN"]
+RB_META = {pid: {"name": pid, "position": "RB"} for pid in ["a", "b", "c", "d"]}
+
+
+def ids(lineup):
+    return [s.player_id for s in lineup]
+
+
+def test_equal_lineups_keep_the_current_order():
+    projections = {pid: make_proj(pid, 10.0) for pid in RB_META}
+    lineup = optimize_lineup(RB_LEAGUE, list(RB_META), projections, RB_META, current_starters=["b", "a", "c"])
+    assert ids(lineup) == ["b", "a", "c"]
+
+
+def test_a_locked_starter_stays_put_even_when_a_better_player_sits():
+    projections = {"a": make_proj("a", 1.0), "b": make_proj("b", 10.0), "c": make_proj("c", 9.0), "d": make_proj("d", 20.0)}
+    lineup = optimize_lineup(RB_LEAGUE, list(RB_META), projections, RB_META,
+                             current_starters=["a", "b", "c"], locked={"a"})
+    assert ids(lineup) == ["a", "b", "d"]
+
+
+def test_a_locked_bench_player_cannot_come_in():
+    projections = {"a": make_proj("a", 5.0), "b": make_proj("b", 6.0), "c": make_proj("c", 7.0), "d": make_proj("d", 30.0)}
+    lineup = optimize_lineup(RB_LEAGUE, list(RB_META), projections, RB_META,
+                             current_starters=["a", "b", "c"], locked={"d"})
+    assert "d" not in ids(lineup)

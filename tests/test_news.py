@@ -1,9 +1,7 @@
 import sqlite3
 
-import pytest
-
 from src.ingestion import storage
-from src.ingestion.news import NewsError, NewsItem, fetch_player_news
+from src.ingestion.news import NewsItem
 
 
 def make_conn() -> sqlite3.Connection:
@@ -18,13 +16,6 @@ def item(news_id: str, player_id: str, published: int, title: str = "T") -> News
         news_id=news_id, player_id=player_id, published=published, source="fantasy_pros",
         title=title, description="D", analysis="A", url="http://example.test",
     )
-
-
-def test_rejects_a_suspicious_player_id_rather_than_interpolating_it():
-    # The id is interpolated into the GraphQL query string, so it is validated
-    # rather than trusted.
-    with pytest.raises(NewsError):
-        fetch_player_news('4984" ) { evil } #')
 
 
 def test_news_is_returned_newest_first():

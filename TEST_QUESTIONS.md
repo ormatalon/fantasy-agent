@@ -43,6 +43,11 @@ in one sitting on a day you haven't otherwise used the agent much.
 | 19 | "What NFL team is DK Metcalf on, and who are the Seahawks' top wide receivers?" | NFL team roster | PIT, from a tool, not memory. WRs from `get_nfl_team_roster`. | **pass** 2026-10-08: PIT via `get_player_news`; Smith-Njigba, Shaheed, Kupp |
 | 20 | "Show me [another manager]'s roster." then "Who is on the Steelers?" | Terminology | First uses `get_fantasy_team_roster`, second `get_nfl_team_roster`. Each answer says "fantasy team" or "NFL team" where it matters. | not yet run: free-model daily limit reached 2026-10-08. Tools checked directly against live data: pass |
 | 21 | "Which team is [a player on another fantasy team] on?" | Terminology | Either asks which kind of team is meant, or answers both (NFL team and fantasy team) and labels each. | not yet run (same reason) |
+| 22 | Swap two starters in the Sleeper app, then within 10 seconds `roster`. | Sleeper API, live rosters | Shows the swap. (The REST copy is cached for up to ~10 minutes.) | not yet run |
+| 23 | `lineup --apply` on a one-player bench swap, then `APPROVE`. | Sleeper API, writes | Prints `Week lineup (matchup): VERIFIED` and `Roster lineup: VERIFIED`; the app shows the change, and so does the week's matchup. Record whether either line said MISMATCH or FAILED: that settles which mutation Sleeper scores from (`plan/sleeper-api.md`, phase 2). | not yet run: needs `SLEEPER_TOKEN` |
+| 24 | `ir --set "name"` with an IR-eligible player, then `APPROVE`. | Sleeper API, writes | `IR: VERIFIED`; the app shows him in the IR slot. | not yet run: needs `SLEEPER_TOKEN` |
+| 25 | `claim "name"` (bid 0), then `claims`, then `claim --cancel <id>`, then `claims`. | Sleeper API, writes | The claim is listed as pending, then gone. | not yet run: needs `SLEEPER_TOKEN` |
+| 26 | During a game window: `waivers`, then `lineup --live`. | Sleeper API, schedule | Waivers leave out players whose game started; `lineup --live` marks better moves out of reach as locked. Record the schedule's in-game `status` value in `schedule.py`'s docstring. | not yet run: needs a live game |
 
 ### Backdating the last sync (for question 11)
 
@@ -61,7 +66,7 @@ uv run python -c "import config; from datetime import datetime, timedelta, timez
 ## Covered by unit tests instead
 
 Name resolution, prompt contents (date, season, IDP/DEF/PPR, preferences),
-auto-sync staleness rules, league selection, kickoff and bye detection, the
+auto-sync staleness rules, league selection, game-started and bye detection, GraphQL writes, the
 waiver exclusions and replacement-level fix, opponent recap, rest-of-season
 proration, crosswalk fallbacks, season-to-date scoring, and chat persistence
 and history trimming. See `tests/`.

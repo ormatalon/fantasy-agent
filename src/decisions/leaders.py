@@ -2,19 +2,17 @@
 league-wide, under this league's scoring rules.
 
 League matchups only hold points for rostered players, so "who are the top
-RBs so far" needs box scores for everyone - nflverse's weekly stats, scored
-the same way the nflverse projection source scores them.
+RBs so far" needs box scores for everyone - Sleeper's weekly stats, which
+share the projections' stat keys and player ids, so they score the same way
+with no id mapping.
 """
 
 import sqlite3
 from dataclasses import dataclass
 
-import pandas as pd
-
-from src.ingestion.id_crosswalk import build_crosswalk, map_nflverse_ids
-from src.ingestion.nflverse_client import import_weekly_stats
-from src.projections.positions import GRANULAR_TO_GROUP, PROJECTED_POSITIONS
-from src.projections.sources.nflverse_src import with_league_points
+from src.projections.positions import GRANULAR_TO_GROUP
+from src.projections.scoring import score_stats
+from src.projections.sources.sleeper_src import fetch_week_stats
 
 
 @dataclass
@@ -35,36 +33,34 @@ def season_to_date(
     scoring_settings: dict[str, float],
     position: str = "",
     limit: int = 20,
-    stats: pd.DataFrame | None = None,
+    weekly_stats: dict[int, list[dict]] | None = None,
 ) -> list[Leader]:
     """Top scorers from week 1 through `through_week`. `position` matches a
-    Sleeper position or its group (e.g. 'DL' matches DE/DT)."""
-    df = stats if stats is not None else import_weekly_stats([int(season)])
-    df = df[(df["week"] <= through_week) & (df["position"].isin(PROJECTED_POSITIONS))]
-    if df.empty:
-        return []
-    df = with_league_points(df, scoring_settings)
-    totals = df.groupby("player_id").agg(total=("league_points", "sum"), games=("week", "nunique"))
+    Sleeper position or its group (e.g. 'DL' matches DE/DT). `weekly_stats`
+    ({week: fetch_week_stats rows}) is fetched when not given."""
+    totals: dict[str, float] = {}
+    games: dict[str, int] = {}
+    for week in range(1, through_week + 1):
+        rows = weekly_stats[week] if weekly_stats is not None else fetch_week_stats(season, week)
+        for e in rows:
+            pid = e["player_id"]
+            totals[pid] = totals.get(pid, 0.0) + score_stats(e["stats"], scoring_settings)
+            games[pid] = games.get(pid, 0) + (1 if e["stats"].get("gp") else 0)
 
-    to_sleeper = map_nflverse_ids(build_crosswalk(conn), df)
     wanted = position.upper()
     leaders = []
-    for gsis_id, row in totals.iterrows():
-        sleeper_id = to_sleeper.get(gsis_id)
-        if not sleeper_id:
-            continue
+    for pid, total in totals.items():
         p = conn.execute(
             "SELECT first_name, last_name, position, team, injury_status FROM players WHERE player_id = ?",
-            (sleeper_id,),
+            (pid,),
         ).fetchone()
         if not p:
             continue
         pos = p["position"] or ""
         if wanted and wanted not in (pos.upper(), (GRANULAR_TO_GROUP.get(pos, pos) or "").upper()):
             continue
-        name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or sleeper_id
-        leaders.append(Leader(sleeper_id, name, p["position"], p["team"], p["injury_status"],
-                              float(row["total"]), int(row["games"])))
+        name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
+        leaders.append(Leader(pid, name, p["position"], p["team"], p["injury_status"], total, games[pid]))
 
     leaders.sort(key=lambda lead: lead.total, reverse=True)
     return leaders[:limit]

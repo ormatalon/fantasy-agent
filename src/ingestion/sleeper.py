@@ -1,16 +1,20 @@
 """Read-only Sleeper API client.
 
-Sleeper's read API is public and keyless: https://docs.sleeper.com/
-No writes are possible through it (see PLAN.md Stage 5 for execution).
+Sleeper's documented REST API is public and keyless: https://docs.sleeper.com/
+It is Cloudflare-cached (rosters up to ~10 minutes), which is fine for
+everything except rosters, so those come from the live GraphQL store
+instead. Writes go through execution/sleeper_writes.py.
 """
 
 import httpx
 
 from config import SLEEPER_API_BASE
+from src.ingestion.sleeper_graphql import SleeperError, gql
 
-
-class SleeperError(RuntimeError):
-    pass
+LIVE_ROSTERS_QUERY = (
+    "query league_rosters($league_id: Snowflake!) {"
+    " league_rosters(league_id: $league_id) { roster_id owner_id players starters reserve settings } }"
+)
 
 
 class SleeperClient:
@@ -53,7 +57,13 @@ class SleeperClient:
         return self._get(f"/league/{league_id}")
 
     def get_rosters(self, league_id: str) -> list[dict]:
-        return self._get(f"/league/{league_id}/rosters") or []
+        """Every roster as Sleeper has it right now. A move made in the app
+        a minute ago can still be missing from the cached REST copy, which
+        is only the fallback for when GraphQL is down."""
+        try:
+            return gql("league_rosters", LIVE_ROSTERS_QUERY, {"league_id": league_id}).get("league_rosters") or []
+        except (SleeperError, httpx.HTTPError):
+            return self._get(f"/league/{league_id}/rosters") or []
 
     def get_league_users(self, league_id: str) -> list[dict]:
         return self._get(f"/league/{league_id}/users") or []
