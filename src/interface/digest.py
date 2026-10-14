@@ -94,7 +94,8 @@ def build_digest(
             player_meta[pid] = {"name": name, "position": p["position"]}
 
     # --- recommended lineup ---
-    slots = optimize_lineup(roster_positions, player_ids, projections, player_meta)
+    slots = optimize_lineup(roster_positions, player_ids, projections, player_meta,
+                            current_starters=json.loads(roster_row["starters"]))
     parts.append(_section("Recommended lineup"))
     for slot in slots:
         parts.append(f"  {slot.slot:<12}{slot.name:<24}{slot.mean:>6.1f}")

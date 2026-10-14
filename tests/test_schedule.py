@@ -1,50 +1,51 @@
-from datetime import datetime, timezone
-
-import pandas as pd
-
 from src.decisions.waivers import unavailable_this_week
 from src.ingestion import schedule
 from src.projections.engine import AdjustedProjection
 
-GAMES = pd.DataFrame([
-    # Thursday night: kicks off 2026-10-01 20:15 ET = 2026-10-02 00:15 UTC.
-    {"season": 2026, "game_type": "REG", "week": 4, "gameday": "2026-10-01", "gametime": "20:15",
-     "away_team": "SF", "home_team": "LA"},
-    {"season": 2026, "game_type": "REG", "week": 4, "gameday": "2026-10-04", "gametime": "13:00",
-     "away_team": "BUF", "home_team": "MIA"},
-    {"season": 2026, "game_type": "REG", "week": 5, "gameday": "2026-10-08", "gametime": "20:15",
-     "away_team": "KC", "home_team": "DEN"},
-    {"season": 2025, "game_type": "REG", "week": 4, "gameday": "2025-09-28", "gametime": "13:00",
-     "away_team": "KC", "home_team": "DEN"},
-])
-FRIDAY = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+GAMES = [
+    {"week": 4, "away": "SF", "home": "LAR", "status": "complete", "date": "2026-10-01", "game_id": "1"},
+    {"week": 4, "away": "BUF", "home": "MIA", "status": "pre_game", "date": "2026-10-04", "game_id": "2"},
+    {"week": 4, "away": "NYJ", "home": "NE", "status": "in_game", "date": "2026-10-04", "game_id": "3"},
+    {"week": 5, "away": "KC", "home": "DEN", "status": "pre_game", "date": "2026-10-08", "game_id": "4"},
+    # Sleeper keeps a canceled game listed next to its rescheduled replacement.
+    {"week": 6, "away": "SEA", "home": "DEN", "status": "pre_game", "date": "2026-10-15", "game_id": "6"},
+    {"week": 6, "away": "SEA", "home": "DAL", "status": "canceled", "date": "2026-10-15", "game_id": "5"},
+    {"week": 6, "away": "DAL", "home": "GB", "status": "pre_game", "date": "2026-10-18", "game_id": "7"},
+]
 
 
 def proj(pid, team):
     return AdjustedProjection(pid, pid, "WR", team, 10.0, 4.0, 1.0, 1.0, 1)
 
 
-def test_kickoffs_are_utc_and_use_sleeper_team_codes():
-    kickoffs = schedule.kickoffs_from_frame(GAMES, "2026", 4)
-    assert kickoffs["LAR"] == datetime(2026, 10, 2, 0, 15, tzinfo=timezone.utc)
-    assert "LA" not in kickoffs
-    assert set(kickoffs) == {"SF", "LAR", "BUF", "MIA"}
+def test_statuses_cover_only_the_weeks_teams():
+    assert set(schedule.statuses_from_games(GAMES, 4)) == {"SF", "LAR", "BUF", "MIA", "NYJ", "NE"}
 
 
 def test_game_status_played_upcoming_bye():
-    kickoffs = schedule.kickoffs_from_frame(GAMES, "2026", 4)
-    assert schedule.game_status("SF", kickoffs, FRIDAY) == schedule.PLAYED
-    assert schedule.game_status("BUF", kickoffs, FRIDAY) == schedule.UPCOMING
-    assert schedule.game_status("KC", kickoffs, FRIDAY) == schedule.BYE
+    statuses = schedule.statuses_from_games(GAMES, 4)
+    assert schedule.game_status("SF", statuses) == schedule.PLAYED
+    assert schedule.game_status("BUF", statuses) == schedule.UPCOMING
+    assert schedule.game_status("KC", statuses) == schedule.BYE
+
+
+def test_a_game_in_progress_counts_as_started():
+    assert schedule.game_status("NE", schedule.statuses_from_games(GAMES, 4)) == schedule.PLAYED
 
 
 def test_unknown_when_no_team_or_no_schedule():
-    kickoffs = schedule.kickoffs_from_frame(GAMES, "2026", 4)
-    assert schedule.game_status(None, kickoffs, FRIDAY) is None
-    assert schedule.game_status("SF", {}, FRIDAY) is None
+    statuses = schedule.statuses_from_games(GAMES, 4)
+    assert schedule.game_status(None, statuses) is None
+    assert schedule.game_status("SF", {}) is None
 
 
 def test_players_who_cannot_score_this_week_are_flagged():
-    kickoffs = schedule.kickoffs_from_frame(GAMES, "2026", 4)
+    statuses = schedule.statuses_from_games(GAMES, 4)
     table = [proj("played", "SF"), proj("upcoming", "BUF"), proj("bye", "KC"), proj("fa", None)]
-    assert unavailable_this_week(table, kickoffs, FRIDAY) == {"played": "played", "bye": "bye"}
+    assert unavailable_this_week(table, statuses) == {"played": "played", "bye": "bye"}
+
+
+def test_a_canceled_game_is_ignored_not_counted_as_played():
+    statuses = schedule.statuses_from_games(GAMES, 6)
+    assert schedule.game_status("SEA", statuses) == schedule.UPCOMING
+    assert schedule.game_status("DAL", statuses) == schedule.UPCOMING

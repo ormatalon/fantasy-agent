@@ -20,6 +20,10 @@ AGENT_HISTORY_MESSAGES = 40
 SLEEPER_USERNAME = os.environ.get("SLEEPER_USERNAME", "")
 SLEEPER_SEASON = os.environ.get("SLEEPER_SEASON", "")
 
+# Your Sleeper login token. Only writes (lineup, IR, add/drop, waiver claims)
+# and a few account reads (pending claims) need it; everything else is public.
+SLEEPER_TOKEN = os.environ.get("SLEEPER_TOKEN", "")
+
 SLEEPER_API_BASE = "https://api.sleeper.app/v1"
 
 # Players catalog is a large payload; Sleeper asks that it not be pulled

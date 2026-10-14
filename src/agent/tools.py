@@ -19,6 +19,7 @@ from src.decisions.lineup import SleeperLineup, optimize_lineup, sleeper_lineup
 from src.decisions.results import last_completed_week, summarize_week
 from src.decisions.trades import evaluate_trade
 from src.decisions.waivers import get_rostered_player_ids, suggest_waivers_by_position, unavailable_this_week
+from src.execution import sleeper_writes
 from src.ingestion import nfl_teams, schedule, storage
 from src.ingestion.news import fetch_player_news
 from src.ingestion.sleeper import SleeperClient, SleeperError
@@ -48,8 +49,8 @@ class AgentContext:
     user_id: str
     season: str
     current_week: int
-    # Projection builds and the schedule hit the network; cache so a
-    # multi-tool conversation doesn't re-fetch on every call.
+    # Projection builds hit the network; cache so a multi-tool conversation
+    # doesn't re-fetch on every call.
     _cache: dict = field(default_factory=dict)
 
     def _cached(self, key, build):
@@ -69,9 +70,6 @@ class AgentContext:
                 apply_injury=not healthy,
             ),
         )
-
-    def kickoffs(self, week: int) -> dict:
-        return self._cached(("kickoffs", week), lambda: schedule.load_kickoffs(self.season, week))
 
     def clear_caches(self) -> None:
         self._cache.clear()
@@ -429,13 +427,16 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
                 name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
                 player_meta[pid] = {"name": name, "position": p["position"]}
 
-        slots = optimize_lineup(ctx.roster_positions(), player_ids, projections, player_meta)
+        current = [pid or sleeper_writes.EMPTY_SLOT for _slot, pid in lineup.starters]
+        slots = optimize_lineup(ctx.roster_positions(), player_ids, projections, player_meta, current_starters=current)
         started = {s.player_id for s in slots if s.player_id}
         lines = []
         for s in slots:
             status = storage.get_injury_status(ctx.conn, s.player_id) if s.player_id else None
             lines.append(f"{s.slot}: {s.name}{_status_tag(status)} ({s.mean:.1f} pts) - {s.why}")
         lines.append(f"Total projected: {sum(s.mean for s in slots):.1f}")
+        lines.append("To enact: `lineup --live` shows the changes vs Sleeper, `lineup --apply` sets them "
+                     "(the user confirms; players whose game started stay locked).")
         for pid in player_ids:
             status = storage.get_injury_status(ctx.conn, pid)
             if pid not in started and _ir_hint(status):
@@ -466,9 +467,9 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         excluded: dict[str, str] = {}
         note = ""
         if not use_season:
-            kickoffs = ctx.kickoffs(ctx.current_week)
-            if kickoffs:
-                excluded = unavailable_this_week(table, kickoffs)
+            statuses = schedule.load_game_statuses(ctx.season, ctx.current_week)
+            if statuses:
+                excluded = unavailable_this_week(table, statuses)
             else:
                 note = "(NFL schedule unavailable - could not exclude players whose game already started.)\n"
 
@@ -492,6 +493,8 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
             lines.append(f"{group} (replacement level {baseline:.1f} pts):")
             for s in suggestions:
                 lines.append(f"  {_fmt_player(s.proj)}, VOR {s.vor:+.1f}, suggested bid {s.bid_pct}% of FAAB")
+        lines.append('To enact: `claim "Name" --drop "Name" --bid N` (waivers) or `add "Name" --drop "Name"` '
+                     "(free agent, immediate); the user confirms either.")
         return "\n".join(lines)
 
     @tool
@@ -701,6 +704,29 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         return f"Now using {ctx.league_name()} (your fantasy team: {ctx.fantasy_team_name()}), week {ctx.current_week}."
 
     @tool
+    def get_pending_claims() -> str:
+        """My waiver claims that are still pending (not yet processed at the
+        waiver run): who I claimed, who I'd drop, and the bid. Use for 'what
+        claims do I have in', 'did my claim go in'. Pending claims are not on
+        my roster yet, so get_my_roster won't show them. Needs the user's
+        SLEEPER_TOKEN."""
+        roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
+        try:
+            claims = sleeper_writes.pending_claims(ctx.league_id, roster_id)
+        except SleeperError as e:
+            return f"Pending claims are unavailable: {e}"
+        if not claims:
+            return "No pending waiver claims."
+        lines = []
+        for t in claims:
+            adds = ", ".join(storage.player_name(ctx.conn, pid) for pid in t.get("adds") or {})
+            drops = ", ".join(storage.player_name(ctx.conn, pid) for pid in t.get("drops") or {})
+            bid = (t.get("settings") or {}).get("waiver_bid")
+            lines.append(f"Claim {adds or '-'}" + (f", drop {drops}" if drops else "")
+                         + (f", bid ${bid}" if bid is not None else "") + f" (id {t['transaction_id']})")
+        return "\n".join(lines)
+
+    @tool
     def remember_preference(note: str) -> str:
         """Save a LASTING preference or fact about how the user plays, so every
         future conversation applies it (e.g. 'Risk-averse at FLEX: prefers a
@@ -730,6 +756,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         recommend_lineup,
         get_waiver_targets,
         get_injured_stash_candidates,
+        get_pending_claims,
         evaluate_proposed_trade,
         get_player_news,
         get_roster_news,

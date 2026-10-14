@@ -72,13 +72,12 @@ def _to_suggestion(
     return WaiverSuggestion(proj=proj, vor=vor, bid_pct=bid_pct, why=why)
 
 
-def unavailable_this_week(
-    table: list[AdjustedProjection], kickoffs: dict, now=None
-) -> dict[str, str]:
-    """{player_id: 'played' | 'bye'} for players who can't score this week."""
+def unavailable_this_week(table: list[AdjustedProjection], statuses: dict[str, str]) -> dict[str, str]:
+    """{player_id: 'played' | 'bye'} for players who can't score this week.
+    `statuses` is schedule.load_game_statuses' {team: game status}."""
     out = {}
     for p in table:
-        status = schedule.game_status(p.team, kickoffs, now)
+        status = schedule.game_status(p.team, statuses)
         if status in (schedule.PLAYED, schedule.BYE):
             out[p.player_id] = status
     return out

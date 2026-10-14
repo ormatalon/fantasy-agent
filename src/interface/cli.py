@@ -25,14 +25,18 @@ import config
 from src.agent.graph import draw_mermaid
 from src.agent.orchestrator import AgentError, ask, chat
 from src.decisions.draft import find_league_draft_id, run_draft_assistant, run_draft_replay
-from src.decisions.lineup import optimize_lineup
+from src.decisions.lineup import NON_STARTING_SLOTS, optimize_lineup
 from src.decisions.results import last_completed_week, summarize_week
 from src.decisions.trades import evaluate_trade
 from src.decisions.waivers import suggest_waivers_by_position, unavailable_this_week
 from src.evaluation.backtest import run_backtest
+from src.execution.approval import Approval, ApprovalDenied, ProposedWrite, require_approval
+from src.execution.sleeper_writes import (
+    EMPTY_SLOT, add_drop, cancel_claim, pending_claims, set_lineup, set_reserve, submit_claim,
+)
 from src.ingestion import storage
 from src.ingestion.news import fetch_player_news
-from src.ingestion.schedule import load_kickoffs
+from src.ingestion.schedule import PLAYED, game_status, load_game_statuses
 from src.ingestion.sleeper import SleeperClient, SleeperError
 from src.ingestion.sync import run_sync
 from src.interface.digest import build_digest
@@ -212,6 +216,109 @@ def cmd_backtest(args: argparse.Namespace) -> None:
         print(f"{label:<20}{r.n:>6}{r.mae:>8.2f}{r.rmse:>8.2f}{delta:>18}")
 
 
+def _live_roster(league_id: str, roster_id: int) -> dict:
+    """My roster as Sleeper has it this second (not the local copy)."""
+    with SleeperClient() as client:
+        return next(r for r in client.get_rosters(league_id) if r["roster_id"] == roster_id)
+
+
+def _player_meta(conn, player_ids) -> dict[str, dict]:
+    meta = {}
+    for pid in player_ids:
+        p = conn.execute("SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)).fetchone()
+        if p:
+            meta[pid] = {"name": " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid, "position": p["position"]}
+    return meta
+
+
+def _team(conn, pid: str) -> str | None:
+    row = conn.execute("SELECT team FROM players WHERE player_id = ?", (pid,)).fetchone()
+    return row["team"] if row else None
+
+
+def _approve(write: ProposedWrite) -> Approval | None:
+    try:
+        return require_approval(write)
+    except ApprovalDenied as e:
+        print(f"\n{e}")
+        return None
+
+
+def _check(label: str, sent, got) -> None:
+    """Report a write's read-back. A failed read-back is not a failed write."""
+    if isinstance(got, Exception):
+        print(f"{label}: FAILED - Sleeper refused it ({got})")
+    elif got is None:
+        print(f"{label}: SENT, could not verify (the read-back failed, not necessarily the write). Check the app.")
+    elif sent == got:
+        print(f"{label}: VERIFIED")
+    else:
+        print(f"{label}: MISMATCH - sent {sent}, Sleeper shows {got}")
+
+
+def _live_lineup(conn, league_id, roster_id, season, week, current_week, roster_positions, projections, apply: bool) -> None:
+    """Compare the recommendation with the lineup set in Sleeper and, with
+    `apply`, set it (after approval). Players whose game has started are
+    locked: they stay where they are, as Sleeper requires."""
+    live = _live_roster(league_id, roster_id)
+    reserve = set(live.get("reserve") or [])
+    pool = [pid for pid in live.get("players") or [] if pid not in reserve]  # IR-slotted players can't start
+    meta = _player_meta(conn, pool)
+    slots = [s for s in roster_positions if s not in NON_STARTING_SLOTS]
+    current = [pid or EMPTY_SLOT for pid in (live.get("starters") or [])][: len(slots)]
+    current += [EMPTY_SLOT] * (len(slots) - len(current))
+
+    statuses = load_game_statuses(season, week)
+    locked = {pid for pid in pool if game_status(_team(conn, pid), statuses) == PLAYED}
+    best = optimize_lineup(roster_positions, pool, projections, meta, current_starters=current)
+    target = optimize_lineup(roster_positions, pool, projections, meta, current_starters=current, locked=locked)
+    starters = [s.player_id or EMPTY_SLOT for s in target]
+
+    def name(pid: str) -> str:
+        return "(empty)" if pid == EMPTY_SLOT else meta.get(pid, {}).get("name", pid)
+
+    print(f"Week {week}: set in Sleeper vs recommended\n")
+    print(f"{'Slot':<12}{'Currently':<25}{'Recommended':<25}")
+    changes = []
+    for i, slot in enumerate(slots):
+        note = ""
+        if starters[i] != current[i]:
+            changes.append(f"{slot}: {name(current[i])} -> {name(starters[i])}")
+            note = "  <-- change"
+        elif current[i] in locked:
+            note = "  (locked: game started)"
+        print(f"{slot:<12}{name(current[i]):<25}{name(starters[i]):<25}{note}")
+
+    # Not the same as matching: the difference is real, kickoff just put it
+    # out of reach.
+    lost = sum(s.mean for s in best) - sum(s.mean for s in target)
+    if lost > 0.05:
+        print(f"\nGames already started cost {lost:.1f} projected pts: the best lineup is out of reach.")
+    if not changes:
+        print("\nNothing else to change." if lost > 0.05 else "\nLineup already matches the recommendation.")
+        return
+    print(f"\n{len(changes)} change(s):")
+    for line in changes:
+        print(f"  - {line}")
+    if not apply:
+        print("\nRe-run with --apply to enact these (you'll be asked to confirm).")
+        return
+
+    write = ProposedWrite(
+        action="set_lineup",
+        summary=f"Set your week {week} Sleeper lineup ({len(changes)} change(s)).",
+        changes=changes,
+        payload={"league_id": league_id, "roster_id": roster_id, "week": week, "starters": starters},
+    )
+    approval = _approve(write)
+    if not approval:
+        return
+    result = set_lineup(league_id, roster_id, week, starters, write, approval)
+    print()
+    _check("Week lineup (matchup)", starters, result["matchup"])
+    _check("Roster lineup", starters, result["roster"])
+
+
 def cmd_lineup(args: argparse.Namespace) -> None:
     conn = storage.get_connection(config.DB_PATH)
     league_id, user_id, current_week = _require_synced_state(conn)
@@ -238,106 +345,16 @@ def cmd_lineup(args: argparse.Namespace) -> None:
             name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
             player_meta[pid] = {"name": name, "position": p["position"]}
 
-    lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta)
+    lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta,
+                             current_starters=json.loads(roster_row["starters"]))
 
     if args.live or args.apply:
-        from src.execution.browser import probe_moves, read_lineup, set_lineup, surname
-        from src.execution.approval import ApprovalDenied, ProposedWrite, require_approval
-
-        print("Reading your current lineup from Sleeper...\n")
-        # Slots repeat (two RB, two WR, two TE), so these must be matched
-        # positionally - a dict keyed by slot name silently collapses them.
-        live_rows = read_lineup(league_id)
-        live_starters = [(s, n, lk) for s, n, lk in live_rows if s not in {"BN", "IR"}]
-        # A swap is blocked if EITHER side has kicked off: you can't bench
-        # someone who already played, and you can't start someone who has.
-        # The incoming player is usually on the bench, so this covers all rows.
-        locked_by_surname = {surname(n): lk for _s, n, lk in live_rows}
-
-        # Two RBs swapping which RB slot they occupy is not a change. Compare
-        # per slot *type* (surnames, since Sleeper abbreviates first names),
-        # otherwise a reordering reads as work that needs doing.
-        live_by_slot: dict[str, set[str]] = {}
-        for slot_name, player, _locked in live_starters:
-            live_by_slot.setdefault(slot_name, set()).add(surname(player))
-
-        print(f"Week {week}: current vs recommended\n")
-        print(f"{'Slot':<12}{'Currently':<22}{'Recommended':<22}")
-        moves = []          # (slot_row_index, player_name) for the browser
-        descriptions = []
-        locked_out = []     # real differences that kickoff has put out of reach
-        for i, slot in enumerate(lineup):
-            now, outgoing_locked = (live_starters[i][1], live_starters[i][2]) if i < len(live_starters) else ("?", False)
-            incoming_locked = locked_by_surname.get(surname(slot.name), False)
-            already_starting = surname(slot.name) in live_by_slot.get(slot.slot, set())
-            if already_starting:
-                note = ""
-            elif incoming_locked or outgoing_locked:
-                who = slot.name if incoming_locked else now
-                locked_out.append(f"{slot.slot}: {now} -> {slot.name} ({who} already played)")
-                note = f"  <-- locked ({who} already played)"
-            else:
-                moves.append((i, slot.name))
-                descriptions.append(f"{slot.slot}: {now} -> {slot.name}")
-                note = "  <-- change"
-            print(f"{slot.slot:<12}{now:<22}{slot.name:<22}{note}")
-
-        if not moves:
-            if locked_out:
-                # Not the same thing as matching - the difference is real, it
-                # just can't be acted on any more.
-                print(f"\nNothing actionable: {len(locked_out)} difference(s) locked by kickoff.")
-                for description in locked_out:
-                    print(f"  - {description}")
-            else:
-                print("\nLineup already matches the recommendation.")
-            return
-
-        print(f"\n{len(moves)} change(s) needed:")
-        for description in descriptions:
-            print(f"  - {description}")
-
-        if not args.apply:
-            print("\nRe-run with --apply to enact these (you'll be asked to confirm).")
-            return
-
-        # Ask Sleeper which of these it will accept before proposing them - a
-        # player whose game has kicked off can't be moved, and that should be
-        # known now rather than after approval.
-        print("\nChecking which changes Sleeper will accept...")
-        actionable, blocked = probe_moves(league_id, moves)
-
-        if blocked:
-            print("\nCannot be changed:")
-            for slot_index, name, reason in blocked:
-                print(f"  - {lineup[slot_index].slot}: {name} ({reason})")
-
-        if not actionable:
-            print("\nNothing left to apply.")
-            return
-
-        descriptions = [f"{lineup[i].slot}: {name}" for i, name in actionable]
-        print(f"\nWill apply {len(actionable)} change(s).")
-
-        write = ProposedWrite(
-            action="set_lineup",
-            summary=f"Set your week {week} Sleeper lineup ({len(actionable)} change(s)).",
-            changes=descriptions,
-            payload={"week": week, "moves": [[i, name] for i, name in actionable]},
-        )
-        moves = actionable
-        try:
-            approval = require_approval(write)
-        except ApprovalDenied as e:
-            print(f"\n{e}")
-            return
-
-        print("\nApplying...")
-        final = set_lineup(league_id, moves, write, approval)
-        print("\nLineup now set on Sleeper:")
-        for slot_name, player, _locked in final:
-            if slot_name not in {"BN", "IR"}:
-                print(f"  {slot_name:<12}{player}")
+        if week != current_week:
+            # Sleeper only reports (and the roster write only sets) the
+            # lineup in effect now, so another week can't be compared or set.
+            print(f"--live/--apply work on the current week ({current_week}) only.", file=sys.stderr)
+            sys.exit(1)
+        _live_lineup(conn, league_id, roster_id, season, week, current_week, roster_positions, projections, apply=args.apply)
         return
 
     print(f"Week {week} lineup recommendation\n")
@@ -380,7 +397,7 @@ def cmd_waivers(args: argparse.Namespace) -> None:
     else:
         table = build_projection_table(conn, season, week, league_id)
         if week == current_week:
-            excluded = unavailable_this_week(table, load_kickoffs(season, week))
+            excluded = unavailable_this_week(table, load_game_statuses(season, week))
         print(f"Week {week} waiver targets by position")
         if excluded:
             print(f"(excluding {len(excluded)} available players whose game already kicked off or who are on bye)")
@@ -567,29 +584,189 @@ def cmd_results(args: argparse.Namespace) -> None:
             print(f"  {name:<25}{pts:>7.1f}")
 
 
-def cmd_login(args: argparse.Namespace) -> None:
-    # Imported lazily so the rest of the CLI works without playwright present.
-    from src.execution.browser import CHROME_CDP_HINT, cdp_available, check_session, login
-
-    if args.check:
-        via = "your running Chrome" if cdp_available() else "the saved profile"
-        if check_session():
-            print(f"Session is valid (via {via}).")
-        else:
-            print(f"No valid session (checked {via}).")
-            if not cdp_available():
-                print(f"\nSleeper's login blocks automated browsers. {CHROME_CDP_HINT}")
-        return
-
-    if cdp_available():
-        print("Attached to your running Chrome - no separate login needed.")
-        print("Session is valid." if check_session() else "That Chrome isn't logged in to Sleeper.")
-        return
-
-    print(f"Sleeper's login blocks automated browsers.\n\n{CHROME_CDP_HINT}\n")
-    print("Attempting the isolated-profile login anyway (may be blocked)...")
-    if not login():
+def _my_live_roster(conn) -> tuple[str, int, int, dict]:
+    """(league_id, roster_id, current_week, my live roster)."""
+    league_id, user_id, current_week = _require_synced_state(conn)
+    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
+    if roster_id is None:
+        print("Could not find your roster in this league.", file=sys.stderr)
         sys.exit(1)
+    return league_id, roster_id, current_week, _live_roster(league_id, roster_id)
+
+
+def _resolve_in_or_exit(conn, name: str, league_id: str, pool: set[str], where: str) -> str:
+    """A player id for `name`, which must be in `pool` (my roster, or the
+    free agents). Resolving against a known pool, not the whole catalog,
+    is what keeps a common name from landing on the wrong player."""
+    pid, candidates = storage.resolve_player(conn, name, league_id)
+    in_pool = [c for c in ([pid] if pid else candidates) if c in pool]
+    if len(in_pool) == 1:
+        return in_pool[0]
+    if not in_pool:
+        print(f"No player matching '{name}' {where}.", file=sys.stderr)
+    else:
+        print(f"'{name}' is ambiguous {where}. Pass one exactly as shown:", file=sys.stderr)
+        for c in in_pool:
+            print(f"  {storage.player_name(conn, c)}", file=sys.stderr)
+    sys.exit(1)
+
+
+def _free_agents(conn, league_id: str) -> set[str]:
+    """Players on an NFL team that no roster in the league holds right now."""
+    with SleeperClient() as client:
+        owned = {pid for r in client.get_rosters(league_id) for pid in r.get("players") or []}
+    on_teams = {r["player_id"] for r in conn.execute("SELECT player_id FROM players WHERE team IS NOT NULL")}
+    return on_teams - owned
+
+
+def _drop_warning(conn, live: dict, drop: str | None) -> str | None:
+    if drop and drop in (live.get("starters") or []):
+        return f"{storage.player_name(conn, drop)} is a starter: dropping him leaves that slot empty."
+    return None
+
+
+def cmd_ir(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    league_id, roster_id, _week, live = _my_live_roster(conn)
+    now = live.get("reserve") or []
+
+    def show(ids) -> str:
+        return ", ".join(storage.player_name(conn, pid) for pid in ids) or "(empty)"
+
+    if args.set is None:
+        print(f"IR now: {show(now)}")
+        return
+    mine = set(live.get("players") or [])
+    names = [n.strip() for n in args.set.split(",") if n.strip()]
+    reserve = [_resolve_in_or_exit(conn, n, league_id, mine, "on your roster") for n in names]
+    if sorted(reserve) == sorted(now):
+        print(f"IR already holds exactly: {show(now)}")
+        return
+
+    write = ProposedWrite(
+        action="set_ir",
+        summary="Set which of your players occupy IR slots.",
+        changes=[f"IR now:   {show(now)}", f"IR after: {show(reserve)}"]
+        + [f"{storage.player_name(conn, pid)}: designation {storage.get_injury_status(conn, pid) or 'none'}"
+           for pid in reserve if pid not in now],
+        payload={"league_id": league_id, "roster_id": roster_id, "reserve": reserve},
+    )
+    approval = _approve(write)
+    if not approval:
+        return
+    got = set_reserve(league_id, roster_id, reserve, write, approval)
+    print()
+    _check("IR", sorted(reserve), None if got is None else sorted(got))
+
+
+def cmd_add(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    league_id, roster_id, _week, live = _my_live_roster(conn)
+    if not args.player and not args.drop:
+        print("Name a player to add, a player to --drop, or both.", file=sys.stderr)
+        sys.exit(1)
+    add = _resolve_in_or_exit(conn, args.player, league_id, _free_agents(conn, league_id), "among free agents") if args.player else None
+    drop = _resolve_in_or_exit(conn, args.drop, league_id, set(live.get("players") or []), "on your roster") if args.drop else None
+
+    changes = [f"ADD  {storage.player_name(conn, add)}"] if add else []
+    changes += [f"DROP {storage.player_name(conn, drop)}"] if drop else []
+    warning = _drop_warning(conn, live, drop)
+    write = ProposedWrite(
+        action="add_drop",
+        summary="Free-agent move, effective immediately." + (f"\nWARNING: {warning}" if warning else ""),
+        changes=changes,
+        payload={"league_id": league_id, "roster_id": roster_id, "add": add, "drop": drop},
+    )
+    approval = _approve(write)
+    if not approval:
+        return
+    players = add_drop(league_id, roster_id, add, drop, write, approval)
+    print()
+    if players is None:
+        _check("Roster", None, None)
+    else:
+        landed = (not add or add in players) and (not drop or drop not in players)
+        print("Roster: VERIFIED" if landed else
+              "Roster: MISMATCH - the move isn't on your roster. If the player is on waivers, use `claim` instead.")
+
+
+def cmd_claim(args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    league_id, roster_id, current_week, live = _my_live_roster(conn)
+
+    if args.cancel:
+        claim = next((t for t in pending_claims(league_id, roster_id) if t["transaction_id"] == args.cancel), None)
+        if not claim:
+            print(f"No pending claim {args.cancel} - see `claims`.", file=sys.stderr)
+            sys.exit(1)
+        write = ProposedWrite(
+            action="cancel_claim",
+            summary="Withdraw a pending waiver claim.",
+            changes=[_describe_claim(conn, claim)],
+            payload={"league_id": league_id, "transaction_id": args.cancel, "leg": claim["leg"]},
+        )
+        approval = _approve(write)
+        if approval:
+            cancel_claim(league_id, args.cancel, claim["leg"], write, approval)
+            still = any(t["transaction_id"] == args.cancel for t in pending_claims(league_id, roster_id))
+            print("\nClaim: MISMATCH - still pending" if still else "\nClaim: VERIFIED - cancelled")
+        return
+
+    if not args.player:
+        print("Name the player to claim (or --cancel <id>).", file=sys.stderr)
+        sys.exit(1)
+    with SleeperClient() as client:
+        settings = client.get_league(league_id).get("settings") or {}
+    faab = settings.get("waiver_type") == 2
+    bid = args.bid
+    if bid is not None and not faab:
+        print("This league doesn't use FAAB, so a claim can't carry a bid.", file=sys.stderr)
+        sys.exit(1)
+    if faab:
+        bid = bid or 0
+        remaining = (settings.get("waiver_budget") or 0) - ((live.get("settings") or {}).get("waiver_budget_used") or 0)
+        if bid > remaining:
+            print(f"Bid ${bid} is more than your remaining FAAB (${remaining}).", file=sys.stderr)
+            sys.exit(1)
+
+    add = _resolve_in_or_exit(conn, args.player, league_id, _free_agents(conn, league_id), "among unrostered players")
+    drop = _resolve_in_or_exit(conn, args.drop, league_id, set(live.get("players") or []), "on your roster") if args.drop else None
+    changes = [f"CLAIM {storage.player_name(conn, add)}"]
+    changes += [f"DROP  {storage.player_name(conn, drop)}"] if drop else []
+    changes += [f"BID   ${bid}"] if faab else []
+    warning = _drop_warning(conn, live, drop)
+    write = ProposedWrite(
+        action="waiver_claim",
+        summary="Waiver claim, processed at the league's next waiver run." + (f"\nWARNING: {warning}" if warning else ""),
+        changes=changes,
+        payload={"league_id": league_id, "roster_id": roster_id, "add": add, "drop": drop, "bid": bid if faab else None},
+    )
+    approval = _approve(write)
+    if not approval:
+        return
+    txn = submit_claim(league_id, roster_id, add, drop, bid if faab else None, write, approval)
+    queued = any(t["transaction_id"] == txn.get("transaction_id") for t in pending_claims(league_id, roster_id))
+    print(f"\nClaim {txn.get('transaction_id')}: " + ("VERIFIED - pending" if queued else "MISMATCH - not among pending claims"))
+
+
+def _describe_claim(conn, txn: dict) -> str:
+    adds = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("adds") or {}))
+    drops = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("drops") or {}))
+    bid = (txn.get("settings") or {}).get("waiver_bid")
+    return (f"{txn['transaction_id']}  claim {adds or '-'}"
+            + (f", drop {drops}" if drops else "") + (f", bid ${bid}" if bid is not None else ""))
+
+
+def cmd_claims(_args: argparse.Namespace) -> None:
+    conn = storage.get_connection(config.DB_PATH)
+    league_id, roster_id, _week, _live = _my_live_roster(conn)
+    claims = pending_claims(league_id, roster_id)
+    if not claims:
+        print("No pending waiver claims.")
+        return
+    for txn in claims:
+        print(_describe_claim(conn, txn))
+    print('\nCancel one with: claim --cancel <id>')
 
 
 def cmd_digest(args: argparse.Namespace) -> None:
@@ -664,7 +841,7 @@ def main() -> None:
     lineup_p.add_argument("--live", action="store_true",
                           help="Compare against what's actually set on Sleeper right now")
     lineup_p.add_argument("--apply", action="store_true",
-                          help="Enact the changes on Sleeper (asks you to confirm first)")
+                          help="Enact the changes on Sleeper (needs SLEEPER_TOKEN; asks you to confirm first)")
 
     waivers_p = sub.add_parser("waivers", help="Ranked waiver/FAAB targets, grouped by position")
     waivers_p.add_argument("--week", type=int, help="Defaults to the current week")
@@ -682,8 +859,20 @@ def main() -> None:
     draft_p.add_argument("--draft-id", dest="draft_id", help="Target a specific draft (e.g. a mock) instead of your league's")
     draft_p.add_argument("--replay", action="store_true", help="Replay a completed draft instead of polling live")
 
-    login_p = sub.add_parser("login", help="Log in to Sleeper once in a browser; the session is saved")
-    login_p.add_argument("--check", action="store_true", help="Only report whether a saved session is still valid")
+    ir_p = sub.add_parser("ir", help="Show your IR slots, or set them (needs SLEEPER_TOKEN; asks you to confirm)")
+    ir_p.add_argument("--set", help='Comma-separated names: the complete IR list ("" empties it)')
+
+    add_p = sub.add_parser("add", help="Free-agent add and/or drop, immediate (needs SLEEPER_TOKEN; asks you to confirm)")
+    add_p.add_argument("player", nargs="?", help="Free agent to add")
+    add_p.add_argument("--drop", help="Player on your roster to drop")
+
+    claim_p = sub.add_parser("claim", help="Waiver claim, or cancel one (needs SLEEPER_TOKEN; asks you to confirm)")
+    claim_p.add_argument("player", nargs="?", help="Player to claim")
+    claim_p.add_argument("--drop", help="Player on your roster to drop if the claim wins")
+    claim_p.add_argument("--bid", type=int, help="FAAB bid (FAAB leagues only; default 0)")
+    claim_p.add_argument("--cancel", metavar="ID", help="Cancel a pending claim by its id (see `claims`)")
+
+    sub.add_parser("claims", help="Your pending waiver claims (needs SLEEPER_TOKEN)")
 
     digest_p = sub.add_parser("digest", help="Weekly digest: lineup, waiver board, news, last week's result")
     digest_p.add_argument("--week", type=int, help="Defaults to the current week")
@@ -735,8 +924,14 @@ def main() -> None:
             cmd_trades(args)
         elif args.command == "draft":
             cmd_draft(args)
-        elif args.command == "login":
-            cmd_login(args)
+        elif args.command == "ir":
+            cmd_ir(args)
+        elif args.command == "add":
+            cmd_add(args)
+        elif args.command == "claim":
+            cmd_claim(args)
+        elif args.command == "claims":
+            cmd_claims(args)
         elif args.command == "digest":
             cmd_digest(args)
         elif args.command == "news":
