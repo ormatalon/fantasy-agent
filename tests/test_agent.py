@@ -147,6 +147,28 @@ def test_graph_rebuilds_the_system_prompt_on_every_model_turn():
     assert seen == ["week 3", "week 4"]
 
 
+def test_traced_run_carries_command_name_tags_and_league_metadata():
+    from langchain_core.messages import AIMessage
+    from langchain_core.tracers.context import collect_runs
+
+    import config
+    from src.agent.graph import build_graph
+    from src.agent.orchestrator import _run, run_config
+
+    ctx = make_ctx(seeded_conn())
+    graph = build_graph(lambda _m: AIMessage(content="ok"), [], lambda: "")
+    with collect_runs() as cb:
+        assert _run(graph, "hi", run_config(ctx, "ask", "cli"), show_progress=False) == "ok"
+
+    root = cb.traced_runs[0]
+    assert root.name == "ask"
+    assert root.tags == ["ask", config.OPENROUTER_MODEL]
+    assert {
+        "thread_id": "cli", "league_id": "L1", "season": "2026", "week": 2,
+        "fantasy_team_name": ctx.fantasy_team_name(), "model": config.OPENROUTER_MODEL,
+    }.items() <= root.extra["metadata"].items()
+
+
 def test_every_tool_has_a_description_the_model_can_route_on():
     for name, t in tools_by_name(seeded_conn()).items():
         assert t.description and len(t.description) > 20, f"{name} needs a usable description"

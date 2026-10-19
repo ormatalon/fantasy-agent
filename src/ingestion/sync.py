@@ -16,6 +16,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 
+from langsmith import traceable
+
 import config
 from src.ingestion import storage
 from src.ingestion.news import fetch_player_news
@@ -261,6 +263,7 @@ def refresh_rosters(conn, max_age_seconds: float | None = None, log: Log = log_t
     return True
 
 
+@traceable(name="refresh_before_question")
 def refresh_before_question(conn, log: Log = log_to_stderr) -> bool:
     """What the agent runs before each question: a full sync if the data is
     stale, otherwise a roster refresh. Returns True if a full sync ran."""
