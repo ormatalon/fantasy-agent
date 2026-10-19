@@ -78,6 +78,13 @@ uv run python -m src.interface.cli chat
 `ask` and `chat` re-sync on their own when local data is more than 2 hours old
 (`AUTO_SYNC_HOURS` in `config.py`), and `chat` re-checks on every question.
 
+## Tracing
+
+Set `LANGSMITH_TRACING=true` and `LANGSMITH_API_KEY` in `.env` to send each
+`ask`/`chat` question to LangSmith (project `LANGSMITH_PROJECT`): every model
+turn, tool call and result, tokens and latency, tagged with league, week and
+model. Traces include league, fantasy team and manager names. Tests never trace.
+
 ## Tests
 
 ```

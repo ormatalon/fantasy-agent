@@ -129,6 +129,24 @@ def build_agent(conn: sqlite3.Connection, ctx: AgentContext | None = None, check
     return graph, tools
 
 
+def run_config(ctx: AgentContext, command: str, thread_id: str) -> dict:
+    """Graph config: the checkpointer thread, plus the name, tags and
+    metadata LangSmith shows on the trace when LANGSMITH_TRACING is on."""
+    return {
+        "configurable": {"thread_id": thread_id},
+        "run_name": command,
+        "tags": [command, config.OPENROUTER_MODEL],
+        # LangGraph adds thread_id to the metadata itself (LangSmith's Threads view).
+        "metadata": {
+            "league_id": ctx.league_id,
+            "season": ctx.season,
+            "week": ctx.current_week,
+            "fantasy_team_name": ctx.fantasy_team_name(),
+            "model": config.OPENROUTER_MODEL,
+        },
+    }
+
+
 def _run(agent, question: str, thread: dict, show_progress: bool = True) -> str:
     """Drive the graph, echoing tool calls as they happen.
 
@@ -159,8 +177,9 @@ def ask(conn: sqlite3.Connection, question: str, thread_id: str = "cli", show_pr
     """One-shot question. Re-syncs first if local data is stale, otherwise
     re-pulls rosters, so the answer reflects moves just made in Sleeper."""
     refresh_before_question(conn)
-    agent, _tools = build_agent(conn)
-    return _run(agent, question, {"configurable": {"thread_id": thread_id}}, show_progress)
+    ctx = build_context(conn)
+    agent, _tools = build_agent(conn, ctx=ctx)
+    return _run(agent, question, run_config(ctx, "ask", thread_id), show_progress)
 
 
 CHAT_THREAD = "chat"
@@ -200,5 +219,6 @@ def chat(conn: sqlite3.Connection, new: bool = False) -> None:
         # leaves the (league-wide) projection caches valid.
         if refresh_before_question(conn):
             ctx.reload_state()
-        answer = _run(agent, question, thread)
+        # Built per turn: a full sync above can change the week.
+        answer = _run(agent, question, run_config(ctx, "chat", CHAT_THREAD))
         print(f"\n{answer}\n")

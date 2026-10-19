@@ -6,7 +6,8 @@ for behavior the unit tests can't cover (what the model does with the tools).
 
 **How to run:** `uv run python -m src.interface.cli ask "..."` (or inside `chat`).
 Tool calls print to stderr as `... tool_name`, so you can see what the agent
-actually did. A correct answer reached without the right tool call is still a
+actually did; with LangSmith tracing on (see README), the trace also shows
+each call's arguments and result. A correct answer reached without the right tool call is still a
 **fail**: it means the model answered from memory.
 
 **Setup:** replace `[brackets]` with real names from your league. No manual
