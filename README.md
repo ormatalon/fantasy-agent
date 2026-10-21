@@ -1,15 +1,70 @@
 # NFL Fantasy Engine
 
-See `PLAN.md` for the full build plan.
+See `plan/PLAN.md` for the full build plan.
 
-## Setup
+## Download
+
+From the latest GitHub release:
+
+- **Windows:** `FantasyAgent-Setup.exe`. Run it. Windows may say "Windows
+  protected your PC": click More info, then Run anyway (the app isn't signed).
+- **Mac (Apple silicon):** `FantasyAgent-Mac.dmg`. Drag the app to
+  Applications. On first open, macOS blocks it: open System Settings, Privacy &
+  Security, and click Open Anyway.
+
+Open Fantasy Agent, enter your Sleeper username and a free OpenRouter key from
+https://openrouter.ai/keys, pick a league and ask away.
+
+"Model not available" means the free model is down. Pick another one under
+Settings, Advanced.
+
+Settings, league data, chats and a `desktop.log` are kept in
+`%LOCALAPPDATA%\FantasyAgent` (Windows) or
+`~/Library/Application Support/FantasyAgent` (Mac).
+
+## Run with Docker
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and start it.
+2. Download `fantasy-agent-docker.zip` from the latest release and unzip it.
+3. Run `scripts/start.bat` (Windows) or `scripts/start.sh` (Mac/Linux). The page
+   opens at http://localhost:8000. `scripts/stop.bat` / `scripts/stop.sh` stop it.
+
+Data is kept in a Docker volume. The page is only reachable from your own computer.
+
+Lineup changes, adds and waiver claims stay on the command line, behind the
+APPROVE prompt. Run any CLI command below inside the app, from the unzipped
+folder (add `SLEEPER_TOKEN` in Settings first):
+
+```
+docker compose exec app python -m src.interface.cli lineup --apply
+```
+
+The model key and base URL are read only in `config.reload()`. A shared key
+later means pointing `OPENROUTER_BASE_URL` at a proxy that holds it.
+
+## Develop
+
+Build the page once: `cd web && npm ci && npm run build`. Then:
+
+- Web app: `uv run uvicorn src.web.app:app --port 8000`
+- Desktop window: `uv run --group desktop python -m src.desktop`
+- Desktop build: `uv run --group desktop pyinstaller desktop/fantasy-agent.spec --noconfirm`,
+  then the Windows installer with Inno Setup: `iscc desktop/installer.iss`
+- Docker: `scripts/start.sh --build` (or `scripts\start.bat --build`)
+
+Publishing: every push to `main` builds the Docker image to
+`ghcr.io/ormatalon/fantasy-agent`. Tagging `v*` (e.g. `git tag v1.0.0 && git push --tags`)
+also builds the Windows installer and the Mac app, and creates the release.
+The GHCR package must be made public once, in its settings on GitHub.
+
+### CLI setup
 
 ```
 uv sync
 cp .env.example .env   # then fill in SLEEPER_USERNAME
 ```
 
-## Usage
+### CLI usage
 
 ```
 uv run python -m src.interface.cli sync [--league "name"] [--all]

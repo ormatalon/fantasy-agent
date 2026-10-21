@@ -10,7 +10,8 @@ from src.ingestion import storage
 
 
 def make_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(":memory:")
+    # Like storage.get_connection: the web tests use it from a server thread.
+    conn = sqlite3.connect(":memory:", check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(storage.SCHEMA)
     return conn
@@ -381,3 +382,35 @@ def test_pending_claims_report_a_missing_token_instead_of_failing(monkeypatch):
 
     monkeypatch.setattr(tools_mod.sleeper_writes, "pending_claims", no_token)
     assert "SLEEPER_TOKEN" in tools_by_name(seeded_conn())["get_pending_claims"].invoke({})
+
+
+def test_a_stop_right_after_tool_calls_leaves_a_valid_conversation():
+    from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+    from langchain_core.tools import tool
+
+    from src.agent.graph import build_graph
+    from src.agent.orchestrator import STOPPED, _run, describe_call
+
+    @tool
+    def get_projections(position: str) -> str:
+        """Fake projections."""
+        return "Puka Nacua 23.6"
+
+    def strict_llm(messages):
+        # Like the real API: every tool call must have a result.
+        answered = {m.tool_call_id for m in messages if isinstance(m, ToolMessage)}
+        for m in messages:
+            for call in getattr(m, "tool_calls", None) or []:
+                assert call["id"] in answered, "tool call without a result"
+        if messages[-1].content == "again":
+            return AIMessage(content="answer")
+        return AIMessage(content="", tool_calls=[{"name": "get_projections", "args": {"position": "RB"}, "id": "c1"}])
+
+    graph = build_graph(strict_llm, [get_projections], lambda: "")
+    thread = {"configurable": {"thread_id": "t"}}
+    steps = []
+
+    assert _run(graph, "loop", thread, show_progress=False, on_step=steps.append, should_stop=lambda: True) == STOPPED
+    assert steps == [describe_call({"name": "get_projections", "args": {"position": "RB"}})] == ["checking projections (RB)"]
+    assert graph.get_state(thread).next == ()
+    assert _run(graph, "again", thread, show_progress=False) == "answer"

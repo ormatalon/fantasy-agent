@@ -238,3 +238,46 @@ included. Plan: `plan/sleeper-api.md`.
 - **Open:** two public reverse-engineerings disagree on which lineup mutation
   Sleeper scores from, so `set_lineup` sends both with the same list and
   reads both back. Test question 23 settles it.
+
+---
+
+## 11. Web app and Docker packaging (2026-10-19)
+
+So someone who isn't a developer can use the agent. Plan:
+`plan/web-docker-packaging.md`.
+
+- **Web chat** (`web/`, Next.js static export) served by FastAPI
+  (`src/web/app.py`): setup form, league picker, sync, chat with saved
+  history. It shares the `chat` thread with the CLI.
+- **Settings from the page** go to `data/settings.env` and apply at once:
+  `config.reload()` re-reads them. Each user brings their own OpenRouter key;
+  `OPENROUTER_BASE_URL` leaves room for a shared-key proxy.
+- **Writes stay on the CLI** behind APPROVE, via `docker compose exec`. The
+  agent has no write tools, so the page needs no approval flow.
+- **Docker**: one image, port bound to localhost only (no login, stored keys),
+  data in a named volume. GitHub Actions publishes amd64 and arm64 images to
+  GHCR and a release zip with the compose file and start/stop scripts.
+
+
+---
+
+## 12. Desktop app (2026-10-21)
+
+For users who won't install Docker or use a terminal. Plan: `plan/desktop-app.md`.
+
+- **One download:** PyInstaller bundles Python, the dependencies and the built
+  page; `src/desktop.py` serves it on a free local port and opens it in a
+  native window (pywebview). Windows installer by Inno Setup, per user, no
+  admin (about 56 MB); Mac `.dmg`. Both built by `.github/workflows/release.yml`
+  on a `v*` tag, which also builds the Docker image and makes one release.
+- **Data** lives in the user's app-data folder when bundled (`config.DATA_DIR`),
+  with a `desktop.log`, since a windowed app has no console.
+- **Found in the build:** pandas loads fastparquet by name, so PyInstaller
+  left it out and the nflverse source was silently skipped (one projection
+  source instead of two). Now a hidden import.
+- **App mode prompt:** in the web and desktop apps the agent pointed users to
+  `lineup --apply`. With `in_app` it tells them to make changes in the
+  Sleeper app instead; the CLI keeps its commands.
+- **Verified on Windows:** install, Start menu shortcut, window renders,
+  sync, lineup solver, both projection sources, uninstall. **Not verified:**
+  the Mac build (no Mac here; first run is the release workflow).

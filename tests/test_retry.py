@@ -30,7 +30,7 @@ def no_sleep(monkeypatch):
 
 def test_daily_quota_fails_fast_with_an_actionable_message():
     llm = FakeLLM([rate_limit("Rate limit exceeded: free-models-per-day")])
-    with pytest.raises(AgentError, match="daily request limit"):
+    with pytest.raises(AgentError, match="Daily limit reached"):
         _invoke_with_retry(llm, [])
     assert llm.calls == 1
 
@@ -49,3 +49,13 @@ def test_openrouter_body_errors_are_still_retried():
 def test_unrelated_errors_are_not_swallowed():
     with pytest.raises(ValueError, match="bad schema"):
         _invoke_with_retry(FakeLLM([ValueError("bad schema")]), [])
+
+
+def test_a_provider_outage_becomes_a_readable_agent_error():
+    # OpenRouter passes the provider's 404 through when the model's only
+    # provider is down; the web page must show this, not a bare 500.
+    response = httpx.Response(404, request=httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions"))
+    llm = FakeLLM([openai.NotFoundError("Provider returned error", response=response, body=None)])
+    with pytest.raises(AgentError, match="Model not available"):
+        _invoke_with_retry(llm, [])
+    assert llm.calls == 1

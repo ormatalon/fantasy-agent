@@ -1,0 +1,4 @@
+# Builds the image from this repo instead of pulling it: scripts/start.sh --build
+services:
+  app:
+    build: .
