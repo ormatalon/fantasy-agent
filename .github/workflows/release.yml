@@ -89,6 +89,9 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
+          # Only the desktop builds: the Docker step also stores a build
+          # record (*.dockerbuild) that fails to download as an artifact.
+          pattern: desktop-*
           path: downloads
           merge-multiple: true
       - name: Docker zip
