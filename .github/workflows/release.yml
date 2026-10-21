@@ -43,6 +43,8 @@ jobs:
 
   desktop:
     if: startsWith(github.ref, 'refs/tags/v')
+    # A normal build takes under 10 minutes; GitHub's default limit is 6 hours.
+    timeout-minutes: 45
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
@@ -60,11 +62,13 @@ jobs:
         run: uv run --group desktop pyinstaller desktop/fantasy-agent.spec --noconfirm
       - name: Windows installer
         if: runner.os == 'Windows'
+        # Running Inno Setup's own installer hung for hours on the runner
+        # (v1.0.0); Chocolatey installs it unattended. A hang now fails fast.
+        timeout-minutes: 15
         shell: pwsh
         run: |
-          curl.exe -sL -o innosetup.exe https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe
-          Start-Process innosetup.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/CURRENTUSER","/DIR=$PWD\inno" -Wait
-          & "$PWD\inno\ISCC.exe" "/DAppVersion=$($env:GITHUB_REF_NAME.TrimStart('v'))" desktop\installer.iss
+          choco install innosetup --version=6.7.1 -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$($env:GITHUB_REF_NAME.TrimStart('v'))" desktop\installer.iss
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Mac disk image
         if: runner.os == 'macOS'
