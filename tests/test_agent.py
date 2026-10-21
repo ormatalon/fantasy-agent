@@ -120,7 +120,7 @@ def test_ambiguous_player_name_returns_candidates_instead_of_guessing():
     storage.save_players(conn, {"p3": {"first_name": "Alpha", "last_name": "Onesie", "position": "WR", "team": "KC"}})
     tools = tools_by_name(conn)
 
-    result = tools["get_player_news"].invoke({"player_name": "alpha"})
+    result = tools["get_player_news"].invoke({"players": "alpha"})
 
     assert "ambiguous" in result
     assert "Alpha One (QB/BUF)" in result
@@ -414,3 +414,35 @@ def test_a_stop_right_after_tool_calls_leaves_a_valid_conversation():
     assert steps == [describe_call({"name": "get_projections", "args": {"position": "RB"}})] == ["checking projections (RB)"]
     assert graph.get_state(thread).next == ()
     assert _run(graph, "again", thread, show_progress=False) == "answer"
+
+
+def test_projections_for_a_list_of_players_in_one_call():
+    from src.projections.engine import AdjustedProjection
+
+    def proj(pid, name, pos, mean):
+        return AdjustedProjection(pid, name, pos, "BUF", mean, 1.0, 1.0, 1.0, 2)
+
+    ctx = make_ctx(seeded_conn())
+    ctx._cache[("week", 2)] = [
+        proj("p1", "Alpha One", "QB", 20.0), proj("p2", "Beta Two", "RB", 12.0), proj("p9", "Practice Squad", "RB", 0.0),
+    ]
+    tools = {t.name: t for t in build_tools(ctx)}
+
+    by_name = tools["get_projections"].invoke({"players": "Beta Two, Alpha One, Nobody Here"})
+    assert by_name.splitlines() == [
+        "Beta Two (RB/BUF): 12.0 pts, std 1.0, 2 source(s)",
+        "Alpha One (QB/BUF): 20.0 pts, std 1.0, 2 source(s)",
+        "No player matching 'Nobody Here'.",
+    ]
+    # A position lists only players projected to score.
+    assert tools["get_projections"].invoke({"position": "RB"}) == "Beta Two (RB/BUF): 12.0 pts, std 1.0, 2 source(s)"
+
+
+def test_news_for_several_players_in_one_call(monkeypatch):
+    from src.agent import tools as tools_module
+
+    monkeypatch.setattr(tools_module, "fetch_player_news", lambda pid, limit: [])
+    result = tools_by_name(seeded_conn())["get_player_news"].invoke({"players": "Alpha One, Beta Two"})
+
+    assert "No news found for Alpha One" in result
+    assert "No news found for Beta Two" in result

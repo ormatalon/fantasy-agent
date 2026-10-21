@@ -23,12 +23,13 @@ const STARTERS = [
   "How did I do last week?",
 ];
 
-// Free OpenRouter models checked to call tools correctly (2026-10-20).
+// Free OpenRouter models checked to call tools correctly, best first. Notes
+// from use in this app and OpenRouter's uptime data (2026-10-21).
 const MODELS = [
-  "nvidia/nemotron-3-super-120b-a12b:free",
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
-  "minimax/minimax-m3.1-flash:free",
-  "nvidia/nemotron-3.5-super-vl:free",
+  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", note: "Recommended. The largest; best at questions that need several steps." },
+  { id: "nvidia/nemotron-3-super-120b-a12b:free", note: "The original default: smaller and quick, but often down lately." },
+  { id: "nvidia/nemotron-3.5-super-vl:free", note: "Smaller than Ultra, so usually quicker. Less tested here." },
+  { id: "minimax/minimax-m3.1-flash:free", note: "Not run by Nvidia, so it works when they are down. Tends to wander on big questions." },
 ];
 
 async function api<T>(path: string, body?: object, signal?: AbortSignal): Promise<T> {
@@ -194,13 +195,19 @@ function Setup({ status, onSaved }: { status: Status; onSaved: (s: Status) => vo
           <input value={model} onChange={(e) => setModel(e.target.value)} list="models" />
           <datalist id="models">
             {MODELS.map((m) => (
-              <option key={m} value={m} />
+              <option key={m.id} value={m.id} />
             ))}
           </datalist>
           <span className="model-picks">
             {MODELS.map((m) => (
-              <button type="button" key={m} className="chip small" onClick={() => setModel(m)}>
-                {m}
+              <button
+                type="button"
+                key={m.id}
+                className={`model-pick${model === m.id ? " chosen" : ""}`}
+                onClick={() => setModel(m.id)}
+              >
+                <b>{m.id}</b>
+                <small>{m.note}</small>
               </button>
             ))}
           </span>
