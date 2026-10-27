@@ -135,12 +135,13 @@ export default function Home() {
           </div>
         </div>
       </header>
-      <main className="app">
-        {body}
-        <footer>
+      <main className="app">{body}</main>
+      <footer>
+        <div className="bar">
+          <Football size={18} />
           Fantasy Agent advises. Make lineup changes, adds and waiver claims in the Sleeper app.
-        </footer>
-      </main>
+        </div>
+      </footer>
     </>
   );
 }
@@ -446,7 +447,8 @@ function Chat({ week, onSynced }: { week: string | null; onSynced: (s: Status) =
 
   return (
     <>
-      <nav className="actions">
+      <div className="actions">
+        <h2>Game plan</h2>
         <button
           disabled={!!busy}
           onClick={() => run("Starting a new chat...", async () => {
@@ -462,7 +464,7 @@ function Chat({ week, onSynced }: { week: string | null; onSynced: (s: Status) =
         >
           Sync now
         </button>
-      </nav>
+      </div>
       <div className="messages">
         {!loaded && <p className="hint">Loading your conversation...</p>}
         {loaded && !messages.length && !busy && (

@@ -163,7 +163,8 @@ button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8
 .model-pick.chosen { border-left-color: var(--accent); background: #fbf8ee; }
 
 /* --- Chat --- */
-.actions { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 16px; }
+.actions { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+.actions h2 { flex: 1; margin: 0; font-size: 1.5rem; padding-left: 10px; border-left: 4px solid var(--accent); }
 .actions button { padding: 3px 12px; font-size: 0.9rem; border-width: 1px; border-color: var(--border); color: #4a5568; background: var(--card); }
 .actions button:hover:not(:disabled) { border-color: var(--navy); }
 .messages { flex: 1; display: flex; flex-direction: column; gap: 16px; margin-bottom: 14px; }
@@ -294,7 +295,9 @@ button.stop:hover:not(:disabled) { background: #b42318; color: #fff; }
 .ask textarea:focus { outline: none; }
 .ask button { min-height: 40px; }
 
-footer { color: var(--gray); font-size: 0.82rem; margin-top: 18px; text-align: center; }
+footer { background: var(--navy-deep); color: #8f9bb0; font-size: 0.82rem; border-top: 4px solid var(--accent); }
+.football { flex: none; }
+footer .bar { justify-content: center; gap: 10px; padding-top: 14px; padding-bottom: 14px; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
