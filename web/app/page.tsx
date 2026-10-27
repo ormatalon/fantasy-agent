@@ -308,6 +308,7 @@ const elapsed = (ms: number) => {
 
 function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -318,7 +319,9 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
   const request = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    api<Message[]>("/api/chat").then(setMessages, (e) => setError(errorText(e)));
+    api<Message[]>("/api/chat")
+      .then(setMessages, (e) => setError(errorText(e)))
+      .finally(() => setLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -409,7 +412,8 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
         </button>
       </nav>
       <div className="messages">
-        {!messages.length && !busy && (
+        {!loaded && <p className="hint">Loading your conversation...</p>}
+        {loaded && !messages.length && !busy && (
           <div className="welcome">
             <Football size={72} />
             <h2>What&apos;s the call this week, coach?</h2>
