@@ -357,6 +357,18 @@ function Byline() {
   );
 }
 
+// Anything in progress: a broadcast-style "on the clock" line.
+function Ticker({ text }: { text: string }) {
+  return (
+    <div className="row agent">
+      <div className="msg agent typing">
+        <span className="clock">On the clock</span>
+        <span>{text}</span>
+      </div>
+    </div>
+  );
+}
+
 const ASKING = "asking";
 
 const elapsed = (ms: number) => {
@@ -469,7 +481,7 @@ function Chat({ onSynced }: { onSynced: (s: Status) => void }) {
         </button>
       </div>
       <div className="messages">
-        {!loaded && <p className="hint">Loading your conversation...</p>}
+        {!loaded && <Ticker text="Loading your conversation" />}
         {loaded && !messages.length && !busy && (
           <div className="welcome">
             <div className="hero">
@@ -499,14 +511,7 @@ function Chat({ onSynced }: { onSynced: (s: Status) => void }) {
             )}
           </div>
         ))}
-        {busy && (
-          <div className="row agent">
-            <div className="msg agent typing">
-              <span className="clock">On the clock</span>
-              <span>{thinking ? progress || "Checking projections, rosters and news" : busy}</span>
-            </div>
-          </div>
-        )}
+        {busy && <Ticker text={thinking ? progress || "Checking projections, rosters and news" : busy} />}
         {error && <p className="error">{error}</p>}
         <div ref={end} />
       </div>
