@@ -17,10 +17,10 @@ type League = { league_id: string; name: string };
 type Message = { role: "user" | "agent"; content: string };
 
 const STARTERS = [
-  "Who should I start this week?",
-  "Any waiver pickups worth a claim?",
-  "Any injury news on my roster?",
-  "How did I do last week?",
+  { label: "Lineup", question: "Who should I start this week?" },
+  { label: "Waivers", question: "Any waiver pickups worth a claim?" },
+  { label: "Injuries", question: "Any injury news on my roster?" },
+  { label: "Results", question: "How did I do last week?" },
 ];
 
 // Free OpenRouter models checked to call tools correctly, best first. Notes
@@ -432,13 +432,16 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
         {!loaded && <p className="hint">Loading your conversation...</p>}
         {loaded && !messages.length && !busy && (
           <div className="welcome">
-            <Football size={72} />
+            <div className="badge">
+              <Football size={72} />
+            </div>
             <h2>What&apos;s the call this week, coach?</h2>
             <p className="hint">Ask about your lineup, waivers, trades, injuries or last week&apos;s results.</p>
             <div className="chips">
               {STARTERS.map((s) => (
-                <button key={s} className="chip" onClick={() => send(s)}>
-                  {s}
+                <button key={s.label} className="chip" onClick={() => send(s.question)}>
+                  <small>{s.label}</small>
+                  {s.question}
                 </button>
               ))}
             </div>
