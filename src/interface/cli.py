@@ -324,8 +324,7 @@ def cmd_lineup(args: argparse.Namespace) -> None:
     roster_row = storage.get_roster(conn, league_id, roster_id)
     roster_player_ids = json.loads(roster_row["players"])
 
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
 
     table = build_projection_table(conn, season, week, league_id)
     projections = {row.player_id: row for row in table}
@@ -373,8 +372,7 @@ def cmd_waivers(args: argparse.Namespace) -> None:
     season = storage.get_state(conn, "active_season")
     week = args.week or current_week
 
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
 
     excluded: dict[str, str] = {}
     if args.season_long:
@@ -442,8 +440,7 @@ def cmd_draft(args: argparse.Namespace) -> None:
     league_id, user_id, _current_week = _require_synced_state(conn)
     season = storage.get_state(conn, "active_season")
 
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
 
     with SleeperClient() as client:
         draft_id = args.draft_id
@@ -530,8 +527,7 @@ def cmd_results(args: argparse.Namespace) -> None:
     week = args.week or last_completed_week(current_week)
 
     roster_id = _my_roster_id(conn, league_id, user_id)
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
 
     result = summarize_week(conn, league_id, roster_id, week, roster_positions)
     if not result:

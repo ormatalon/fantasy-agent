@@ -66,10 +66,7 @@ def build_digest(
     if roster_id is None:
         return "Could not find your roster in this league."
 
-    league_row = conn.execute(
-        "SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)
-    ).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
     roster_row = storage.get_roster(conn, league_id, roster_id)
     player_ids = json.loads(roster_row["players"])
 

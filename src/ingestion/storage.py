@@ -466,6 +466,11 @@ def get_opponent_roster(conn: sqlite3.Connection, league_id: str, week: int, ros
     ).fetchone()
 
 
+def roster_positions(conn: sqlite3.Connection, league_id: str) -> list[str]:
+    row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
+    return json.loads(row["roster_positions"])
+
+
 def list_leagues(conn: sqlite3.Connection, season: str | None = None) -> list[sqlite3.Row]:
     if season:
         return conn.execute(
