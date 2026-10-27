@@ -235,11 +235,33 @@ button:disabled { opacity: 0.5; cursor: default; }
 .msg.agent tbody tr:nth-child(even) td { background: #f3f5f9; }
 .msg.agent td { border-bottom: 1px solid var(--border); }
 
-.msg.agent.typing { flex: 0 1 auto; display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
-.dots { display: inline-flex; gap: 4px; }
-.dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); animation: bounce 1.2s infinite ease-in-out; }
-.dots i:nth-child(2) { animation-delay: 0.15s; background: var(--accent); }
-.dots i:nth-child(3) { animation-delay: 0.3s; background: var(--purple); }
+/* While a question runs: a broadcast-style ticker. */
+.msg.agent.typing {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 8px 8px;
+  color: var(--navy);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px;
+  background: var(--navy);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.clock::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s infinite ease-in-out; }
 
 button.stop { background: #fff; border-color: #b42318; color: #b42318; }
 button.stop:hover:not(:disabled) { background: #b42318; color: #fff; }
@@ -252,7 +274,7 @@ button.stop:hover:not(:disabled) { background: #b42318; color: #fff; }
 footer { color: var(--gray); font-size: 0.82rem; margin-top: 18px; text-align: center; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-6px); opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
 @keyframes spiral { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg) translateY(-4px); } }
 
 /* Phones: every pixel goes to the text. */

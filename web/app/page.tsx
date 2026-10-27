@@ -95,7 +95,9 @@ export default function Home() {
   else if (view === "settings" || !status.configured)
     body = <Setup status={status} onSaved={done} onCancel={status.configured ? back : undefined} />;
   else if (view === "league" || !status.league)
-    body = <LeaguePicker onSynced={done} onCancel={status.league ? back : undefined} />;
+    body = (
+      <LeaguePicker current={status.league?.league_id} onSynced={done} onCancel={status.league ? back : undefined} />
+    );
   else body = <Chat onSynced={setStatus} />;
 
   return (
@@ -253,7 +255,15 @@ function Setup({ status, onSaved, onCancel }: { status: Status; onSaved: (s: Sta
   );
 }
 
-function LeaguePicker({ onSynced, onCancel }: { onSynced: (s: Status) => void; onCancel?: () => void }) {
+function LeaguePicker({
+  current,
+  onSynced,
+  onCancel,
+}: {
+  current?: string;
+  onSynced: (s: Status) => void;
+  onCancel?: () => void;
+}) {
   const [leagues, setLeagues] = useState<League[] | null>(null);
   const [chosen, setChosen] = useState("");
   const [busy, setBusy] = useState(false);
@@ -263,7 +273,7 @@ function LeaguePicker({ onSynced, onCancel }: { onSynced: (s: Status) => void; o
     api<League[]>("/api/leagues").then(
       (found) => {
         setLeagues(found);
-        if (found.length) setChosen(found[0].league_id);
+        if (found.length) setChosen(found.some((lg) => lg.league_id === current) ? current! : found[0].league_id);
       },
       (e) => setError(errorText(e)),
     );
@@ -471,12 +481,8 @@ function Chat({ onSynced }: { onSynced: (s: Status) => void }) {
         {thinking && (
           <div className="row agent">
             <div className="msg agent typing">
-              <span className="dots" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
-              <span className="hint">{progress || "Checking projections, rosters and news"}</span>
+              <span className="clock">On the clock</span>
+              <span>{progress || "Checking projections, rosters and news"}</span>
             </div>
           </div>
         )}
