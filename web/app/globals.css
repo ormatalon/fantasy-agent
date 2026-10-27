@@ -78,8 +78,6 @@ button:disabled { opacity: 0.55; cursor: default; }
 
 button.stop { background: #fff; border: 2px solid #b42318; color: #b42318; font-weight: 600; }
 button.stop:hover { background: #fef3f2; }
-.notes { margin-left: 44px; }
-.notes p { margin: 2px 0; font-size: 0.85rem; }
 
 .model-picks { display: grid; gap: 6px; margin-top: 8px; }
 .model-pick { text-align: left; border-radius: 10px; padding: 8px 12px; font-weight: 400; }

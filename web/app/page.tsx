@@ -192,12 +192,7 @@ function Setup({ status, onSaved }: { status: Status; onSaved: (s: Status) => vo
             </a>
             ). If one is not available, pick another:
           </small>
-          <input value={model} onChange={(e) => setModel(e.target.value)} list="models" />
-          <datalist id="models">
-            {MODELS.map((m) => (
-              <option key={m.id} value={m.id} />
-            ))}
-          </datalist>
+          <input value={model} onChange={(e) => setModel(e.target.value)} />
           <span className="model-picks">
             {MODELS.map((m) => (
               <button
@@ -289,14 +284,22 @@ function Avatar({ role, username }: { role: Message["role"]; username: string })
   return <span className="avatar user">{(username[0] || "?").toUpperCase()}</span>;
 }
 
+const ASKING = "asking";
+
+const elapsed = (ms: number) => {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
 function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
-  // One line per minute while a question runs: how long, and the last step.
-  const [notes, setNotes] = useState<string[]>([]);
+  // While a question runs: how long it has taken and its last step.
+  const [progress, setProgress] = useState("");
   const end = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
   const request = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -305,7 +308,11 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, busy, notes]);
+  }, [messages, busy, error]);
+
+  useEffect(() => {
+    if (!busy) input.current?.focus();
+  }, [busy]);
 
   async function run(label: string, action: () => Promise<void>) {
     setBusy(label);
@@ -330,16 +337,15 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
     const started = Date.now();
     const timer = setInterval(async () => {
       const { step } = await api<{ step: string }>("/api/chat/progress").catch(() => ({ step: "" }));
-      const minutes = Math.round((Date.now() - started) / 60000);
-      if (step) setNotes((n) => [...n, `Still working (${minutes} min). Last step: ${step}.`]);
-    }, 60000);
-    run("Checking projections, rosters and news", async () => {
+      setProgress(`${step ? step[0].toUpperCase() + step.slice(1) : "Working"} · ${elapsed(Date.now() - started)}`);
+    }, 2000);
+    run(ASKING, async () => {
       try {
         const { answer } = await api<{ answer: string }>("/api/chat", { question: q }, controller.signal);
         setMessages((m) => [...m, { role: "agent", content: answer }]);
       } finally {
         clearInterval(timer);
-        setNotes([]);
+        setProgress("");
         request.current = null;
       }
     });
@@ -360,7 +366,7 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
     }
   }
 
-  const thinking = busy.startsWith("Checking");
+  const thinking = busy === ASKING;
 
   return (
     <>
@@ -415,17 +421,8 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
                 <i />
                 <i />
               </span>
-              <span className="hint">{busy}</span>
+              <span className="hint">{progress || "Checking projections, rosters and news"}</span>
             </div>
-          </div>
-        )}
-        {thinking && notes.length > 0 && (
-          <div className="notes">
-            {notes.map((n, i) => (
-              <p key={i} className="hint">
-                {n}
-              </p>
-            ))}
           </div>
         )}
         {busy && !thinking && <p className="hint">{busy}</p>}
@@ -440,6 +437,7 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
         }}
       >
         <textarea
+          ref={input}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={onKey}
