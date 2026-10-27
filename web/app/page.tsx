@@ -98,7 +98,7 @@ export default function Home() {
     body = (
       <LeaguePicker current={status.league?.league_id} onSynced={done} onCancel={status.league ? back : undefined} />
     );
-  else body = <Chat onSynced={setStatus} />;
+  else body = <Chat week={status.week} onSynced={setStatus} />;
 
   return (
     <>
@@ -360,7 +360,7 @@ const elapsed = (ms: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-function Chat({ onSynced }: { onSynced: (s: Status) => void }) {
+function Chat({ week, onSynced }: { week: string | null; onSynced: (s: Status) => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [question, setQuestion] = useState("");
@@ -469,6 +469,7 @@ function Chat({ onSynced }: { onSynced: (s: Status) => void }) {
           <div className="welcome">
             <div className="hero">
               <Football size={56} />
+              {week && <span className="eyebrow">Week {week} game plan</span>}
               <h2>What&apos;s the call this week, coach?</h2>
               <p>Ask about your lineup, waivers, trades, injuries or last week&apos;s results.</p>
             </div>

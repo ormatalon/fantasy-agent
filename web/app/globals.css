@@ -122,6 +122,7 @@ button:hover:not(:disabled) { background: var(--navy); color: #fff; }
 button.primary { background: var(--purple); border-color: var(--purple); color: #fff; }
 button.primary:hover:not(:disabled) { background: #5e2c75; border-color: #5e2c75; }
 button:disabled { opacity: 0.5; cursor: default; }
+button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8; }
 
 .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -180,7 +181,8 @@ button:disabled { opacity: 0.5; cursor: default; }
   border-bottom: 4px solid var(--accent);
 }
 .hero .football { animation: spiral 2.4s ease-in-out infinite; }
-.hero h2 { color: #fff; font-style: italic; font-size: 2.4rem; margin: 10px 0 6px; }
+.eyebrow { display: block; margin-top: 8px; color: var(--accent); font-family: var(--display); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.hero h2 { color: #fff; font-style: italic; font-size: 2.4rem; margin: 2px 0 6px; }
 .hero p { margin: 0; }
 .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
 .chip {
