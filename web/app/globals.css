@@ -12,6 +12,7 @@
   --border: #dde2ea;
   --text: #1c2430;
   --display: var(--font-display), "Arial Narrow", sans-serif;
+  --body: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -20,7 +21,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--body);
   line-height: 1.55;
   min-height: 100vh;
   display: flex;
@@ -98,9 +99,10 @@ header nav { display: flex; align-self: stretch; }
 /* --- Cards and forms --- */
 .card { background: var(--card); border-top: 4px solid var(--navy); border-radius: 2px; padding: 24px; box-shadow: 0 1px 3px rgba(3, 33, 71, 0.12); }
 
-label { display: block; margin-bottom: 18px; font-weight: 600; color: var(--navy); }
-label small { display: block; font-weight: 400; color: var(--gray); }
-input, textarea { width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 2px; font: inherit; background: #fff; }
+/* Field names in condensed caps; help text and what people type stay in the body face. */
+label { display: block; margin-bottom: 20px; color: var(--navy); font-family: var(--display); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.05em; text-transform: uppercase; }
+label small { display: block; margin-top: 1px; color: var(--gray); font-family: var(--body); font-weight: 400; font-size: 0.88rem; letter-spacing: 0; text-transform: none; }
+input, textarea { width: 100%; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 2px; background: #fff; color: var(--text); font-family: var(--body); font-size: 1rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
 input:focus, textarea:focus { outline: 2px solid var(--blue); outline-offset: -1px; border-color: transparent; }
 
 details { margin-bottom: 18px; }
@@ -164,12 +166,12 @@ button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8
 .hint { color: var(--gray); font-size: 0.92rem; }
 
 .leagues { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 8px; }
-.leagues label { display: flex; gap: 10px; align-items: center; color: var(--text); margin: 0; padding: 12px 14px; border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 2px; cursor: pointer; }
+.leagues label { display: flex; gap: 12px; align-items: center; color: var(--navy); font-weight: 800; font-size: 1.3rem; margin: 0; padding: 12px 14px; border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 2px; cursor: pointer; }
 .leagues label.chosen { border-left-color: var(--accent); background: #fbf8ee; }
 .leagues input { width: auto; margin: 0; accent-color: var(--purple); }
 
 .model-picks { display: grid; gap: 6px; margin-top: 8px; }
-.model-pick { text-align: left; padding: 8px 12px; border: 1px solid var(--border); border-left: 4px solid var(--border); font-family: inherit; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.model-pick { text-align: left; padding: 8px 12px; border: 1px solid var(--border); border-left: 4px solid var(--border); font-family: var(--body); font-size: 0.92rem; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .model-pick:hover:not(:disabled) { background: #f6f8fb; color: var(--text); }
 .model-pick b { display: block; font-size: 0.85rem; font-weight: 600; color: var(--navy); }
 .model-pick small { color: var(--gray); }
@@ -210,7 +212,7 @@ button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8
   border-left: 4px solid var(--accent);
   box-shadow: 0 1px 3px rgba(3, 33, 71, 0.12);
   color: var(--text);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--body);
   font-weight: 500;
   font-size: 1rem;
   text-transform: none;
