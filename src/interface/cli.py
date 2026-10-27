@@ -226,15 +226,6 @@ def _live_roster(league_id: str, roster_id: int) -> dict:
         return next(r for r in client.get_rosters(league_id) if r["roster_id"] == roster_id)
 
 
-def _player_meta(conn, player_ids) -> dict[str, dict]:
-    meta = {}
-    for pid in player_ids:
-        p = conn.execute("SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)).fetchone()
-        if p:
-            meta[pid] = {"name": " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid, "position": p["position"]}
-    return meta
-
-
 def _team(conn, pid: str) -> str | None:
     row = conn.execute("SELECT team FROM players WHERE player_id = ?", (pid,)).fetchone()
     return row["team"] if row else None
@@ -267,7 +258,7 @@ def _live_lineup(conn, league_id, roster_id, season, week, current_week, roster_
     live = _live_roster(league_id, roster_id)
     reserve = set(live.get("reserve") or [])
     pool = [pid for pid in live.get("players") or [] if pid not in reserve]  # IR-slotted players can't start
-    meta = _player_meta(conn, pool)
+    meta = storage.player_meta(conn, pool)
     slots = [s for s in roster_positions if s not in NON_STARTING_SLOTS]
     current = [pid or EMPTY_SLOT for pid in (live.get("starters") or [])][: len(slots)]
     current += [EMPTY_SLOT] * (len(slots) - len(current))
@@ -339,13 +330,7 @@ def cmd_lineup(args: argparse.Namespace) -> None:
     table = build_projection_table(conn, season, week, league_id)
     projections = {row.player_id: row for row in table}
 
-    player_meta = {}
-    for pid in roster_player_ids:
-        p = conn.execute("SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)).fetchone()
-        if p:
-            name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
-            player_meta[pid] = {"name": name, "position": p["position"]}
-
+    player_meta = storage.player_meta(conn, roster_player_ids)
     lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta,
                              current_starters=json.loads(roster_row["starters"]))
 

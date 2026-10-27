@@ -205,6 +205,16 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
             return None
         return json.loads(storage.get_roster(ctx.conn, ctx.league_id, roster_id)["players"])
 
+    def fresh_news(pid: str, limit: int) -> list:
+        """A player's news, fetched live when possible, else from the cache."""
+        try:
+            items = fetch_player_news(pid, limit=limit)
+            if items:
+                storage.save_player_news(ctx.conn, items)
+        except Exception:
+            pass
+        return storage.get_player_news(ctx.conn, pid, limit=limit)
+
     @tool
     def get_league_state() -> str:
         """Current season, week, league, my team name, my opponent this week, and
@@ -445,17 +455,9 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         player_ids = [pid for pid in my_roster_ids() if pid not in lineup.ir]
 
         projections = {p.player_id: p for p in ctx.projections(target_week)}
-        player_meta = {}
-        for pid in player_ids:
-            p = ctx.conn.execute(
-                "SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)
-            ).fetchone()
-            if p:
-                name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
-                player_meta[pid] = {"name": name, "position": p["position"]}
-
         current = [pid or sleeper_writes.EMPTY_SLOT for _slot, pid in lineup.starters]
-        slots = optimize_lineup(ctx.roster_positions(), player_ids, projections, player_meta, current_starters=current)
+        slots = optimize_lineup(ctx.roster_positions(), player_ids, projections,
+                                storage.player_meta(ctx.conn, player_ids), current_starters=current)
         started = {s.player_id for s in slots if s.player_id}
         lines = []
         for s in slots:
@@ -542,13 +544,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
 
         chunks = []
         for p in candidates:
-            try:
-                items = fetch_player_news(p.player_id, limit=1)
-                if items:
-                    storage.save_player_news(ctx.conn, items)
-            except Exception:
-                pass  # fall back to whatever is cached
-            news = storage.get_player_news(ctx.conn, p.player_id, limit=1)
+            news = fresh_news(p.player_id, limit=1)
             lines = [f"{p.name} ({p.position}/{p.team or 'FA'}) [{p.injury_status}]: "
                      f"{p.mean:.1f} pts rest-of-season if healthy"]
             if news:
@@ -570,7 +566,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         a trade should be judged on) or 'week' (this week's projection only)."""
         def resolve_all(names: str) -> tuple[list[str], list[str]]:
             ids, problems = [], []
-            for name in [n.strip() for n in names.split(",") if n.strip()]:
+            for name in _names(names):
                 pid, problem = resolve(name)
                 if pid:
                     ids.append(pid)
@@ -619,13 +615,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
             if not pid:
                 sections.append(problem)
                 continue
-            try:
-                items = fetch_player_news(pid, limit=min(limit, 5))
-                if items:
-                    storage.save_player_news(ctx.conn, items)
-            except Exception:
-                pass  # fall through to whatever is cached
-            rows = storage.get_player_news(ctx.conn, pid, limit=min(limit, 5))
+            rows = fresh_news(pid, limit=min(limit, 5))
             status = storage.get_injury_status(ctx.conn, pid)
             label = f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}"
             sections.append(_format_news(rows, f"News for {label}:") if rows else f"No news found for {label}.")

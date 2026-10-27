@@ -84,17 +84,8 @@ def build_digest(
     table = build_projection_table(conn, season, week, league_id)
     projections = {row.player_id: row for row in table}
 
-    player_meta = {}
-    for pid in player_ids:
-        p = conn.execute(
-            "SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)
-        ).fetchone()
-        if p:
-            name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
-            player_meta[pid] = {"name": name, "position": p["position"]}
-
     # --- recommended lineup ---
-    slots = optimize_lineup(roster_positions, player_ids, projections, player_meta,
+    slots = optimize_lineup(roster_positions, player_ids, projections, storage.player_meta(conn, player_ids),
                             current_starters=json.loads(roster_row["starters"]))
     parts.append(_section("Recommended lineup"))
     for slot in slots:

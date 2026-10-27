@@ -366,6 +366,17 @@ def player_name(conn: sqlite3.Connection, player_id: str) -> str:
     return f"{name} ({tag})" if tag else name
 
 
+def player_meta(conn: sqlite3.Connection, player_ids) -> dict[str, dict]:
+    """player_id -> {"name", "position"} for the known players, as
+    optimize_lineup takes them."""
+    meta = {}
+    for pid in player_ids:
+        p = conn.execute("SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)).fetchone()
+        if p:
+            meta[pid] = {"name": " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid, "position": p["position"]}
+    return meta
+
+
 def get_injury_status(conn: sqlite3.Connection, player_id: str | None) -> str | None:
     if not player_id:
         return None
