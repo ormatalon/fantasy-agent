@@ -72,6 +72,11 @@ def cmd_use(args: argparse.Namespace) -> None:
     print(f"Now using: {_league_name(conn, storage.get_state(conn, 'active_league_id'))}")
 
 
+def _date(ms: int | None) -> str:
+    """A Sleeper timestamp (milliseconds) as YYYY-MM-DD."""
+    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d") if ms else "?"
+
+
 def _league_name(conn, league_id: str | None) -> str:
     row = conn.execute("SELECT name FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
     return f"{row['name']} ({league_id})" if row else str(league_id)
@@ -159,7 +164,7 @@ def cmd_transactions(args: argparse.Namespace) -> None:
         return
 
     for t in txns:
-        when = datetime.fromtimestamp(t["created"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d") if t["created"] else "?"
+        when = _date(t["created"])
         adds = json.loads(t["adds"]) or {}
         drops = json.loads(t["drops"]) or {}
         print(f"\n[{when}] {t['type']} ({t['status']})")
@@ -485,11 +490,7 @@ def cmd_news(args: argparse.Namespace) -> None:
         status = storage.get_injury_status(conn, pid)
         print(f"\n{storage.player_name(conn, pid)}{f' [{status}]' if status else ''}")
         for item in items:
-            when = (
-                datetime.fromtimestamp(item["published"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
-                if item["published"] else "?"
-            )
-            print(f"  [{when}] {item['title']}")
+            print(f"  [{_date(item['published'])}] {item['title']}")
             if item["analysis"]:
                 print(f"    {item['analysis']}")
         printed += 1
