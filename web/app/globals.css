@@ -90,6 +90,8 @@ header nav { display: flex; align-self: stretch; }
 }
 .strip b { color: #fff; font-weight: 800; }
 .strip .bar > * + * { margin-left: 12px; padding-left: 12px; border-left: 1px solid rgba(255, 255, 255, 0.2); }
+.strip .bar > .week { padding: 0 8px; border-left: none; background: var(--accent); color: var(--navy); font-weight: 800; }
+.strip .bar > .week + * { border-left: none; padding-left: 0; }
 
 .app { max-width: 860px; margin: 0 auto; padding: 22px 16px; width: 100%; flex: 1; display: flex; flex-direction: column; }
 
@@ -147,7 +149,18 @@ button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8
 .steps .done { color: var(--navy); }
 .steps .done b { background: var(--navy); border-color: var(--navy); color: #fff; }
 
-.error { color: #b42318; background: #fef3f2; border-left: 4px solid #b42318; border-radius: 2px; padding: 8px 12px; margin: 12px 0; }
+/* Errors are penalties: a yellow flag, then what happened and how to fix it. */
+.error { color: var(--text); background: #fff8e1; border-left: 6px solid var(--accent); border-radius: 2px; padding: 10px 14px; margin: 12px 0; box-shadow: 0 1px 3px rgba(3, 33, 71, 0.12); }
+.error::before {
+  content: "Flag on the play";
+  display: block;
+  color: #8a5a00;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .hint { color: var(--gray); font-size: 0.92rem; }
 
 .leagues { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 8px; }

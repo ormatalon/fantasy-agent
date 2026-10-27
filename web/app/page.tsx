@@ -124,7 +124,7 @@ export default function Home() {
             {status?.league ? (
               <>
                 <b>{status.league.name}</b>
-                {status.week && <span>Week {status.week}</span>}
+                {status.week && <span className="week">Week {status.week}</span>}
                 <span title={status.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : undefined}>
                   Synced {status.last_synced_at ? ago(status.last_synced_at) : "never"}
                 </span>
