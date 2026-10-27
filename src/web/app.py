@@ -78,6 +78,7 @@ def status() -> dict:
             "has_sleeper_token": bool(config.SLEEPER_TOKEN),
             "league": {"league_id": league_id, "name": league["name"]} if league else None,
             "last_synced_at": storage.get_state(conn, "last_synced_at"),
+            "week": storage.get_state(conn, "current_week"),
         }
 
 

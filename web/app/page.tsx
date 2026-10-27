@@ -12,6 +12,7 @@ type Status = {
   has_sleeper_token: boolean;
   league: { league_id: string; name: string } | null;
   last_synced_at: string | null;
+  week: string | null;
 };
 type League = { league_id: string; name: string };
 type Message = { role: "user" | "agent"; content: string };
@@ -95,30 +96,41 @@ export default function Home() {
     body = <Setup status={status} onSaved={done} onCancel={status.configured ? back : undefined} />;
   else if (view === "league" || !status.league)
     body = <LeaguePicker onSynced={done} onCancel={status.league ? back : undefined} />;
-  else body = <Chat username={status.sleeper_username} onSynced={setStatus} />;
+  else body = <Chat onSynced={setStatus} />;
 
   return (
     <>
       <header>
         <div className="bar">
-          <Football size={38} />
-          <div className="title">
-            <h1>Fantasy Agent</h1>
-            <span
-              className="meta"
-              title={status?.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : undefined}
-            >
-              {status?.league
-                ? `${status.league.name} · synced ${status.last_synced_at ? ago(status.last_synced_at) : "never"}`
-                : "Your Sleeper fantasy football assistant"}
-            </span>
-          </div>
+          <Football size={34} />
+          <h1>Fantasy Agent</h1>
           {status?.configured && (
             <nav>
-              {status.league && <button className="ghost" onClick={() => setView("league")}>Change league</button>}
-              <button className="ghost" onClick={() => setView("settings")}>Settings</button>
+              {status.league && (
+                <button className={`navlink${view === "league" ? " active" : ""}`} onClick={() => setView("league")}>
+                  League
+                </button>
+              )}
+              <button className={`navlink${view === "settings" ? " active" : ""}`} onClick={() => setView("settings")}>
+                Settings
+              </button>
             </nav>
           )}
+        </div>
+        <div className="strip">
+          <div className="bar">
+            {status?.league ? (
+              <>
+                <b>{status.league.name}</b>
+                {status.week && <span>Week {status.week}</span>}
+                <span title={status.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : undefined}>
+                  Synced {status.last_synced_at ? ago(status.last_synced_at) : "never"}
+                </span>
+              </>
+            ) : (
+              <span>Your Sleeper fantasy football assistant</span>
+            )}
+          </div>
         </div>
       </header>
       <main className="app">
@@ -306,14 +318,13 @@ function LeaguePicker({ onSynced, onCancel }: { onSynced: (s: Status) => void; o
   );
 }
 
-function Avatar({ role, username }: { role: Message["role"]; username: string }) {
-  if (role === "agent")
-    return (
-      <span className="avatar agent">
-        <Football size={22} />
-      </span>
-    );
-  return <span className="avatar user">{(username[0] || "?").toUpperCase()}</span>;
+function Byline() {
+  return (
+    <span className="byline">
+      <Football size={16} />
+      Fantasy Agent
+    </span>
+  );
 }
 
 const ASKING = "asking";
@@ -323,7 +334,7 @@ const elapsed = (ms: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) => void }) {
+function Chat({ onSynced }: { onSynced: (s: Status) => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [question, setQuestion] = useState("");
@@ -411,7 +422,6 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
     <>
       <nav className="actions">
         <button
-          className="ghost dark"
           disabled={!!busy}
           onClick={() => run("Starting a new chat...", async () => {
             await api("/api/chat/new", {});
@@ -421,7 +431,6 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
           New chat
         </button>
         <button
-          className="ghost dark"
           disabled={!!busy}
           onClick={() => run("Syncing from Sleeper...", async () => onSynced(await api<Status>("/api/sync", {})))}
         >
@@ -432,11 +441,11 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
         {!loaded && <p className="hint">Loading your conversation...</p>}
         {loaded && !messages.length && !busy && (
           <div className="welcome">
-            <div className="badge">
-              <Football size={72} />
+            <div className="hero">
+              <Football size={56} />
+              <h2>What&apos;s the call this week, coach?</h2>
+              <p>Ask about your lineup, waivers, trades, injuries or last week&apos;s results.</p>
             </div>
-            <h2>What&apos;s the call this week, coach?</h2>
-            <p className="hint">Ask about your lineup, waivers, trades, injuries or last week&apos;s results.</p>
             <div className="chips">
               {STARTERS.map((s) => (
                 <button key={s.label} className="chip" onClick={() => send(s.question)}>
@@ -449,15 +458,18 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
         )}
         {messages.map((m, i) => (
           <div key={i} className={`row ${m.role}`}>
-            <Avatar role={m.role} username={username} />
-            <div className={`msg ${m.role}`}>
-              {m.role === "agent" ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownLinks}>{m.content}</ReactMarkdown> : m.content}
-            </div>
+            {m.role === "agent" ? (
+              <article className="msg agent">
+                <Byline />
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownLinks}>{m.content}</ReactMarkdown>
+              </article>
+            ) : (
+              <div className="msg user">{m.content}</div>
+            )}
           </div>
         ))}
         {thinking && (
           <div className="row agent">
-            <Avatar role="agent" username={username} />
             <div className="msg agent typing">
               <span className="dots" aria-hidden="true">
                 <i />
