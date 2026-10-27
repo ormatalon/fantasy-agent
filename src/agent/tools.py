@@ -11,6 +11,7 @@ regression guard, not something to invoke mid-conversation.
 import json
 import sqlite3
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 from langchain_core.tools import BaseTool, tool
 
@@ -440,8 +441,11 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
     def recommend_lineup(week: int = 0) -> str:
         """The optimal start/sit for my roster, solved against my league's roster
         slots from projections (which already discount injured players). Returns
-        each starting slot, who fills it, and why, plus injured bench players who
-        could move to IR. This is what the lineup SHOULD be; for the lineup
+        each starting slot with its player's NFL team, projection and std dev;
+        for a slot that should change, the player it replaces with the same
+        facts; the latest news on the players in changed slots; and injured
+        bench players who could move to IR. These are the facts to explain a
+        start/sit with. This is what the lineup SHOULD be; for the lineup
         currently set in Sleeper use get_my_roster. Players in IR slots are not
         considered. Defaults to the current week."""
         target_week = week or ctx.current_week
@@ -455,12 +459,39 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         current = [pid or sleeper_writes.EMPTY_SLOT for _slot, pid in lineup.starters]
         slots = optimize_lineup(ctx.roster_positions(), player_ids, projections,
                                 storage.player_meta(ctx.conn, player_ids), current_starters=current)
-        started = {s.player_id for s in slots if s.player_id}
-        lines = []
-        for s in slots:
-            status = storage.get_injury_status(ctx.conn, s.player_id) if s.player_id else None
-            lines.append(f"{s.slot}: {s.name}{_status_tag(status)} ({s.mean:.1f} pts) - {s.why}")
+        started = {s.player_id: s.slot for s in slots if s.player_id}
+
+        def facts(pid: str) -> str:
+            p = projections.get(pid)
+            if not p:
+                status = storage.get_injury_status(ctx.conn, pid)
+                return f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}: no projection"
+            text = f"{_fmt_player(p)}, std {p.variance ** 0.5:.1f}"
+            if p.injury_multiplier != 1.0:
+                text += f", injury adjustment x{p.injury_multiplier:.2f}"
+            if p.matchup_multiplier != 1.0:
+                text += f", matchup adjustment x{p.matchup_multiplier:.2f}"
+            return text
+
+        lines, changed = [], []
+        for s, (_slot, was) in zip(slots, lineup.starters):
+            text = facts(s.player_id) if s.player_id else "(empty)"
+            if s.player_id != was:
+                text += f" - CHANGE, in for {facts(was) if was else 'an empty slot'}"
+                if was in started:
+                    text += f" (who moves to {started[was]})"
+                changed += [pid for pid in (s.player_id, was) if pid]
+            lines.append(f"{s.slot}: {text}")
         lines.append(f"Total projected: {sum(s.mean for s in slots):.1f}")
+        news = []
+        for pid in dict.fromkeys(changed):
+            for row in storage.get_player_news(ctx.conn, pid, limit=1):
+                when = f" ({datetime.fromtimestamp(row['published'] / 1000, tz=timezone.utc):%Y-%m-%d})" if row["published"] else ""
+                # Capped: some analyses run to a page, and small models lose the thread.
+                analysis = f" {row['analysis'][:300]}{'...' if len(row['analysis']) > 300 else ''}" if row["analysis"] else ""
+                news.append(f"  {storage.player_name(ctx.conn, pid)}{when}: {row['title']}.{analysis}")
+        if news:
+            lines += ["Latest news on the players in changed slots:", *news]
         lines.append("To enact: `lineup --live` shows the changes vs Sleeper, `lineup --apply` sets them "
                      "(the user confirms; players whose game started stay locked).")
         for pid in player_ids:
