@@ -126,6 +126,7 @@ button:hover:not(:disabled) { background: var(--navy); color: #fff; }
 button.primary { background: var(--purple); border-color: var(--purple); color: #fff; }
 button.primary:hover:not(:disabled) { background: #5e2c75; border-color: #5e2c75; }
 button:disabled { opacity: 0.5; cursor: default; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8; }
 
 .buttons { display: flex; gap: 8px; flex-wrap: wrap; }

@@ -451,7 +451,7 @@ function Chat({ week, onSynced }: { week: string | null; onSynced: (s: Status) =
         <h2>Game plan</h2>
         <button
           disabled={!!busy}
-          onClick={() => run("Starting a new chat...", async () => {
+          onClick={() => run("Starting a new chat", async () => {
             await api("/api/chat/new", {});
             setMessages([]);
           })}
@@ -460,7 +460,7 @@ function Chat({ week, onSynced }: { week: string | null; onSynced: (s: Status) =
         </button>
         <button
           disabled={!!busy}
-          onClick={() => run("Syncing from Sleeper...", async () => onSynced(await api<Status>("/api/sync", {})))}
+          onClick={() => run("Syncing from Sleeper", async () => onSynced(await api<Status>("/api/sync", {})))}
         >
           Sync now
         </button>
@@ -497,15 +497,14 @@ function Chat({ week, onSynced }: { week: string | null; onSynced: (s: Status) =
             )}
           </div>
         ))}
-        {thinking && (
+        {busy && (
           <div className="row agent">
             <div className="msg agent typing">
               <span className="clock">On the clock</span>
-              <span>{progress || "Checking projections, rosters and news"}</span>
+              <span>{thinking ? progress || "Checking projections, rosters and news" : busy}</span>
             </div>
           </div>
         )}
-        {busy && !thinking && <p className="hint">{busy}</p>}
         {error && <p className="error">{error}</p>}
         <div ref={end} />
       </div>
