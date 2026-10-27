@@ -358,6 +358,10 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
       try {
         const { answer } = await api<{ answer: string }>("/api/chat", { question: q }, controller.signal);
         setMessages((m) => [...m, { role: "agent", content: answer }]);
+      } catch (e) {
+        // Back in the box, so a failed question is one click from a retry.
+        if (!controller.signal.aborted) setQuestion(q);
+        throw e;
       } finally {
         clearInterval(timer);
         setProgress("");
@@ -453,6 +457,7 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
       >
         <textarea
           ref={input}
+          aria-label="Your question"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={onKey}
