@@ -182,104 +182,68 @@ def remove_preference(conn: sqlite3.Connection, number: int) -> str | None:
 
 # --- writes ---
 
-def save_league(conn: sqlite3.Connection, league: dict) -> None:
-    conn.execute(
-        "INSERT INTO leagues (league_id, season, name, scoring_settings, roster_positions, synced_at) "
-        "VALUES (?, ?, ?, ?, ?, ?) "
-        "ON CONFLICT(league_id) DO UPDATE SET season=excluded.season, name=excluded.name, "
-        "scoring_settings=excluded.scoring_settings, roster_positions=excluded.roster_positions, "
-        "synced_at=excluded.synced_at",
-        (
-            league["league_id"],
-            league.get("season"),
-            league.get("name"),
-            json.dumps(league.get("scoring_settings", {})),
-            json.dumps(league.get("roster_positions", [])),
-            now_iso(),
-        ),
+def _upsert(conn: sqlite3.Connection, table: str, key: tuple[str, ...], rows: list[dict],
+            update: list[str] | None = None) -> None:
+    """Insert `rows` (dicts with the same keys, in column order). A row whose
+    `key` exists overwrites the `update` columns (default: all but the key)."""
+    if not rows:
+        return
+    cols = list(rows[0])
+    update = update or [c for c in cols if c not in key]
+    conn.executemany(
+        f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))}) "
+        f"ON CONFLICT({', '.join(key)}) DO UPDATE SET {', '.join(f'{c}=excluded.{c}' for c in update)}",
+        [tuple(r.values()) for r in rows],
     )
     conn.commit()
+
+
+def save_league(conn: sqlite3.Connection, league: dict) -> None:
+    _upsert(conn, "leagues", ("league_id",), [{
+        "league_id": league["league_id"],
+        "season": league.get("season"),
+        "name": league.get("name"),
+        "scoring_settings": json.dumps(league.get("scoring_settings", {})),
+        "roster_positions": json.dumps(league.get("roster_positions", [])),
+        "synced_at": now_iso(),
+    }])
 
 
 def save_league_users(conn: sqlite3.Connection, league_id: str, users: list[dict]) -> None:
     ts = now_iso()
-    rows = [
-        (
-            league_id,
-            u["user_id"],
-            u.get("display_name"),
-            (u.get("metadata") or {}).get("team_name") or u.get("display_name"),
-            ts,
-        )
-        for u in users
-    ]
-    conn.executemany(
-        "INSERT INTO league_users (league_id, user_id, display_name, team_name, synced_at) "
-        "VALUES (?, ?, ?, ?, ?) "
-        "ON CONFLICT(league_id, user_id) DO UPDATE SET display_name=excluded.display_name, "
-        "team_name=excluded.team_name, synced_at=excluded.synced_at",
-        rows,
-    )
-    conn.commit()
+    _upsert(conn, "league_users", ("league_id", "user_id"), [{
+        "league_id": league_id,
+        "user_id": u["user_id"],
+        "display_name": u.get("display_name"),
+        "team_name": (u.get("metadata") or {}).get("team_name") or u.get("display_name"),
+        "synced_at": ts,
+    } for u in users])
 
 
 def save_rosters(conn: sqlite3.Connection, league_id: str, rosters: list[dict]) -> None:
     ts = now_iso()
-    rows = [
-        (
-            league_id,
-            r["roster_id"],
-            r.get("owner_id"),
-            json.dumps(r.get("players") or []),
-            json.dumps(r.get("starters") or []),
-            # Players in IR slots. Sleeper also lists them in `players`.
-            json.dumps(r.get("reserve") or []),
-            ts,
-        )
-        for r in rosters
-    ]
-    conn.executemany(
-        "INSERT INTO rosters (league_id, roster_id, owner_id, players, starters, reserve, synced_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?) "
-        "ON CONFLICT(league_id, roster_id) DO UPDATE SET owner_id=excluded.owner_id, "
-        "players=excluded.players, starters=excluded.starters, reserve=excluded.reserve, "
-        "synced_at=excluded.synced_at",
-        rows,
-    )
-    conn.commit()
+    _upsert(conn, "rosters", ("league_id", "roster_id"), [{
+        "league_id": league_id,
+        "roster_id": r["roster_id"],
+        "owner_id": r.get("owner_id"),
+        "players": json.dumps(r.get("players") or []),
+        "starters": json.dumps(r.get("starters") or []),
+        # Players in IR slots. Sleeper also lists them in `players`.
+        "reserve": json.dumps(r.get("reserve") or []),
+        "synced_at": ts,
+    } for r in rosters])
+
+
+PLAYER_FIELDS = ("first_name", "last_name", "position", "team", "status", "injury_status",
+                 "depth_chart_position", "depth_chart_order", "gsis_id")
 
 
 def save_players(conn: sqlite3.Connection, players: dict) -> None:
     ts = now_iso()
-    rows = [
-        (
-            pid,
-            p.get("first_name"),
-            p.get("last_name"),
-            p.get("position"),
-            p.get("team"),
-            p.get("status"),
-            p.get("injury_status"),
-            p.get("depth_chart_position"),
-            p.get("depth_chart_order"),
-            p.get("gsis_id"),
-            ts,
-        )
+    _upsert(conn, "players", ("player_id",), [
+        {"player_id": pid, **{f: p.get(f) for f in PLAYER_FIELDS}, "synced_at": ts}
         for pid, p in players.items()
-    ]
-    conn.executemany(
-        "INSERT INTO players (player_id, first_name, last_name, position, team, status, "
-        "injury_status, depth_chart_position, depth_chart_order, gsis_id, synced_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-        "ON CONFLICT(player_id) DO UPDATE SET first_name=excluded.first_name, "
-        "last_name=excluded.last_name, position=excluded.position, team=excluded.team, "
-        "status=excluded.status, injury_status=excluded.injury_status, "
-        "depth_chart_position=excluded.depth_chart_position, "
-        "depth_chart_order=excluded.depth_chart_order, gsis_id=excluded.gsis_id, "
-        "synced_at=excluded.synced_at",
-        rows,
-    )
-    conn.commit()
+    ])
 
 
 def players_on_nfl_team(conn: sqlite3.Connection, team: str, positions: list[str]) -> list[sqlite3.Row]:
@@ -300,56 +264,33 @@ def players_last_synced(conn: sqlite3.Connection) -> str | None:
 
 def save_matchups(conn: sqlite3.Connection, league_id: str, week: int, matchups: list[dict]) -> None:
     ts = now_iso()
-    rows = [
-        (
-            league_id,
-            week,
-            m["roster_id"],
-            m.get("matchup_id"),
-            m.get("points"),
-            json.dumps(m.get("starters") or []),
-            json.dumps(m.get("players") or []),
-            json.dumps(m.get("players_points") or {}),
-            ts,
-        )
-        for m in matchups
-    ]
-    conn.executemany(
-        "INSERT INTO matchups (league_id, week, roster_id, matchup_id, points, starters, players, "
-        "players_points, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
-        "ON CONFLICT(league_id, week, roster_id) DO UPDATE SET matchup_id=excluded.matchup_id, "
-        "points=excluded.points, starters=excluded.starters, players=excluded.players, "
-        "players_points=excluded.players_points, synced_at=excluded.synced_at",
-        rows,
-    )
-    conn.commit()
+    _upsert(conn, "matchups", ("league_id", "week", "roster_id"), [{
+        "league_id": league_id,
+        "week": week,
+        "roster_id": m["roster_id"],
+        "matchup_id": m.get("matchup_id"),
+        "points": m.get("points"),
+        "starters": json.dumps(m.get("starters") or []),
+        "players": json.dumps(m.get("players") or []),
+        "players_points": json.dumps(m.get("players_points") or {}),
+        "synced_at": ts,
+    } for m in matchups])
 
 
 def save_transactions(conn: sqlite3.Connection, league_id: str, week: int, transactions: list[dict]) -> None:
     ts = now_iso()
-    rows = [
-        (
-            t["transaction_id"],
-            league_id,
-            week,
-            t.get("type"),
-            t.get("status"),
-            json.dumps(t.get("adds") or {}),
-            json.dumps(t.get("drops") or {}),
-            json.dumps(t.get("roster_ids") or []),
-            t.get("created"),
-            ts,
-        )
-        for t in transactions
-    ]
-    conn.executemany(
-        "INSERT INTO transactions (transaction_id, league_id, week, type, status, adds, drops, "
-        "roster_ids, created, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-        "ON CONFLICT(transaction_id) DO UPDATE SET status=excluded.status, adds=excluded.adds, "
-        "drops=excluded.drops, roster_ids=excluded.roster_ids, synced_at=excluded.synced_at",
-        rows,
-    )
-    conn.commit()
+    _upsert(conn, "transactions", ("transaction_id",), [{
+        "transaction_id": t["transaction_id"],
+        "league_id": league_id,
+        "week": week,
+        "type": t.get("type"),
+        "status": t.get("status"),
+        "adds": json.dumps(t.get("adds") or {}),
+        "drops": json.dumps(t.get("drops") or {}),
+        "roster_ids": json.dumps(t.get("roster_ids") or []),
+        "created": t.get("created"),
+        "synced_at": ts,
+    } for t in transactions], update=["status", "adds", "drops", "roster_ids", "synced_at"])
 
 
 # --- reads ---
@@ -387,18 +328,17 @@ def get_injury_status(conn: sqlite3.Connection, player_id: str | None) -> str | 
 def save_player_news(conn: sqlite3.Connection, items) -> None:
     """`items` are ingestion.news.NewsItem records."""
     ts = now_iso()
-    rows = [
-        (i.news_id, i.player_id, i.published, i.source, i.title, i.description, i.analysis, i.url, ts)
-        for i in items
-    ]
-    conn.executemany(
-        "INSERT INTO player_news (news_id, player_id, published, source, title, description, "
-        "analysis, url, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
-        "ON CONFLICT(news_id) DO UPDATE SET title=excluded.title, description=excluded.description, "
-        "analysis=excluded.analysis, url=excluded.url, synced_at=excluded.synced_at",
-        rows,
-    )
-    conn.commit()
+    _upsert(conn, "player_news", ("news_id",), [{
+        "news_id": i.news_id,
+        "player_id": i.player_id,
+        "published": i.published,
+        "source": i.source,
+        "title": i.title,
+        "description": i.description,
+        "analysis": i.analysis,
+        "url": i.url,
+        "synced_at": ts,
+    } for i in items], update=["title", "description", "analysis", "url", "synced_at"])
 
 
 def get_player_news(conn: sqlite3.Connection, player_id: str, limit: int = 3) -> list[sqlite3.Row]:
@@ -488,13 +428,12 @@ def get_roster_id_for_user(conn: sqlite3.Connection, league_id: str, user_id: st
 def find_roster_by_fantasy_team(conn: sqlite3.Connection, league_id: str, query: str) -> sqlite3.Row | None:
     """Fuzzy-match a team/display name to a roster (case-insensitive substring)."""
     like = f"%{query.lower()}%"
-    row = conn.execute(
+    return conn.execute(
         "SELECT r.* FROM rosters r JOIN league_users u "
         "ON r.league_id = u.league_id AND r.owner_id = u.user_id "
         "WHERE r.league_id = ? AND (LOWER(u.team_name) LIKE ? OR LOWER(u.display_name) LIKE ?)",
         (league_id, like, like),
     ).fetchone()
-    return row
 
 
 def fantasy_team_label(conn: sqlite3.Connection, league_id: str, owner_id: str) -> str:
