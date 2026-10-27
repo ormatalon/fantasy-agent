@@ -176,6 +176,7 @@ button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8
 .model-pick:hover:not(:disabled) { background: #f6f8fb; color: var(--text); }
 .model-pick b { display: block; font-size: 0.85rem; font-weight: 600; color: var(--navy); }
 .model-pick small { color: var(--gray); }
+.tag { margin-left: 8px; padding: 0 6px; background: var(--accent); color: var(--navy); font-family: var(--display); font-style: normal; font-weight: 800; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: 1px; }
 .model-pick.chosen { border-left-color: var(--accent); background: #fbf8ee; }
 
 /* --- Chat --- */

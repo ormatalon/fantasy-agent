@@ -27,7 +27,7 @@ const STARTERS = [
 // Free OpenRouter models checked to call tools correctly, best first. Notes
 // from use in this app and OpenRouter's uptime data (2026-10-21).
 const MODELS = [
-  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", note: "Recommended. The largest; best at questions that need several steps." },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", note: "The largest; best at questions that need several steps." },
   { id: "nvidia/nemotron-3-super-120b-a12b:free", note: "The original default: smaller and quick, but often down lately." },
   { id: "nvidia/nemotron-3.5-super-vl:free", note: "Smaller than Ultra, so usually quicker. Less tested here." },
   { id: "minimax/minimax-m3.1-flash:free", note: "Not run by Nvidia, so it works when they are down. Tends to wander on big questions." },
@@ -228,14 +228,17 @@ function Setup({ status, onSaved, onCancel }: { status: Status; onSaved: (s: Sta
           </small>
           <input value={model} onChange={(e) => setModel(e.target.value)} />
           <span className="model-picks">
-            {MODELS.map((m) => (
+            {MODELS.map((m, i) => (
               <button
                 type="button"
                 key={m.id}
                 className={`model-pick${model === m.id ? " chosen" : ""}`}
                 onClick={() => setModel(m.id)}
               >
-                <b>{m.id}</b>
+                <b>
+                  {m.id}
+                  {i === 0 && <em className="tag">Recommended</em>}
+                </b>
                 <small>{m.note}</small>
               </button>
             ))}
