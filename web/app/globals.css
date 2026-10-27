@@ -125,6 +125,27 @@ button:disabled { opacity: 0.5; cursor: default; }
 
 .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
+.steps { list-style: none; display: flex; margin: -24px -24px 22px; padding: 0; border-bottom: 1px solid var(--border); }
+.steps li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  color: var(--gray);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.steps li + li { border-left: 1px solid var(--border); }
+.steps b { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 2px solid currentColor; font-size: 0.9rem; }
+.steps .now { color: var(--navy); box-shadow: inset 0 -3px 0 var(--accent); }
+.steps .now b { background: var(--accent); border-color: var(--accent); color: var(--navy); }
+.steps .done { color: var(--navy); }
+.steps .done b { background: var(--navy); border-color: var(--navy); color: #fff; }
+
 .error { color: #b42318; background: #fef3f2; border-left: 4px solid #b42318; border-radius: 2px; padding: 8px 12px; margin: 12px 0; }
 .hint { color: var(--gray); font-size: 0.92rem; }
 
@@ -286,6 +307,7 @@ footer { color: var(--gray); font-size: 0.82rem; margin-top: 18px; text-align: c
   .msg.agent { padding: 12px 14px; }
   .hero h2 { font-size: 1.9rem; }
   .chips { grid-template-columns: 1fr; }
+  .steps li { padding: 12px 14px; gap: 8px; font-size: 0.9rem; white-space: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {

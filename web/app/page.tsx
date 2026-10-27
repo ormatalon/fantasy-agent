@@ -175,6 +175,7 @@ function Setup({ status, onSaved, onCancel }: { status: Status; onSaved: (s: Sta
 
   return (
     <form className="card" onSubmit={save}>
+      {!status.configured && <Steps at={1} />}
       <h2>{status.configured ? "Settings" : "Welcome, coach"}</h2>
       {!status.configured && <p className="hint">Two things and you are ready for kickoff.</p>}
       <label>
@@ -255,6 +256,20 @@ function Setup({ status, onSaved, onCancel }: { status: Status; onSaved: (s: Sta
   );
 }
 
+// First-run progress: accounts, then a league.
+function Steps({ at }: { at: 1 | 2 }) {
+  return (
+    <ol className="steps">
+      {["Your accounts", "Pick a league"].map((label, i) => (
+        <li key={label} className={i + 1 < at ? "done" : i + 1 === at ? "now" : ""}>
+          <b>{i + 1 < at ? "✓" : i + 1}</b>
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function LeaguePicker({
   current,
   onSynced,
@@ -293,6 +308,7 @@ function LeaguePicker({
 
   return (
     <form className="card" onSubmit={sync}>
+      {!current && <Steps at={2} />}
       <h2>Pick your league</h2>
       {!leagues && !error && <p className="hint">Looking up your leagues...</p>}
       {leagues && !leagues.length && <p className="hint">No leagues found for this season.</p>}
