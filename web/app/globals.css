@@ -274,6 +274,10 @@ button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8
 .msg.agent th, .msg.agent td { padding: 7px 14px; text-align: left; }
 .msg.agent tbody tr:nth-child(even) td { background: #f3f5f9; }
 .msg.agent td { border-bottom: 1px solid var(--border); }
+.msg.agent td:first-child { font-weight: 600; color: var(--navy); }
+.msg.agent tbody tr:hover td { background: #fbf6e4; }
+.msg.agent blockquote { margin: 12px 0; padding: 4px 14px; border-left: 4px solid var(--blue); color: #3d4a5c; background: #f3f7fb; }
+.msg.agent code { padding: 1px 5px; background: #eef1f5; border-radius: 2px; font-size: 0.88em; }
 
 /* While a question runs: a broadcast-style ticker. */
 .msg.agent.typing {
