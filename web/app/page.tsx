@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentProps, FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { ComponentProps, FormEvent, KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import ReactMarkdown, { type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -59,17 +59,60 @@ const markdownLinks = {
   a: ({ node: _node, ...props }: ComponentProps<"a"> & ExtraProps) => <a {...props} target="_blank" rel="noreferrer" />,
 };
 
+// A ball with pointed tips, shaded leather, end stripes and a lace row.
 function Football({ size = 32 }: { size?: number }) {
+  const leather = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="football">
-      <ellipse cx="32" cy="32" rx="27" ry="17" transform="rotate(-35 32 32)" fill="var(--leather)" />
-      <path d="M14 45 Q32 32 50 19" stroke="#fff" strokeWidth="2.5" fill="none" opacity="0.35" />
-      <g stroke="#fff" strokeWidth="3" strokeLinecap="round" transform="rotate(-35 32 32)">
-        <line x1="22" y1="32" x2="42" y2="32" />
-        <line x1="25" y1="28" x2="25" y2="36" />
-        <line x1="30" y1="28" x2="30" y2="36" />
-        <line x1="35" y1="28" x2="35" y2="36" />
-        <line x1="40" y1="28" x2="40" y2="36" />
+      <defs>
+        <radialGradient id={leather} cx="42%" cy="34%" r="72%">
+          <stop offset="0" stopColor="#b8692f" />
+          <stop offset="0.55" stopColor="#874621" />
+          <stop offset="1" stopColor="#4a230d" />
+        </radialGradient>
+      </defs>
+      <g transform="rotate(-35 32 32)">
+        <path d="M3 32 C12 13 52 13 61 32 C52 51 12 51 3 32 Z" fill={`url(#${leather})`} />
+        <path d="M3 32 Q32 27 61 32 M3 32 Q32 37 61 32" stroke="#3a1a08" strokeWidth="0.8" fill="none" opacity="0.5" />
+        <path d="M15 21.8 Q12.5 32 15 42.2 M49 21.8 Q51.5 32 49 42.2" stroke="#f3ede2" strokeWidth="2.4" fill="none" />
+        <g stroke="#f3ede2" strokeWidth="1.8" strokeLinecap="round">
+          <line x1="21" y1="32" x2="43" y2="32" />
+          {[23, 26.5, 30, 33.5, 37, 40.5].map((x) => (
+            <line key={x} x1={x} y1="29" x2={x} y2="35" />
+          ))}
+        </g>
+        <path d="M9 28 C18 19 44 18 54 26" stroke="#fff" strokeWidth="1.6" fill="none" opacity="0.16" />
+      </g>
+    </svg>
+  );
+}
+
+// A slice of field drawn to scale (10 units per yard): mowing stripes every
+// 5 yards, yard lines, hash marks and the numbers on both sides.
+function Field() {
+  const yards = Array.from({ length: 101 }, (_, i) => i * 10);
+  const numbers = [10, 20, 30, 40, 50, 40, 30, 20, 10];
+  return (
+    <svg className="field" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      {Array.from({ length: 20 }, (_, i) => (
+        <rect key={i} x={i * 50} width="50" height="260" fill={i % 2 ? "#2c7a31" : "#338a39"} />
+      ))}
+      <g stroke="#fff" strokeOpacity="0.8">
+        {yards.map((x, i) =>
+          i % 5 === 0 ? (
+            <line key={x} x1={x} x2={x} y1="0" y2="260" strokeWidth="3" />
+          ) : (
+            <path key={x} d={`M${x} 0v8M${x} 92v12M${x} 156v12M${x} 252v8`} strokeWidth="2" />
+          ),
+        )}
+      </g>
+      <g fill="#fff" fillOpacity="0.6" fontSize="40" fontWeight="800" textAnchor="middle" style={{ fontFamily: "var(--display)" }}>
+        {numbers.map((n, i) => (
+          <g key={i}>
+            <text x={100 + i * 100} y="236">{n}</text>
+            <text x={100 + i * 100} y="236" transform={`rotate(180 ${100 + i * 100} 130)`}>{n}</text>
+          </g>
+        ))}
       </g>
     </svg>
   );
@@ -485,7 +528,8 @@ function Chat({ onSynced }: { onSynced: (s: Status) => void }) {
         {loaded && !messages.length && !busy && (
           <div className="welcome">
             <div className="hero">
-              <Football size={56} />
+              <Field />
+              <Football size={64} />
               <h2>What&apos;s the call this week, coach?</h2>
               <p>Ask about your lineup, waivers, trades, injuries or last week&apos;s results.</p>
             </div>
