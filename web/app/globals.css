@@ -198,9 +198,8 @@ button.primary:disabled { opacity: 1; background: #c5ccd8; border-color: #c5ccd8
     linear-gradient(160deg, var(--navy-light), var(--navy) 60%, var(--navy-deep));
   border-bottom: 4px solid var(--accent);
 }
-.hero .football { animation: spiral 2.4s ease-in-out infinite; }
-.eyebrow { display: block; margin-top: 8px; color: var(--accent); font-family: var(--display); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.14em; text-transform: uppercase; }
-.hero h2 { color: #fff; font-style: italic; font-size: 2.4rem; margin: 2px 0 6px; }
+.hero .football { display: block; margin: 0 auto; animation: spiral 2.4s ease-in-out infinite; }
+.hero h2 { color: #fff; font-style: italic; font-size: 2.4rem; margin: 8px 0 6px; }
 .hero p { margin: 0; }
 .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
 .chip {
@@ -331,6 +330,7 @@ footer .bar { justify-content: center; gap: 10px; padding-top: 14px; padding-bot
   .app { padding-top: 14px; }
   .msg.user { max-width: 92%; }
   .msg.agent { padding: 12px 14px; }
+  .hero { padding: 22px 16px 20px; }
   .hero h2 { font-size: 1.9rem; }
   .chips { grid-template-columns: 1fr; }
   .steps li { padding: 12px 14px; gap: 8px; font-size: 0.9rem; white-space: nowrap; }
