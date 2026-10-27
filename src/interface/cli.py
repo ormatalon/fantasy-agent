@@ -100,6 +100,14 @@ def _require_synced_state(conn) -> tuple[str, str, int]:
     return league_id, user_id, int(week)
 
 
+def _my_roster_id(conn, league_id: str, user_id: str) -> int:
+    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
+    if roster_id is None:
+        print("Could not find your roster in this league.", file=sys.stderr)
+        sys.exit(1)
+    return roster_id
+
+
 def _print_roster(conn, league_id: str, roster_row, week: int) -> None:
     owner_label = storage.fantasy_team_label(conn, league_id, roster_row["owner_id"])
     print(f"\n{owner_label}")
@@ -136,11 +144,7 @@ def cmd_roster(args: argparse.Namespace) -> None:
             print(f"No fantasy team matching '{args.fantasy_team}' found.", file=sys.stderr)
             sys.exit(1)
     else:
-        roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-        if roster_id is None:
-            print("Could not find your roster in this league.", file=sys.stderr)
-            sys.exit(1)
-        roster_row = storage.get_roster(conn, league_id, roster_id)
+        roster_row = storage.get_roster(conn, league_id, _my_roster_id(conn, league_id, user_id))
 
     _print_roster(conn, league_id, roster_row, week)
 
@@ -325,10 +329,7 @@ def cmd_lineup(args: argparse.Namespace) -> None:
     season = storage.get_state(conn, "active_season")
     week = args.week or current_week
 
-    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-    if roster_id is None:
-        print("Could not find your roster in this league.", file=sys.stderr)
-        sys.exit(1)
+    roster_id = _my_roster_id(conn, league_id, user_id)
     roster_row = storage.get_roster(conn, league_id, roster_id)
     roster_player_ids = json.loads(roster_row["players"])
 
@@ -491,11 +492,7 @@ def cmd_news(args: argparse.Namespace) -> None:
         except Exception as e:
             print(f"Live news fetch failed ({e}); showing cached.", file=sys.stderr)
     else:
-        roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-        row = storage.get_roster(conn, league_id, roster_id) if roster_id is not None else None
-        if not row:
-            print("Could not find your roster in this league.", file=sys.stderr)
-            sys.exit(1)
+        row = storage.get_roster(conn, league_id, _my_roster_id(conn, league_id, user_id))
         player_ids = json.loads(row["players"])
 
     printed = 0
@@ -547,10 +544,7 @@ def cmd_results(args: argparse.Namespace) -> None:
     league_id, user_id, current_week = _require_synced_state(conn)
     week = args.week or last_completed_week(current_week)
 
-    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-    if roster_id is None:
-        print("Could not find your roster in this league.", file=sys.stderr)
-        sys.exit(1)
+    roster_id = _my_roster_id(conn, league_id, user_id)
     league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
     roster_positions = json.loads(league_row["roster_positions"])
 
@@ -587,10 +581,7 @@ def cmd_results(args: argparse.Namespace) -> None:
 def _my_live_roster(conn) -> tuple[str, int, int, dict]:
     """(league_id, roster_id, current_week, my live roster)."""
     league_id, user_id, current_week = _require_synced_state(conn)
-    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-    if roster_id is None:
-        print("Could not find your roster in this league.", file=sys.stderr)
-        sys.exit(1)
+    roster_id = _my_roster_id(conn, league_id, user_id)
     return league_id, roster_id, current_week, _live_roster(league_id, roster_id)
 
 
@@ -900,50 +891,7 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        if args.command == "sync":
-            cmd_sync(args)
-        elif args.command == "leagues":
-            cmd_leagues(args)
-        elif args.command == "use":
-            cmd_use(args)
-        elif args.command == "graph":
-            cmd_graph(args)
-        elif args.command == "roster":
-            cmd_roster(args)
-        elif args.command == "transactions":
-            cmd_transactions(args)
-        elif args.command == "projections":
-            cmd_projections(args)
-        elif args.command == "backtest":
-            cmd_backtest(args)
-        elif args.command == "lineup":
-            cmd_lineup(args)
-        elif args.command == "waivers":
-            cmd_waivers(args)
-        elif args.command == "trades":
-            cmd_trades(args)
-        elif args.command == "draft":
-            cmd_draft(args)
-        elif args.command == "ir":
-            cmd_ir(args)
-        elif args.command == "add":
-            cmd_add(args)
-        elif args.command == "claim":
-            cmd_claim(args)
-        elif args.command == "claims":
-            cmd_claims(args)
-        elif args.command == "digest":
-            cmd_digest(args)
-        elif args.command == "news":
-            cmd_news(args)
-        elif args.command == "trending":
-            cmd_trending(args)
-        elif args.command == "results":
-            cmd_results(args)
-        elif args.command == "ask":
-            cmd_ask(args)
-        elif args.command == "chat":
-            cmd_chat(args)
+        globals()[f"cmd_{args.command}"](args)
     except (SleeperError, AgentError, NotifyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
