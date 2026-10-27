@@ -76,3 +76,16 @@ def test_prompt_defines_fantasy_team_and_nfl_team():
     text = prompt(STANDARD_SLOTS)
     assert "Fantasy team: a manager's roster in this Sleeper league (mine is\n  My Team)" in text
     assert "NFL team: a real NFL franchise" in text
+
+
+def test_cli_prompt_gives_commands_and_app_prompt_points_to_sleeper():
+    common = dict(season="2026", week=4, league_name="L", fantasy_team_name="T",
+                  roster_positions=STANDARD_SLOTS, scoring_settings={"rec": 1.0}, today=date(2026, 9, 29))
+
+    cli = build_system_prompt(**common)
+    app = build_system_prompt(**common, in_app=True)
+
+    assert "the CLI command the tool output gives" in cli
+    assert "in the Sleeper app" in app
+    assert "never mention CLI commands" in app
+    assert "the CLI command the tool output gives" not in app

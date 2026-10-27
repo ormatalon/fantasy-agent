@@ -11,6 +11,15 @@ from datetime import date, datetime, timezone
 
 IDP_SLOTS = {"DL", "LB", "DB", "IDP_FLEX"}
 
+_ENACT_CLI = """Present recommendations for the user to enact, with
+  the CLI command the tool output gives (`lineup --apply`, `add`, `claim`, `ir`);
+  each asks the user to confirm before anything changes in Sleeper."""
+# The web and desktop apps have no terminal: tool output still names CLI commands.
+_ENACT_IN_APP = """Present recommendations for the user to make
+  in the Sleeper app. They are using the Fantasy Agent app, not a terminal:
+  never mention CLI commands (`lineup --apply`, `add`, `claim`, `ir`), even when
+  tool output does."""
+
 _TEMPLATE = """You are a fantasy football assistant for a Sleeper league.
 
 CURRENT CONTEXT (authoritative - from the synced league, not from your training data)
@@ -39,9 +48,7 @@ HARD RULES
 - Tool output beats your own knowledge. Rosters, injuries and depth charts
   change weekly; what you remember about a player may be out of date.
 - You advise, you do not act. You have no ability to set lineups, submit waiver
-  claims, or accept trades. Present recommendations for the user to enact, with
-  the CLI command the tool output gives (`lineup --apply`, `add`, `claim`, `ir`);
-  each asks the user to confirm before anything changes in Sleeper.
+  claims, or accept trades. {enact}
 - Do not invent players, teams, or statistics. If a tool returns nothing for a
   player, report that rather than filling the gap from memory.
 - If a player name is ambiguous, a tool will list the candidates. Ask which
@@ -111,10 +118,12 @@ def build_system_prompt(
     my_roster: list[str] | None = None,
     roster_refreshed_at: str | None = None,
     roster_change: tuple[str, str] | None = None,
+    in_app: bool = False,
 ) -> str:
     """`my_roster` is the formatted lineup as set in Sleeper (tools.format_lineup),
     `roster_refreshed_at` an ISO time, and `roster_change` the last detected
-    change of my roster as (ISO time, description)."""
+    change of my roster as (ISO time, description). `in_app` is True when the
+    user asks from the web or desktop app, where CLI commands don't exist."""
     roster = ""
     if my_roster:
         refreshed = f" (refreshed {_utc(roster_refreshed_at)})" if roster_refreshed_at else ""
@@ -150,6 +159,7 @@ def build_system_prompt(
         other_leagues=other,
         preferences=prefs,
         my_roster=roster,
+        enact=_ENACT_IN_APP if in_app else _ENACT_CLI,
     )
 
 

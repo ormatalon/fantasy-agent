@@ -1,0 +1,14 @@
+# Runs Fantasy Agent at http://localhost:8000. Start and stop it with the
+# scripts in scripts/.
+name: fantasy-agent
+services:
+  app:
+    image: ghcr.io/ormatalon/fantasy-agent:latest
+    # Local only: the app has no login and stores your keys.
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - data:/app/data
+    restart: unless-stopped
+volumes:
+  data:

@@ -106,6 +106,11 @@ class AgentContext:
         return [lg["name"] or lg["league_id"] for lg in known if lg["league_id"] != self.league_id]
 
 
+def _names(text: str) -> list[str]:
+    """Player names from a comma-separated list."""
+    return [n.strip() for n in text.split(",") if n.strip()]
+
+
 def _status_tag(status: str | None) -> str:
     return f" [{status}]" if status else ""
 
@@ -344,18 +349,40 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         return "\n".join(lines)
 
     @tool
-    def get_projections(position: str = "", limit: int = 20, week: int = 0) -> str:
-        """Top projected players (rostered or not) for ONE week, optionally
-        filtered to a position (QB/RB/WR/TE/K/DEF, or IDP groups DL/LB/DB). Each
-        line has the mean projection, injury designation, its uncertainty (std
-        dev), and how many sources agreed. Projections already include injury
-        discounts (an Out/IR player projects ~0). Defaults to the current week."""
+    def get_projections(players: str = "", position: str = "", limit: int = 0, week: int = 0) -> str:
+        """Projections for ONE week, rostered or not. Pass `players`, a
+        comma-separated list of names, to get exactly those players in one call
+        (e.g. to compare options). Or pass `position` (QB/RB/WR/TE/K/DEF, or IDP
+        groups DL/LB/DB) for every player there projected to score, best first;
+        `limit` keeps only the top N. Each line has the mean projection, injury designation, its
+        uncertainty (std dev), and how many sources agreed. Projections already
+        include injury discounts (an Out/IR player projects ~0). Defaults to the
+        current week."""
         target_week = week or ctx.current_week
         table = ctx.projections(target_week)
+
+        def line(p: AdjustedProjection) -> str:
+            return f"{_fmt_player(p)}, std {p.variance ** 0.5:.1f}, {p.num_sources} source(s)"
+
+        if players:
+            by_id = {p.player_id: p for p in table}
+            lines = []
+            for name in _names(players):
+                pid, problem = resolve(name)
+                if not pid:
+                    lines.append(problem)
+                elif pid in by_id:
+                    lines.append(line(by_id[pid]))
+                else:
+                    lines.append(f"{storage.player_name(ctx.conn, pid)}: no projection for week {target_week}.")
+            return "\n".join(lines)
         if position:
-            table = [p for p in table if _matches_position(p, position)]
-        lines = [f"{_fmt_player(p)}, std {p.variance ** 0.5:.1f}, {p.num_sources} source(s)" for p in table[:limit]]
-        return "\n".join(lines) or "No projections found."
+            # Only players projected to score: about 90% of a position's
+            # players (practice squad, inactive, Out) project 0.0, and listing
+            # them made one call ~18k tokens. Stashes: get_injured_stash_candidates.
+            table = [p for p in table if _matches_position(p, position) and p.mean > 0]
+        # With neither, the whole league's table would be thousands of lines.
+        return "\n".join(line(p) for p in table[: limit or (None if position else 20)]) or "No projections found."
 
     @tool
     def get_season_projections(position: str = "", limit: int = 20, full_season: bool = False) -> str:
@@ -578,27 +605,31 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         return "\n".join(lines)
 
     @tool
-    def get_player_news(player_name: str, limit: int = 3) -> str:
-        """Latest news for ANY NFL player - on my roster, another team's, or a
-        free agent - fetched live: a factual description plus a fantasy analysis.
-        Use when a question is about a specific player's situation, role, or
-        injury; it carries context projections cannot (timelines, depth-chart
-        chatter). Use the full name; ambiguous names return a candidate list."""
-        pid, problem = resolve(player_name)
-        if not pid:
-            return problem
-        try:
-            items = fetch_player_news(pid, limit=min(limit, 5))
-            if items:
-                storage.save_player_news(ctx.conn, items)
-        except Exception:
-            pass  # fall through to whatever is cached
-        rows = storage.get_player_news(ctx.conn, pid, limit=min(limit, 5))
-        status = storage.get_injury_status(ctx.conn, pid)
-        header = f"News for {storage.player_name(ctx.conn, pid)}{_status_tag(status)}:"
-        if not rows:
-            return f"No news found for {storage.player_name(ctx.conn, pid)}{_status_tag(status)}."
-        return _format_news(rows, header)
+    def get_player_news(players: str, limit: int = 3) -> str:
+        """Latest news for ANY NFL players - on my roster, another team's, or
+        free agents - fetched live: a factual description plus a fantasy
+        analysis. `players` is one name or a comma-separated list, so several
+        players take one call. Use when a question is about a player's situation,
+        role, or injury; it carries context projections cannot (timelines,
+        depth-chart chatter). Use full names; ambiguous names return a candidate
+        list. `limit` is items per player (max 5)."""
+        sections = []
+        for name in _names(players):
+            pid, problem = resolve(name)
+            if not pid:
+                sections.append(problem)
+                continue
+            try:
+                items = fetch_player_news(pid, limit=min(limit, 5))
+                if items:
+                    storage.save_player_news(ctx.conn, items)
+            except Exception:
+                pass  # fall through to whatever is cached
+            rows = storage.get_player_news(ctx.conn, pid, limit=min(limit, 5))
+            status = storage.get_injury_status(ctx.conn, pid)
+            label = f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}"
+            sections.append(_format_news(rows, f"News for {label}:") if rows else f"No news found for {label}.")
+        return "\n\n".join(sections)
 
     @tool
     def get_roster_news(items_per_player: int = 2) -> str:
