@@ -58,6 +58,8 @@ button.ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
 button.ghost.dark { border-color: var(--border); color: var(--navy); background: var(--card); }
 button:disabled { opacity: 0.55; cursor: default; }
 
+.buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
 .error { color: #b42318; background: #fef3f2; border: 1px solid #fecdca; border-radius: 8px; padding: 8px 12px; margin: 12px 0; }
 .hint { color: var(--gray); font-size: 0.92rem; }
 

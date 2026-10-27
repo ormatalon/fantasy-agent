@@ -87,11 +87,14 @@ export default function Home() {
     setStatus(s);
     setView("auto");
   };
+  const back = () => setView("auto");
 
   let body;
   if (!status) body = error ? <p className="error">{error}</p> : <p className="hint">Loading...</p>;
-  else if (view === "settings" || !status.configured) body = <Setup status={status} onSaved={done} />;
-  else if (view === "league" || !status.league) body = <LeaguePicker onSynced={done} />;
+  else if (view === "settings" || !status.configured)
+    body = <Setup status={status} onSaved={done} onCancel={status.configured ? back : undefined} />;
+  else if (view === "league" || !status.league)
+    body = <LeaguePicker onSynced={done} onCancel={status.league ? back : undefined} />;
   else body = <Chat username={status.sleeper_username} onSynced={setStatus} />;
 
   return (
@@ -128,7 +131,7 @@ export default function Home() {
   );
 }
 
-function Setup({ status, onSaved }: { status: Status; onSaved: (s: Status) => void }) {
+function Setup({ status, onSaved, onCancel }: { status: Status; onSaved: (s: Status) => void; onCancel?: () => void }) {
   const [username, setUsername] = useState(status.sleeper_username);
   const [key, setKey] = useState("");
   const [token, setToken] = useState("");
@@ -224,14 +227,21 @@ function Setup({ status, onSaved }: { status: Status; onSaved: (s: Status) => vo
         </label>
       </details>
       {error && <p className="error">{error}</p>}
-      <button className="primary" disabled={busy}>
-        {busy ? "Saving..." : "Save"}
-      </button>
+      <div className="buttons">
+        <button className="primary" disabled={busy}>
+          {busy ? "Saving..." : "Save"}
+        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} disabled={busy}>
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }
 
-function LeaguePicker({ onSynced }: { onSynced: (s: Status) => void }) {
+function LeaguePicker({ onSynced, onCancel }: { onSynced: (s: Status) => void; onCancel?: () => void }) {
   const [leagues, setLeagues] = useState<League[] | null>(null);
   const [chosen, setChosen] = useState("");
   const [busy, setBusy] = useState(false);
@@ -282,9 +292,16 @@ function LeaguePicker({ onSynced }: { onSynced: (s: Status) => void }) {
         </ul>
       )}
       {error && <p className="error">{error}</p>}
-      <button className="primary" disabled={busy || !chosen}>
-        {busy ? "Syncing... the first sync takes a minute" : "Sync this league"}
-      </button>
+      <div className="buttons">
+        <button className="primary" disabled={busy || !chosen}>
+          {busy ? "Syncing... the first sync takes a minute" : "Sync this league"}
+        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} disabled={busy}>
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }
