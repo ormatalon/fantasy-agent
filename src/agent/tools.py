@@ -735,14 +735,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
             return f"Pending claims are unavailable: {e}"
         if not claims:
             return "No pending waiver claims."
-        lines = []
-        for t in claims:
-            adds = ", ".join(storage.player_name(ctx.conn, pid) for pid in t.get("adds") or {})
-            drops = ", ".join(storage.player_name(ctx.conn, pid) for pid in t.get("drops") or {})
-            bid = (t.get("settings") or {}).get("waiver_bid")
-            lines.append(f"Claim {adds or '-'}" + (f", drop {drops}" if drops else "")
-                         + (f", bid ${bid}" if bid is not None else "") + f" (id {t['transaction_id']})")
-        return "\n".join(lines)
+        return "\n".join(sleeper_writes.describe_claim(ctx.conn, t) for t in claims)
 
     @tool
     def remember_preference(note: str) -> str:

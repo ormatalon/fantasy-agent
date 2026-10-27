@@ -32,7 +32,7 @@ from src.decisions.waivers import suggest_waivers_by_position, unavailable_this_
 from src.evaluation.backtest import run_backtest
 from src.execution.approval import Approval, ApprovalDenied, ProposedWrite, require_approval
 from src.execution.sleeper_writes import (
-    EMPTY_SLOT, add_drop, cancel_claim, pending_claims, set_lineup, set_reserve, submit_claim,
+    EMPTY_SLOT, add_drop, cancel_claim, describe_claim, pending_claims, set_lineup, set_reserve, submit_claim,
 )
 from src.ingestion import storage
 from src.ingestion.news import fetch_player_news
@@ -674,7 +674,7 @@ def cmd_claim(args: argparse.Namespace) -> None:
         write = ProposedWrite(
             action="cancel_claim",
             summary="Withdraw a pending waiver claim.",
-            changes=[_describe_claim(conn, claim)],
+            changes=[describe_claim(conn, claim)],
             payload={"league_id": league_id, "transaction_id": args.cancel, "leg": claim["leg"]},
         )
         approval = _approve(write)
@@ -721,14 +721,6 @@ def cmd_claim(args: argparse.Namespace) -> None:
     print(f"\nClaim {txn.get('transaction_id')}: " + ("VERIFIED - pending" if queued else "MISMATCH - not among pending claims"))
 
 
-def _describe_claim(conn, txn: dict) -> str:
-    adds = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("adds") or {}))
-    drops = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("drops") or {}))
-    bid = (txn.get("settings") or {}).get("waiver_bid")
-    return (f"{txn['transaction_id']}  claim {adds or '-'}"
-            + (f", drop {drops}" if drops else "") + (f", bid ${bid}" if bid is not None else ""))
-
-
 def cmd_claims(_args: argparse.Namespace) -> None:
     conn = storage.get_connection(config.DB_PATH)
     league_id, roster_id, _week, _live = _my_live_roster(conn)
@@ -737,7 +729,7 @@ def cmd_claims(_args: argparse.Namespace) -> None:
         print("No pending waiver claims.")
         return
     for txn in claims:
-        print(_describe_claim(conn, txn))
+        print(describe_claim(conn, txn))
     print('\nCancel one with: claim --cancel <id>')
 
 

@@ -16,6 +16,7 @@ with no review period an accepted trade executes at once.
 """
 
 from src.execution.approval import Approval, ProposedWrite, verify
+from src.ingestion import storage
 from src.ingestion.sleeper import LIVE_ROSTERS_QUERY
 from src.ingestion.sleeper_graphql import SleeperError, gql
 
@@ -176,3 +177,11 @@ def pending_claims(league_id: str, roster_id: int) -> list[dict]:
         "league_id": league_id, "roster_id_filters": [roster_id],
     }, auth=True)
     return [t for t in data.get("league_transactions_filtered") or [] if t.get("type") == "waiver"]
+
+
+def describe_claim(conn, txn: dict) -> str:
+    adds = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("adds") or {}))
+    drops = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("drops") or {}))
+    bid = (txn.get("settings") or {}).get("waiver_bid")
+    return (f"{txn['transaction_id']}  claim {adds or '-'}"
+            + (f", drop {drops}" if drops else "") + (f", bid ${bid}" if bid is not None else ""))
