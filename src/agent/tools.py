@@ -151,8 +151,7 @@ ROSTER_TOOLS = frozenset({
 
 
 def my_lineup(ctx: AgentContext) -> SleeperLineup | None:
-    roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
-    row = storage.get_roster(ctx.conn, ctx.league_id, roster_id) if roster_id is not None else None
+    row = storage.get_my_roster(ctx.conn, ctx.league_id, ctx.user_id)
     if not row:
         return None
     return sleeper_lineup(
@@ -200,10 +199,8 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         )
 
     def my_roster_ids() -> list[str] | None:
-        roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
-        if roster_id is None:
-            return None
-        return json.loads(storage.get_roster(ctx.conn, ctx.league_id, roster_id)["players"])
+        row = storage.get_my_roster(ctx.conn, ctx.league_id, ctx.user_id)
+        return json.loads(row["players"]) if row else None
 
     def fresh_news(pid: str, limit: int) -> list:
         """A player's news, fetched live when possible, else from the cache."""

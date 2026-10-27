@@ -417,6 +417,13 @@ def get_roster(conn: sqlite3.Connection, league_id: str, roster_id: int) -> sqli
     ).fetchone()
 
 
+def get_my_roster(conn: sqlite3.Connection, league_id: str, user_id: str | None) -> sqlite3.Row | None:
+    return conn.execute(
+        "SELECT * FROM rosters WHERE league_id = ? AND owner_id = ?",
+        (league_id, user_id),
+    ).fetchone()
+
+
 def get_roster_id_for_user(conn: sqlite3.Connection, league_id: str, user_id: str) -> int | None:
     row = conn.execute(
         "SELECT roster_id FROM rosters WHERE league_id = ? AND owner_id = ?",
