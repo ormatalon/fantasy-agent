@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import { ComponentProps, FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import ReactMarkdown, { type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 type Status = {
@@ -46,6 +46,18 @@ async function api<T>(path: string, body?: object, signal?: AbortSignal): Promis
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+function ago(iso: string) {
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  if (min < 24 * 60) return `${Math.round(min / 60)} h ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+const markdownLinks = {
+  a: ({ node: _node, ...props }: ComponentProps<"a"> & ExtraProps) => <a {...props} target="_blank" rel="noreferrer" />,
+};
+
 function Football({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" className="football">
@@ -89,9 +101,12 @@ export default function Home() {
           <Football size={38} />
           <div className="title">
             <h1>Fantasy Agent</h1>
-            <span className="meta">
+            <span
+              className="meta"
+              title={status?.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : undefined}
+            >
               {status?.league
-                ? `${status.league.name} · synced ${status.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : "never"}`
+                ? `${status.league.name} · synced ${status.last_synced_at ? ago(status.last_synced_at) : "never"}`
                 : "Your Sleeper fantasy football assistant"}
             </span>
           </div>
@@ -408,7 +423,7 @@ function Chat({ username, onSynced }: { username: string; onSynced: (s: Status) 
           <div key={i} className={`row ${m.role}`}>
             <Avatar role={m.role} username={username} />
             <div className={`msg ${m.role}`}>
-              {m.role === "agent" ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown> : m.content}
+              {m.role === "agent" ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownLinks}>{m.content}</ReactMarkdown> : m.content}
             </div>
           </div>
         ))}
