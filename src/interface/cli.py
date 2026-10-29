@@ -32,7 +32,7 @@ from src.decisions.waivers import suggest_waivers_by_position, unavailable_this_
 from src.evaluation.backtest import run_backtest
 from src.execution.approval import Approval, ApprovalDenied, ProposedWrite, require_approval
 from src.execution.sleeper_writes import (
-    EMPTY_SLOT, add_drop, cancel_claim, pending_claims, set_lineup, set_reserve, submit_claim,
+    EMPTY_SLOT, add_drop, cancel_claim, describe_claim, pending_claims, set_lineup, set_reserve, submit_claim,
 )
 from src.ingestion import storage
 from src.ingestion.news import fetch_player_news
@@ -72,6 +72,11 @@ def cmd_use(args: argparse.Namespace) -> None:
     print(f"Now using: {_league_name(conn, storage.get_state(conn, 'active_league_id'))}")
 
 
+def _date(ms: int | None) -> str:
+    """A Sleeper timestamp (milliseconds) as YYYY-MM-DD."""
+    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d") if ms else "?"
+
+
 def _league_name(conn, league_id: str | None) -> str:
     row = conn.execute("SELECT name FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
     return f"{row['name']} ({league_id})" if row else str(league_id)
@@ -98,6 +103,14 @@ def _require_synced_state(conn) -> tuple[str, str, int]:
         print("No local data yet - run `sync` first.", file=sys.stderr)
         sys.exit(1)
     return league_id, user_id, int(week)
+
+
+def _my_roster_id(conn, league_id: str, user_id: str) -> int:
+    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
+    if roster_id is None:
+        print("Could not find your roster in this league.", file=sys.stderr)
+        sys.exit(1)
+    return roster_id
 
 
 def _print_roster(conn, league_id: str, roster_row, week: int) -> None:
@@ -136,11 +149,7 @@ def cmd_roster(args: argparse.Namespace) -> None:
             print(f"No fantasy team matching '{args.fantasy_team}' found.", file=sys.stderr)
             sys.exit(1)
     else:
-        roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-        if roster_id is None:
-            print("Could not find your roster in this league.", file=sys.stderr)
-            sys.exit(1)
-        roster_row = storage.get_roster(conn, league_id, roster_id)
+        roster_row = storage.get_roster(conn, league_id, _my_roster_id(conn, league_id, user_id))
 
     _print_roster(conn, league_id, roster_row, week)
 
@@ -155,7 +164,7 @@ def cmd_transactions(args: argparse.Namespace) -> None:
         return
 
     for t in txns:
-        when = datetime.fromtimestamp(t["created"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d") if t["created"] else "?"
+        when = _date(t["created"])
         adds = json.loads(t["adds"]) or {}
         drops = json.loads(t["drops"]) or {}
         print(f"\n[{when}] {t['type']} ({t['status']})")
@@ -222,15 +231,6 @@ def _live_roster(league_id: str, roster_id: int) -> dict:
         return next(r for r in client.get_rosters(league_id) if r["roster_id"] == roster_id)
 
 
-def _player_meta(conn, player_ids) -> dict[str, dict]:
-    meta = {}
-    for pid in player_ids:
-        p = conn.execute("SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)).fetchone()
-        if p:
-            meta[pid] = {"name": " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid, "position": p["position"]}
-    return meta
-
-
 def _team(conn, pid: str) -> str | None:
     row = conn.execute("SELECT team FROM players WHERE player_id = ?", (pid,)).fetchone()
     return row["team"] if row else None
@@ -263,7 +263,7 @@ def _live_lineup(conn, league_id, roster_id, season, week, current_week, roster_
     live = _live_roster(league_id, roster_id)
     reserve = set(live.get("reserve") or [])
     pool = [pid for pid in live.get("players") or [] if pid not in reserve]  # IR-slotted players can't start
-    meta = _player_meta(conn, pool)
+    meta = storage.player_meta(conn, pool)
     slots = [s for s in roster_positions if s not in NON_STARTING_SLOTS]
     current = [pid or EMPTY_SLOT for pid in (live.get("starters") or [])][: len(slots)]
     current += [EMPTY_SLOT] * (len(slots) - len(current))
@@ -325,26 +325,16 @@ def cmd_lineup(args: argparse.Namespace) -> None:
     season = storage.get_state(conn, "active_season")
     week = args.week or current_week
 
-    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-    if roster_id is None:
-        print("Could not find your roster in this league.", file=sys.stderr)
-        sys.exit(1)
+    roster_id = _my_roster_id(conn, league_id, user_id)
     roster_row = storage.get_roster(conn, league_id, roster_id)
     roster_player_ids = json.loads(roster_row["players"])
 
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
 
     table = build_projection_table(conn, season, week, league_id)
     projections = {row.player_id: row for row in table}
 
-    player_meta = {}
-    for pid in roster_player_ids:
-        p = conn.execute("SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)).fetchone()
-        if p:
-            name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
-            player_meta[pid] = {"name": name, "position": p["position"]}
-
+    player_meta = storage.player_meta(conn, roster_player_ids)
     lineup = optimize_lineup(roster_positions, roster_player_ids, projections, player_meta,
                              current_starters=json.loads(roster_row["starters"]))
 
@@ -387,8 +377,7 @@ def cmd_waivers(args: argparse.Namespace) -> None:
     season = storage.get_state(conn, "active_season")
     week = args.week or current_week
 
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
 
     excluded: dict[str, str] = {}
     if args.season_long:
@@ -456,8 +445,7 @@ def cmd_draft(args: argparse.Namespace) -> None:
     league_id, user_id, _current_week = _require_synced_state(conn)
     season = storage.get_state(conn, "active_season")
 
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_positions = storage.roster_positions(conn, league_id)
 
     with SleeperClient() as client:
         draft_id = args.draft_id
@@ -491,11 +479,7 @@ def cmd_news(args: argparse.Namespace) -> None:
         except Exception as e:
             print(f"Live news fetch failed ({e}); showing cached.", file=sys.stderr)
     else:
-        roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-        row = storage.get_roster(conn, league_id, roster_id) if roster_id is not None else None
-        if not row:
-            print("Could not find your roster in this league.", file=sys.stderr)
-            sys.exit(1)
+        row = storage.get_roster(conn, league_id, _my_roster_id(conn, league_id, user_id))
         player_ids = json.loads(row["players"])
 
     printed = 0
@@ -506,11 +490,7 @@ def cmd_news(args: argparse.Namespace) -> None:
         status = storage.get_injury_status(conn, pid)
         print(f"\n{storage.player_name(conn, pid)}{f' [{status}]' if status else ''}")
         for item in items:
-            when = (
-                datetime.fromtimestamp(item["published"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
-                if item["published"] else "?"
-            )
-            print(f"  [{when}] {item['title']}")
+            print(f"  [{_date(item['published'])}] {item['title']}")
             if item["analysis"]:
                 print(f"    {item['analysis']}")
         printed += 1
@@ -547,12 +527,8 @@ def cmd_results(args: argparse.Namespace) -> None:
     league_id, user_id, current_week = _require_synced_state(conn)
     week = args.week or last_completed_week(current_week)
 
-    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-    if roster_id is None:
-        print("Could not find your roster in this league.", file=sys.stderr)
-        sys.exit(1)
-    league_row = conn.execute("SELECT roster_positions FROM leagues WHERE league_id = ?", (league_id,)).fetchone()
-    roster_positions = json.loads(league_row["roster_positions"])
+    roster_id = _my_roster_id(conn, league_id, user_id)
+    roster_positions = storage.roster_positions(conn, league_id)
 
     result = summarize_week(conn, league_id, roster_id, week, roster_positions)
     if not result:
@@ -587,10 +563,7 @@ def cmd_results(args: argparse.Namespace) -> None:
 def _my_live_roster(conn) -> tuple[str, int, int, dict]:
     """(league_id, roster_id, current_week, my live roster)."""
     league_id, user_id, current_week = _require_synced_state(conn)
-    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-    if roster_id is None:
-        print("Could not find your roster in this league.", file=sys.stderr)
-        sys.exit(1)
+    roster_id = _my_roster_id(conn, league_id, user_id)
     return league_id, roster_id, current_week, _live_roster(league_id, roster_id)
 
 
@@ -702,7 +675,7 @@ def cmd_claim(args: argparse.Namespace) -> None:
         write = ProposedWrite(
             action="cancel_claim",
             summary="Withdraw a pending waiver claim.",
-            changes=[_describe_claim(conn, claim)],
+            changes=[describe_claim(conn, claim)],
             payload={"league_id": league_id, "transaction_id": args.cancel, "leg": claim["leg"]},
         )
         approval = _approve(write)
@@ -749,14 +722,6 @@ def cmd_claim(args: argparse.Namespace) -> None:
     print(f"\nClaim {txn.get('transaction_id')}: " + ("VERIFIED - pending" if queued else "MISMATCH - not among pending claims"))
 
 
-def _describe_claim(conn, txn: dict) -> str:
-    adds = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("adds") or {}))
-    drops = ", ".join(storage.player_name(conn, pid) for pid in (txn.get("drops") or {}))
-    bid = (txn.get("settings") or {}).get("waiver_bid")
-    return (f"{txn['transaction_id']}  claim {adds or '-'}"
-            + (f", drop {drops}" if drops else "") + (f", bid ${bid}" if bid is not None else ""))
-
-
 def cmd_claims(_args: argparse.Namespace) -> None:
     conn = storage.get_connection(config.DB_PATH)
     league_id, roster_id, _week, _live = _my_live_roster(conn)
@@ -765,7 +730,7 @@ def cmd_claims(_args: argparse.Namespace) -> None:
         print("No pending waiver claims.")
         return
     for txn in claims:
-        print(_describe_claim(conn, txn))
+        print(describe_claim(conn, txn))
     print('\nCancel one with: claim --cancel <id>')
 
 
@@ -900,50 +865,7 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        if args.command == "sync":
-            cmd_sync(args)
-        elif args.command == "leagues":
-            cmd_leagues(args)
-        elif args.command == "use":
-            cmd_use(args)
-        elif args.command == "graph":
-            cmd_graph(args)
-        elif args.command == "roster":
-            cmd_roster(args)
-        elif args.command == "transactions":
-            cmd_transactions(args)
-        elif args.command == "projections":
-            cmd_projections(args)
-        elif args.command == "backtest":
-            cmd_backtest(args)
-        elif args.command == "lineup":
-            cmd_lineup(args)
-        elif args.command == "waivers":
-            cmd_waivers(args)
-        elif args.command == "trades":
-            cmd_trades(args)
-        elif args.command == "draft":
-            cmd_draft(args)
-        elif args.command == "ir":
-            cmd_ir(args)
-        elif args.command == "add":
-            cmd_add(args)
-        elif args.command == "claim":
-            cmd_claim(args)
-        elif args.command == "claims":
-            cmd_claims(args)
-        elif args.command == "digest":
-            cmd_digest(args)
-        elif args.command == "news":
-            cmd_news(args)
-        elif args.command == "trending":
-            cmd_trending(args)
-        elif args.command == "results":
-            cmd_results(args)
-        elif args.command == "ask":
-            cmd_ask(args)
-        elif args.command == "chat":
-            cmd_chat(args)
+        globals()[f"cmd_{args.command}"](args)
     except (SleeperError, AgentError, NotifyError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

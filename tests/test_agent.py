@@ -279,6 +279,30 @@ def test_recommended_lineup_never_starts_a_player_in_an_ir_slot():
     assert "move him out of IR" in result
 
 
+def test_recommended_lineup_gives_the_facts_behind_each_change():
+    from src.ingestion.news import NewsItem
+
+    conn = superflex_conn(reserve=())
+    storage.save_players(conn, {"cole": {"first_name": "Cole", "last_name": "Three", "position": "QB", "team": "NYJ"}})
+    storage.save_rosters(conn, "L1", [{"roster_id": 1, "owner_id": "u1", "players": ["maye", "allen", "cole"],
+                                       "starters": ["allen", "maye"], "reserve": []}])
+    storage.save_player_news(conn, [
+        NewsItem("n1", "cole", 1761300000000, None, "Cole named the starter", "", "Takes every first-team rep.", ""),
+        NewsItem("n2", "maye", 1761300000000, None, "Maye limited in practice", "", "", ""),
+    ])
+    projections = [proj("cole", "Cole Three", 30.0), proj("maye", "Drake Maye", 25.0), proj("allen", "Josh Allen", 20.0)]
+    tools = {t.name: t for t in build_tools(ctx_with_cached_projections(conn, projections))}
+
+    result = tools["recommend_lineup"].invoke({})
+
+    assert "QB: Cole Three (QB/X): 30.0 pts, std 1.0 - CHANGE, in for Josh Allen (QB/X): 20.0 pts, std 1.0" in result
+    assert "SUPER_FLEX: Drake Maye (QB/X): 25.0 pts, std 1.0\n" in result
+    news = result.split("Latest news on the players in changed slots:")[1]
+    assert "Cole named the starter. Takes every first-team rep." in news
+    # Maye's slot doesn't change, so his news stays out.
+    assert "Maye limited" not in news
+
+
 def test_system_prompt_carries_my_roster_and_follows_the_stored_roster():
     from src.agent.orchestrator import system_prompt_for
 

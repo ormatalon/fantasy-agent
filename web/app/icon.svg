@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="leather" cx="42%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#b8692f"/>
+      <stop offset="0.55" stop-color="#874621"/>
+      <stop offset="1" stop-color="#4a230d"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" fill="#032147"/>
+  <rect y="56" width="64" height="8" fill="#ecad0a"/>
+  <g transform="translate(0 -3) rotate(-35 32 32)">
+    <path d="M5 32 C13 15 51 15 59 32 C51 49 13 49 5 32 Z" fill="url(#leather)"/>
+    <path d="M16 22.6 Q13.7 32 16 41.4 M48 22.6 Q50.3 32 48 41.4" stroke="#f3ede2" stroke-width="2.6" fill="none"/>
+    <g stroke="#f3ede2" stroke-width="2.2" stroke-linecap="round">
+      <line x1="22" y1="32" x2="42" y2="32"/>
+      <line x1="25" y1="28.5" x2="25" y2="35.5"/>
+      <line x1="30" y1="28.5" x2="30" y2="35.5"/>
+      <line x1="35" y1="28.5" x2="35" y2="35.5"/>
+      <line x1="39.5" y1="28.5" x2="39.5" y2="35.5"/>
+    </g>
+  </g>
+</svg>

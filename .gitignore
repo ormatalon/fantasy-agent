@@ -45,3 +45,4 @@ data/*
 
 # temporarycomments file
 COMMENTS_ignored.md
+.claude/ralph-loop*

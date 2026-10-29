@@ -37,15 +37,8 @@ def _age_hours(iso_ts: str | None) -> float | None:
     return (datetime.now(timezone.utc) - datetime.fromisoformat(iso_ts)) / timedelta(hours=1)
 
 
-def _age_seconds(iso_ts: str | None) -> float | None:
-    if not iso_ts:
-        return None
-    return (datetime.now(timezone.utc) - datetime.fromisoformat(iso_ts)).total_seconds()
-
-
 def _roster_snapshot(conn, league_id: str, user_id: str | None) -> dict | None:
-    roster_id = storage.get_roster_id_for_user(conn, league_id, user_id) if user_id else None
-    row = storage.get_roster(conn, league_id, roster_id) if roster_id is not None else None
+    row = storage.get_my_roster(conn, league_id, user_id)
     if not row:
         return None
     return {
@@ -112,12 +105,8 @@ def _sync_one_league(conn, client: SleeperClient, league_id: str, current_week: 
     # Every week, not just the current one: past weeks pick up stat
     # corrections, and a recap needs last week's final scores.
     for week in range(1, current_week + 1):
-        matchups = client.get_matchups(league_id, week)
-        if matchups:
-            storage.save_matchups(conn, league_id, week, matchups)
-        txns = client.get_transactions(league_id, week)
-        if txns:
-            storage.save_transactions(conn, league_id, week, txns)
+        storage.save_matchups(conn, league_id, week, client.get_matchups(league_id, week))
+        storage.save_transactions(conn, league_id, week, client.get_transactions(league_id, week))
 
 
 def _sync_roster_news(conn, league_ids: list[str], user_id: str, log: Log) -> None:
@@ -125,8 +114,7 @@ def _sync_roster_news(conn, league_ids: list[str], user_id: str, log: Log) -> No
     league's ~200 rostered players would make sync crawl."""
     player_ids: list[str] = []
     for league_id in league_ids:
-        roster_id = storage.get_roster_id_for_user(conn, league_id, user_id)
-        row = storage.get_roster(conn, league_id, roster_id) if roster_id is not None else None
+        row = storage.get_my_roster(conn, league_id, user_id)
         if row:
             player_ids.extend(pid for pid in json.loads(row["players"]) if pid not in player_ids)
 
@@ -242,8 +230,8 @@ def refresh_rosters(conn, max_age_seconds: float | None = None, log: Log = log_t
     week = storage.get_state(conn, "current_week")
     if not league_id or not week or not config.SLEEPER_USERNAME:
         return False
-    age = _age_seconds(storage.get_state(conn, "rosters_synced_at"))
-    if age is not None and age < max_age:
+    age = _age_hours(storage.get_state(conn, "rosters_synced_at"))
+    if age is not None and age * 3600 < max_age:
         return False
 
     try:
@@ -255,10 +243,8 @@ def refresh_rosters(conn, max_age_seconds: float | None = None, log: Log = log_t
         log(f"Roster refresh failed ({e}); answering from the last synced rosters.")
         return False
     save_rosters_tracking_changes(conn, league_id, rosters, storage.get_state(conn, "active_user_id"))
-    if matchups:
-        storage.save_matchups(conn, league_id, int(week), matchups)
-    if txns:
-        storage.save_transactions(conn, league_id, int(week), txns)
+    storage.save_matchups(conn, league_id, int(week), matchups)
+    storage.save_transactions(conn, league_id, int(week), txns)
     storage.set_state(conn, "rosters_synced_at", storage.now_iso())
     return True
 

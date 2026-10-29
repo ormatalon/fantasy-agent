@@ -11,6 +11,7 @@ regression guard, not something to invoke mid-conversation.
 import json
 import sqlite3
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 from langchain_core.tools import BaseTool, tool
 
@@ -151,8 +152,7 @@ ROSTER_TOOLS = frozenset({
 
 
 def my_lineup(ctx: AgentContext) -> SleeperLineup | None:
-    roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
-    row = storage.get_roster(ctx.conn, ctx.league_id, roster_id) if roster_id is not None else None
+    row = storage.get_my_roster(ctx.conn, ctx.league_id, ctx.user_id)
     if not row:
         return None
     return sleeper_lineup(
@@ -200,10 +200,18 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         )
 
     def my_roster_ids() -> list[str] | None:
-        roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
-        if roster_id is None:
-            return None
-        return json.loads(storage.get_roster(ctx.conn, ctx.league_id, roster_id)["players"])
+        row = storage.get_my_roster(ctx.conn, ctx.league_id, ctx.user_id)
+        return json.loads(row["players"]) if row else None
+
+    def fresh_news(pid: str, limit: int) -> list:
+        """A player's news, fetched live when possible, else from the cache."""
+        try:
+            items = fetch_player_news(pid, limit=limit)
+            if items:
+                storage.save_player_news(ctx.conn, items)
+        except Exception:
+            pass
+        return storage.get_player_news(ctx.conn, pid, limit=limit)
 
     @tool
     def get_league_state() -> str:
@@ -433,8 +441,11 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
     def recommend_lineup(week: int = 0) -> str:
         """The optimal start/sit for my roster, solved against my league's roster
         slots from projections (which already discount injured players). Returns
-        each starting slot, who fills it, and why, plus injured bench players who
-        could move to IR. This is what the lineup SHOULD be; for the lineup
+        each starting slot with its player's NFL team, projection and std dev;
+        for a slot that should change, the player it replaces with the same
+        facts; the latest news on the players in changed slots; and injured
+        bench players who could move to IR. These are the facts to explain a
+        start/sit with. This is what the lineup SHOULD be; for the lineup
         currently set in Sleeper use get_my_roster. Players in IR slots are not
         considered. Defaults to the current week."""
         target_week = week or ctx.current_week
@@ -445,23 +456,42 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         player_ids = [pid for pid in my_roster_ids() if pid not in lineup.ir]
 
         projections = {p.player_id: p for p in ctx.projections(target_week)}
-        player_meta = {}
-        for pid in player_ids:
-            p = ctx.conn.execute(
-                "SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)
-            ).fetchone()
-            if p:
-                name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) or pid
-                player_meta[pid] = {"name": name, "position": p["position"]}
-
         current = [pid or sleeper_writes.EMPTY_SLOT for _slot, pid in lineup.starters]
-        slots = optimize_lineup(ctx.roster_positions(), player_ids, projections, player_meta, current_starters=current)
-        started = {s.player_id for s in slots if s.player_id}
-        lines = []
-        for s in slots:
-            status = storage.get_injury_status(ctx.conn, s.player_id) if s.player_id else None
-            lines.append(f"{s.slot}: {s.name}{_status_tag(status)} ({s.mean:.1f} pts) - {s.why}")
+        slots = optimize_lineup(ctx.roster_positions(), player_ids, projections,
+                                storage.player_meta(ctx.conn, player_ids), current_starters=current)
+        started = {s.player_id: s.slot for s in slots if s.player_id}
+
+        def facts(pid: str) -> str:
+            p = projections.get(pid)
+            if not p:
+                status = storage.get_injury_status(ctx.conn, pid)
+                return f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}: no projection"
+            text = f"{_fmt_player(p)}, std {p.variance ** 0.5:.1f}"
+            if p.injury_multiplier != 1.0:
+                text += f", injury adjustment x{p.injury_multiplier:.2f}"
+            if p.matchup_multiplier != 1.0:
+                text += f", matchup adjustment x{p.matchup_multiplier:.2f}"
+            return text
+
+        lines, changed = [], []
+        for s, (_slot, was) in zip(slots, lineup.starters):
+            text = facts(s.player_id) if s.player_id else "(empty)"
+            if s.player_id != was:
+                text += f" - CHANGE, in for {facts(was) if was else 'an empty slot'}"
+                if was in started:
+                    text += f" (who moves to {started[was]})"
+                changed += [pid for pid in (s.player_id, was) if pid]
+            lines.append(f"{s.slot}: {text}")
         lines.append(f"Total projected: {sum(s.mean for s in slots):.1f}")
+        news = []
+        for pid in dict.fromkeys(changed):
+            for row in storage.get_player_news(ctx.conn, pid, limit=1):
+                when = f" ({datetime.fromtimestamp(row['published'] / 1000, tz=timezone.utc):%Y-%m-%d})" if row["published"] else ""
+                # Capped: some analyses run to a page, and small models lose the thread.
+                analysis = f" {row['analysis'][:300]}{'...' if len(row['analysis']) > 300 else ''}" if row["analysis"] else ""
+                news.append(f"  {storage.player_name(ctx.conn, pid)}{when}: {row['title']}.{analysis}")
+        if news:
+            lines += ["Latest news on the players in changed slots:", *news]
         lines.append("To enact: `lineup --live` shows the changes vs Sleeper, `lineup --apply` sets them "
                      "(the user confirms; players whose game started stay locked).")
         for pid in player_ids:
@@ -542,13 +572,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
 
         chunks = []
         for p in candidates:
-            try:
-                items = fetch_player_news(p.player_id, limit=1)
-                if items:
-                    storage.save_player_news(ctx.conn, items)
-            except Exception:
-                pass  # fall back to whatever is cached
-            news = storage.get_player_news(ctx.conn, p.player_id, limit=1)
+            news = fresh_news(p.player_id, limit=1)
             lines = [f"{p.name} ({p.position}/{p.team or 'FA'}) [{p.injury_status}]: "
                      f"{p.mean:.1f} pts rest-of-season if healthy"]
             if news:
@@ -570,7 +594,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
         a trade should be judged on) or 'week' (this week's projection only)."""
         def resolve_all(names: str) -> tuple[list[str], list[str]]:
             ids, problems = [], []
-            for name in [n.strip() for n in names.split(",") if n.strip()]:
+            for name in _names(names):
                 pid, problem = resolve(name)
                 if pid:
                     ids.append(pid)
@@ -619,13 +643,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
             if not pid:
                 sections.append(problem)
                 continue
-            try:
-                items = fetch_player_news(pid, limit=min(limit, 5))
-                if items:
-                    storage.save_player_news(ctx.conn, items)
-            except Exception:
-                pass  # fall through to whatever is cached
-            rows = storage.get_player_news(ctx.conn, pid, limit=min(limit, 5))
+            rows = fresh_news(pid, limit=min(limit, 5))
             status = storage.get_injury_status(ctx.conn, pid)
             label = f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}"
             sections.append(_format_news(rows, f"News for {label}:") if rows else f"No news found for {label}.")
@@ -748,14 +766,7 @@ def build_tools(ctx: AgentContext) -> list[BaseTool]:
             return f"Pending claims are unavailable: {e}"
         if not claims:
             return "No pending waiver claims."
-        lines = []
-        for t in claims:
-            adds = ", ".join(storage.player_name(ctx.conn, pid) for pid in t.get("adds") or {})
-            drops = ", ".join(storage.player_name(ctx.conn, pid) for pid in t.get("drops") or {})
-            bid = (t.get("settings") or {}).get("waiver_bid")
-            lines.append(f"Claim {adds or '-'}" + (f", drop {drops}" if drops else "")
-                         + (f", bid ${bid}" if bid is not None else "") + f" (id {t['transaction_id']})")
-        return "\n".join(lines)
+        return "\n".join(sleeper_writes.describe_claim(ctx.conn, t) for t in claims)
 
     @tool
     def remember_preference(note: str) -> str:

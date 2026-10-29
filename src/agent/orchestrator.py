@@ -228,8 +228,9 @@ CHAT_THREAD = "chat"
 def open_chat_agent(conn: sqlite3.Connection, new: bool = False, in_app: bool = False):
     """Returns (agent, ctx) for the saved `chat` conversation, shared by the
     CLI and the web app. History lives in config.CONVERSATIONS_DB_PATH, so a
-    later session picks up where this one left off (`new=True` starts over)."""
-    refresh_before_question(conn)
+    later session picks up where this one left off (`new=True` starts over).
+    No refresh here: chat_turn refreshes before every question, and opening
+    the web page must not wait on a sync."""
     ctx = build_context(conn)
     config.CONVERSATIONS_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     checkpointer = SqliteSaver(sqlite3.connect(config.CONVERSATIONS_DB_PATH, check_same_thread=False))
