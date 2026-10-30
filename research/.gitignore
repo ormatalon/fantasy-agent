@@ -1,0 +1,6 @@
+data/
+mlruns/
+mlflow.db
+mlartifacts/
+models/
+.venv/

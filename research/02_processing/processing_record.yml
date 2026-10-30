@@ -1,0 +1,167 @@
+created: '2026-10-29'
+versions:
+  dsprep: 0.2.0
+  pandas: 3.1.0
+  numpy: 2.4.6
+  scikit-learn: 1.9.1
+eda_source: eda_player_games.ipynb
+user_overrides:
+- key: recommendations.datetime_parts
+  eda_value: []
+  user_value: []
+- key: recommendations.target.transform
+  eda_value: null
+  user_value: null
+cleaning:
+- step: null_tokens
+  column: practice_status
+  action: to NaN
+  n_affected: 26.0
+  note: ''
+- step: invalid_values
+  column: snap_share_l3
+  action: set NaN
+  n_affected: 4.0
+  note: snap_share_l3 < 0 or snap_share_l3 > 1
+- step: leakage
+  column: kickoff
+  action: dropped
+  n_affected: .nan
+  note: timestamp
+- step: drop_columns
+  column: name
+  action: dropped
+  n_affected: .nan
+  note: identifier
+- step: drop_columns
+  column: gsis_id
+  action: dropped
+  n_affected: .nan
+  note: identifier (NFL id)
+- step: drop_columns
+  column: team
+  action: dropped
+  n_affected: .nan
+  note: identity effect eps2 0.004; would memorise team-seasons
+- step: drop_columns
+  column: opponent
+  action: dropped
+  n_affected: .nan
+  note: identity effect eps2 0.000; strength captured by the opp_* defense features
+- step: drop_columns
+  column: rec_tgt_l3
+  action: dropped
+  n_affected: .nan
+  note: r=0.97 with tgt_share_l3
+- step: drop_columns
+  column: rec_tgt_l8
+  action: dropped
+  n_affected: .nan
+  note: r=0.98 with tgt_share_l8
+- step: drop_columns
+  column: qb_cpoe_rel_l8
+  action: dropped
+  n_affected: .nan
+  note: PSI 0.21 train vs test even league-relative; adds nothing beyond qb_epa_db_rel_l8
+target:
+  task: regression
+  mode: auto
+  transform: null
+  log:
+  - processor: TargetProcessor
+    column: <target>
+    action: target_transform
+    detail: none (original scale)
+split:
+  how: time
+  time_col: season
+  group_col: player_id
+  train: 2022-2024
+  val: '2025'
+  test: 2026 weeks 1-7
+feature_sets:
+  gbm:
+    n_features: 71
+    cat_features:
+    - position
+    - roof
+    - report_status
+    - practice_status
+    text_features: []
+    unused_input_columns:
+    - season
+    - player_id
+    - act
+    log:
+    - step: num
+      processor: NumericProcessor
+      column: pts_l8
+      action: missing_indicator
+      detail: train missing rate 3.867%
+    - step: num
+      processor: NumericProcessor
+      column: pts_prev_season
+      action: missing_indicator
+      detail: train missing rate 21.222%
+    - step: num
+      processor: NumericProcessor
+      column: xfp_l8
+      action: missing_indicator
+      detail: train missing rate 5.179%
+    - step: num
+      processor: NumericProcessor
+      column: fp_ecr
+      action: missing_indicator
+      detail: train missing rate 17.521%
+    - step: num
+      processor: NumericProcessor
+      column: sleeper_adp
+      action: missing_indicator
+      detail: train missing rate 29.940%
+    - step: cat
+      processor: CategoricalProcessor
+      column: position
+      action: native
+      detail: 4 levels kept as category
+    - step: cat
+      processor: CategoricalProcessor
+      column: roof
+      action: native
+      detail: 4 levels kept as category
+    - step: cat
+      processor: CategoricalProcessor
+      column: report_status
+      action: native
+      detail: 4 levels kept as category
+    - step: cat
+      processor: CategoricalProcessor
+      column: practice_status
+      action: native
+      detail: 4 levels kept as category
+outputs:
+  dir: ../data/processed
+  X:
+    gbm:
+      train: ../data/processed\X_train_gbm.parquet
+      val: ../data/processed\X_val_gbm.parquet
+      test: ../data/processed\X_test_gbm.parquet
+  y:
+    train: ../data/processed\y_train.parquet
+    val: ../data/processed\y_val.parquet
+    test: ../data/processed\y_test.parquet
+  clean:
+    train: ../data/processed\clean_train.parquet
+    val: ../data/processed\clean_val.parquet
+    test: ../data/processed\clean_test.parquet
+  eval:
+    train: ../data/processed\eval_train.parquet
+    val: ../data/processed\eval_val.parquet
+    test: ../data/processed\eval_test.parquet
+  processors:
+    gbm: ../models/feature_processor_gbm.joblib
+  target_processor: ../models/target_processor.joblib
+  processing_module: processing_player_games.py
+notes:
+- season kept out of the features (no trend; trees cannot extrapolate an unseen season)
+- no weekly projection is a feature; Sleeper's is read only from benchmark_sleeper.parquet
+- eval_* frames hold player_id/season/week/position/act for joining the benchmark

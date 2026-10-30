@@ -1,0 +1,416 @@
+meta:
+  dataset: player_games
+  eda_notebook: eda_player_games.ipynb
+  created: '2026-10-28'
+  files:
+    train: research/data/player_games_train.parquet
+    test: research/data/player_games_test.parquet
+  rules_file_found: true
+problem:
+  type: regression
+  target: act
+  positive_class: null
+  target_classes: []
+  unit_of_observation: 'one QB/RB/WR/TE in one regular-season week: on the 53-man
+    roster, recently active or preseason-ranked, not listed Out'
+  key:
+  - player_id
+  - season
+  - week
+  entity_column: player_id
+  time_column: kickoff
+  rows_missing_target:
+    count: 0
+    meaning: unknown
+columns:
+  season:
+    type: low_card_numeric
+    missing_pct: 0.0
+  week:
+    type: low_card_numeric
+    missing_pct: 0.0
+  team:
+    type: categorical
+    missing_pct: 0.0
+  position:
+    type: categorical
+    missing_pct: 0.0
+  gsis_id:
+    type: identifier
+    missing_pct: 0.0
+  name:
+    type: identifier
+    missing_pct: 0.0
+  player_id:
+    type: identifier
+    missing_pct: 0.0
+  total_line:
+    type: continuous
+    missing_pct: 0.0
+  roof:
+    type: categorical
+    missing_pct: 0.0
+  div_game:
+    type: low_card_numeric
+    missing_pct: 0.0
+  opponent:
+    type: categorical
+    missing_pct: 0.0
+  rest:
+    type: low_card_numeric
+    missing_pct: 0.0
+  home:
+    type: low_card_numeric
+    missing_pct: 0.0
+  team_spread:
+    type: continuous
+    missing_pct: 0.0
+  implied_total:
+    type: continuous
+    missing_pct: 0.0
+  kickoff:
+    type: datetime
+    missing_pct: 0.0
+    notes: timestamp; drop as a feature
+  age:
+    type: continuous
+    missing_pct: 0.0
+  years_exp:
+    type: continuous
+    missing_pct: 0.013
+  report_status:
+    type: categorical
+    missing_pct: 94.167
+  practice_status:
+    type: categorical
+    missing_pct: 83.178
+  pts_l3:
+    type: continuous
+    missing_pct: 3.572
+  snap_share_l3:
+    type: continuous
+    missing_pct: 3.585
+  tgt_share_l3:
+    type: continuous
+    missing_pct: 3.572
+  rec_tgt_l3:
+    type: continuous
+    missing_pct: 3.572
+  rush_att_l3:
+    type: continuous
+    missing_pct: 3.572
+  pass_att_l3:
+    type: continuous
+    missing_pct: 3.572
+  rz_opps_l3:
+    type: continuous
+    missing_pct: 3.572
+  rec_air_yd_l3:
+    type: continuous
+    missing_pct: 3.572
+  pts_l8:
+    type: continuous
+    missing_pct: 3.572
+  snap_share_l8:
+    type: continuous
+    missing_pct: 3.585
+  tgt_share_l8:
+    type: continuous
+    missing_pct: 3.572
+  rec_tgt_l8:
+    type: continuous
+    missing_pct: 3.572
+  rush_att_l8:
+    type: continuous
+    missing_pct: 3.572
+  pass_att_l8:
+    type: continuous
+    missing_pct: 3.572
+  rz_opps_l8:
+    type: continuous
+    missing_pct: 3.572
+  rec_air_yd_l8:
+    type: continuous
+    missing_pct: 3.572
+  pts_std_l8:
+    type: continuous
+    missing_pct: 7.503
+  pts_max_l8:
+    type: continuous
+    missing_pct: 3.572
+  pts_season_avg:
+    type: continuous
+    missing_pct: 11.375
+  games_season:
+    type: low_card_numeric
+    missing_pct: 0.0
+  weeks_since_played:
+    type: continuous
+    missing_pct: 3.572
+  pts_prev_season:
+    type: continuous
+    missing_pct: 21.408
+  games_prev_season:
+    type: low_card_numeric
+    missing_pct: 21.408
+  xfp_l3:
+    type: continuous
+    missing_pct: 5.174
+  xfp_l8:
+    type: continuous
+    missing_pct: 5.174
+  fp_over_xfp_l8:
+    type: continuous
+    missing_pct: 5.174
+  opp_pos_over_avg_l8:
+    type: continuous
+    missing_pct: 0.0
+  wopr_l8:
+    type: continuous
+    missing_pct: 4.704
+  air_yards_share_l8:
+    type: continuous
+    missing_pct: 4.704
+  rec_epa_tgt_l8:
+    type: continuous
+    missing_pct: 20.442
+  rush_epa_carry_l8:
+    type: continuous
+    missing_pct: 46.944
+  fp_ecr:
+    type: continuous
+    missing_pct: 18.878
+  fp_pos_rank:
+    type: continuous
+    missing_pct: 18.878
+  sleeper_adp:
+    type: continuous
+    missing_pct: 30.414
+  sleeper_pos_adp:
+    type: continuous
+    missing_pct: 30.414
+  team_pos_rank:
+    type: low_card_numeric
+    missing_pct: 0.585
+  team_pos_share:
+    type: continuous
+    missing_pct: 0.585
+  vacated_pts:
+    type: continuous
+    missing_pct: 0.0
+  qb_change:
+    type: low_card_numeric
+    missing_pct: 0.0
+  is_expected_qb:
+    type: low_card_numeric
+    missing_pct: 86.306
+  team_plays_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  team_pass_rate_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  team_pass_epa_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  team_rush_epa_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  team_points_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  qb_epa_db_rel_l8:
+    type: continuous
+    missing_pct: 0.307
+  qb_cpoe_rel_l8:
+    type: continuous
+    missing_pct: 0.307
+  qb_ppr_rel_l8:
+    type: continuous
+    missing_pct: 0.307
+  opp_pass_epa_allowed_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  opp_rush_epa_allowed_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  opp_sack_rate_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  opp_points_allowed_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  opp_plays_allowed_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  opp_pts_allowed_rel_l8:
+    type: continuous
+    missing_pct: 0.0
+  act:
+    type: target
+    missing_pct: 0.0
+cleaning:
+  parsing_fixes: []
+  null_tokens:
+  - NA
+  - N/A
+  - 'null'
+  - None
+  - ''
+  - ' '
+  - '?'
+  - '-'
+  sentinels_to_nan: []
+  spelling_mappings: []
+  duplicates:
+    full_row:
+      count: 0
+      action: drop
+      status: applied
+    conflicting_key:
+      count: 0
+      action: keep_all
+      status: applied
+      reason: no duplicated keys
+  invalid_values:
+  - column: snap_share_l3
+    rule: snap_share_l3 < 0 or snap_share_l3 > 1
+    count: 4
+    action: set_nan
+    status: recommended
+    reason: outside the physically possible range
+  outlier_removals: []
+recommendations:
+  drop_columns:
+  - column: kickoff
+    reason: timestamp, not a feature
+    status: recommended
+  - column: name
+    reason: identifier
+    status: recommended
+  - column: gsis_id
+    reason: identifier (NFL id)
+    status: recommended
+  - column: team
+    reason: identity effect eps2 0.004; would memorise team-seasons
+    status: recommended
+  - column: opponent
+    reason: identity effect eps2 0.000; strength captured by the opp_* defense features
+    status: recommended
+  - column: rec_tgt_l3
+    reason: r=0.97 with tgt_share_l3
+    status: recommended
+  - column: rec_tgt_l8
+    reason: r=0.98 with tgt_share_l8
+    status: recommended
+  - column: qb_cpoe_rel_l8
+    reason: PSI 0.21 train vs test even league-relative; adds nothing beyond qb_epa_db_rel_l8
+    status: recommended
+  leakage:
+  - column: kickoff
+    evidence: timestamp
+    verdict: drop
+  - column: fp_ecr
+    evidence: last FantasyPros scrape before the first kickoff; one value per player-season
+    verdict: keep
+  - column: sleeper_adp
+    evidence: ADP stored with week-1 projections; frozen for the season
+    verdict: keep
+  - column: xfp_l8
+    evidence: expected points of past regular-season games; 1200/1200 recomputed values
+      matched
+    verdict: keep
+  - column: pts_l3
+    evidence: 'history features audited: 400/400 recomputed values matched'
+    verdict: keep
+  - column: opp_pass_epa_allowed_rel_l8
+    evidence: team-stats history audited 300/300; league mean uses only that week's
+      pre-game values
+    verdict: keep
+  - column: is_expected_qb
+    evidence: last game's starter if available; matches the real starter 89.8%
+    verdict: keep
+  missing_indicators:
+  - column: pts_l8
+    mechanism: MAR
+    reason: whole history block missing for debuts; act 1.6 vs 6.0
+  - column: pts_prev_season
+    mechanism: MAR
+    reason: rookies / absent last season; act 3.8 vs 6.3
+  - column: xfp_l8
+    mechanism: MAR
+    reason: no ff_opportunity history; act 1.0 vs 6.1
+  - column: fp_ecr
+    mechanism: MNAR
+    reason: unranked preseason; act 1.4 vs 6.8
+  - column: sleeper_adp
+    mechanism: MNAR
+    reason: undrafted preseason; act 2.3 vs 7.3
+  - column: report_status
+    mechanism: MNAR
+    reason: missing = not on the injury report; own level
+  - column: practice_status
+    mechanism: MNAR
+    reason: missing = not on the practice report; own level
+  capping: []
+  transforms: []
+  rare_level_grouping: []
+  manual_treatment:
+  - column: player_id
+    kind: high_card_categorical
+    cardinality: 1012
+    examples:
+    - '1029'
+    - '1034'
+    - '1049'
+  redundant_pairs:
+  - columns:
+    - rec_tgt_l8
+    - tgt_share_l8
+    measure: pearson
+    value: 0.983
+    suggestion: drop rec_tgt_l8 (and rec_tgt_l3)
+  - columns:
+    - sleeper_pos_adp
+    - fp_pos_rank
+    measure: spearman
+    value: 0.955
+    suggestion: keep both; they disagree on the undrafted tail
+  datetime_parts: []
+  target:
+    transform: null
+    class_weights: null
+    reason: '37% zeros with negatives; lineups need expected points: squared-error
+      on the raw target, Tweedie as an experiment'
+validation:
+  split: already_split
+  group_column: player_id
+  stratify_on: []
+  holdout: '2026 weeks 1-7 (test file); inside train an expanding season split: fit
+    2022-2023 -> validate 2024, fit 2022-2024 -> validate 2025'
+  representativeness_issues:
+  - feature: total_line
+    psi: 0.15
+    note: higher 2026 totals; moderate
+  - feature: qb_cpoe_rel_l8
+    psi: 0.21
+    note: dropped
+  - feature: team_plays_rel_l8
+    psi: 0.12
+    note: league-relative (raw was 0.23)
+  - feature: opp_pass_epa_allowed_rel_l8
+    psi: 0.11
+    note: league-relative
+  metric:
+    primary: rmse
+    secondary:
+    - mae
+    - within_week_spearman
+    - bias
+    - rmse_played_only
+    reason: lineup value is expected points (mean); MAE rewards median shrinkage;
+      played-only isolates performance from availability
+open_questions:
+- Sleeper's final snapshot knows game-day inactives (it projects 0 for 96% of players
+  who end up not playing). Should the headline comparison include those rows (fair
+  to the use case) or only players who played (fair to the model)? Both are reported.

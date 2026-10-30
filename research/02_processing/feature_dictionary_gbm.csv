@@ -1,0 +1,72 @@
+step,feature,source,processor,method,dtype,params
+num,team_spread,team_spread,NumericProcessor,auto,float64,method=auto
+num,total_line,total_line,NumericProcessor,auto,float64,method=auto
+num,implied_total,implied_total,NumericProcessor,auto,float64,method=auto
+num,home,home,NumericProcessor,auto,float64,method=auto
+num,div_game,div_game,NumericProcessor,auto,float64,method=auto
+num,rest,rest,NumericProcessor,auto,float64,method=auto
+num,week,week,NumericProcessor,auto,float64,method=auto
+num,age,age,NumericProcessor,auto,float64,method=auto
+num,years_exp,years_exp,NumericProcessor,auto,float64,method=auto
+num,pts_l3,pts_l3,NumericProcessor,auto,float64,method=auto
+num,snap_share_l3,snap_share_l3,NumericProcessor,auto,float64,method=auto
+num,tgt_share_l3,tgt_share_l3,NumericProcessor,auto,float64,method=auto
+num,rush_att_l3,rush_att_l3,NumericProcessor,auto,float64,method=auto
+num,pass_att_l3,pass_att_l3,NumericProcessor,auto,float64,method=auto
+num,rz_opps_l3,rz_opps_l3,NumericProcessor,auto,float64,method=auto
+num,rec_air_yd_l3,rec_air_yd_l3,NumericProcessor,auto,float64,method=auto
+num,pts_l8,pts_l8,NumericProcessor,auto,float64,"missing_indicator=True, method=auto"
+num,pts_l8__missing,pts_l8,NumericProcessor,auto,int8,"missing_indicator=True, method=auto"
+num,snap_share_l8,snap_share_l8,NumericProcessor,auto,float64,method=auto
+num,tgt_share_l8,tgt_share_l8,NumericProcessor,auto,float64,method=auto
+num,rush_att_l8,rush_att_l8,NumericProcessor,auto,float64,method=auto
+num,pass_att_l8,pass_att_l8,NumericProcessor,auto,float64,method=auto
+num,rz_opps_l8,rz_opps_l8,NumericProcessor,auto,float64,method=auto
+num,rec_air_yd_l8,rec_air_yd_l8,NumericProcessor,auto,float64,method=auto
+num,pts_std_l8,pts_std_l8,NumericProcessor,auto,float64,method=auto
+num,pts_max_l8,pts_max_l8,NumericProcessor,auto,float64,method=auto
+num,pts_season_avg,pts_season_avg,NumericProcessor,auto,float64,method=auto
+num,games_season,games_season,NumericProcessor,auto,float64,method=auto
+num,weeks_since_played,weeks_since_played,NumericProcessor,auto,float64,method=auto
+num,pts_prev_season,pts_prev_season,NumericProcessor,auto,float64,"missing_indicator=True, method=auto"
+num,pts_prev_season__missing,pts_prev_season,NumericProcessor,auto,int8,"missing_indicator=True, method=auto"
+num,games_prev_season,games_prev_season,NumericProcessor,auto,float64,method=auto
+num,xfp_l3,xfp_l3,NumericProcessor,auto,float64,method=auto
+num,xfp_l8,xfp_l8,NumericProcessor,auto,float64,"missing_indicator=True, method=auto"
+num,xfp_l8__missing,xfp_l8,NumericProcessor,auto,int8,"missing_indicator=True, method=auto"
+num,fp_over_xfp_l8,fp_over_xfp_l8,NumericProcessor,auto,float64,method=auto
+num,wopr_l8,wopr_l8,NumericProcessor,auto,float64,method=auto
+num,air_yards_share_l8,air_yards_share_l8,NumericProcessor,auto,float64,method=auto
+num,rec_epa_tgt_l8,rec_epa_tgt_l8,NumericProcessor,auto,float64,method=auto
+num,rush_epa_carry_l8,rush_epa_carry_l8,NumericProcessor,auto,float64,method=auto
+num,opp_pts_allowed_rel_l8,opp_pts_allowed_rel_l8,NumericProcessor,auto,float64,method=auto
+num,opp_pos_over_avg_l8,opp_pos_over_avg_l8,NumericProcessor,auto,float64,method=auto
+num,opp_pass_epa_allowed_rel_l8,opp_pass_epa_allowed_rel_l8,NumericProcessor,auto,float64,method=auto
+num,opp_rush_epa_allowed_rel_l8,opp_rush_epa_allowed_rel_l8,NumericProcessor,auto,float64,method=auto
+num,opp_sack_rate_rel_l8,opp_sack_rate_rel_l8,NumericProcessor,auto,float64,method=auto
+num,opp_points_allowed_rel_l8,opp_points_allowed_rel_l8,NumericProcessor,auto,float64,method=auto
+num,opp_plays_allowed_rel_l8,opp_plays_allowed_rel_l8,NumericProcessor,auto,float64,method=auto
+num,team_plays_rel_l8,team_plays_rel_l8,NumericProcessor,auto,float64,method=auto
+num,team_pass_rate_rel_l8,team_pass_rate_rel_l8,NumericProcessor,auto,float64,method=auto
+num,team_pass_epa_rel_l8,team_pass_epa_rel_l8,NumericProcessor,auto,float64,method=auto
+num,team_rush_epa_rel_l8,team_rush_epa_rel_l8,NumericProcessor,auto,float64,method=auto
+num,team_points_rel_l8,team_points_rel_l8,NumericProcessor,auto,float64,method=auto
+num,qb_epa_db_rel_l8,qb_epa_db_rel_l8,NumericProcessor,auto,float64,method=auto
+num,qb_ppr_rel_l8,qb_ppr_rel_l8,NumericProcessor,auto,float64,method=auto
+num,qb_change,qb_change,NumericProcessor,auto,float64,method=auto
+num,is_expected_qb,is_expected_qb,NumericProcessor,auto,float64,method=auto
+num,fp_ecr,fp_ecr,NumericProcessor,auto,float64,"missing_indicator=True, method=auto"
+num,fp_ecr__missing,fp_ecr,NumericProcessor,auto,int8,"missing_indicator=True, method=auto"
+num,fp_pos_rank,fp_pos_rank,NumericProcessor,auto,float64,method=auto
+num,sleeper_adp,sleeper_adp,NumericProcessor,auto,float64,"missing_indicator=True, method=auto"
+num,sleeper_adp__missing,sleeper_adp,NumericProcessor,auto,int8,"missing_indicator=True, method=auto"
+num,sleeper_pos_adp,sleeper_pos_adp,NumericProcessor,auto,float64,method=auto
+num,team_pos_rank,team_pos_rank,NumericProcessor,auto,float64,method=auto
+num,team_pos_share,team_pos_share,NumericProcessor,auto,float64,method=auto
+num,vacated_pts,vacated_pts,NumericProcessor,auto,float64,method=auto
+num,injury_level,injury_level,NumericProcessor,auto,float64,method=auto
+num,practice_level,practice_level,NumericProcessor,auto,float64,method=auto
+cat,position,position,CategoricalProcessor,native,category,method=native
+cat,roof,roof,CategoricalProcessor,native,category,method=native
+cat,report_status,report_status,CategoricalProcessor,native,category,method=native
+cat,practice_status,practice_status,CategoricalProcessor,native,category,method=native
