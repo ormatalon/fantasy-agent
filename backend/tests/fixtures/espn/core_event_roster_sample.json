@@ -1,0 +1,251 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster?lang=en&region=us",
+ "entries": [
+  {
+   "playerId": 16802,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "0",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/16802?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/30?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/16802/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Lawrence"
+  },
+  {
+   "playerId": 2971622,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "99",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/2971622?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/32?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/2971622/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Williams"
+  },
+  {
+   "playerId": 2975863,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "81",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/2975863?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/7?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/2975863/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Saubert"
+  },
+  {
+   "playerId": 3129308,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "53",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/3129308?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/73?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/3129308/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Nelson"
+  },
+  {
+   "playerId": 3912547,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "14",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/3912547?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/8?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/3912547/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Darnold"
+  },
+  {
+   "playerId": 3914630,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "74",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/3914630?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/73?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/3914630/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "J. Jones"
+  },
+  {
+   "playerId": 4046675,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "20",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4046675?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/36?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/4046675/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Love"
+  },
+  {
+   "playerId": 4245171,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "72",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4245171?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/46?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/4245171/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Lucas"
+  },
+  {
+   "playerId": 4247808,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "39",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4247808?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/36?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/4247808/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Okada"
+  },
+  {
+   "playerId": 4362851,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "13",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4362851?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/30?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/4362851/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "E. Jones IV"
+  },
+  {
+   "playerId": 4372020,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "29",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4372020?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/29?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/4372020/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Jobe"
+  },
+  {
+   "playerId": 4383409,
+   "period": 0,
+   "active": false,
+   "starter": true,
+   "forPlayerId": 0,
+   "jersey": "61",
+   "valid": true,
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4383409?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/4?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036/competitors/26/roster/4383409/statistics/0?lang=en&region=us"
+   },
+   "didNotPlay": false,
+   "displayName": "Sundell"
+  }
+ ],
+ "competition": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873036/competitions/401873036?lang=en&region=us"
+ },
+ "team": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/26?lang=en&region=us"
+ }
+}

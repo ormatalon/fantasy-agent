@@ -1,0 +1,65 @@
+{
+  "id": "gen-1793734325-g94u1fegbKqUAMyoUlTt",
+  "object": "chat.completion",
+  "created": 1793734325,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "tool_calls",
+      "native_finish_reason": "tool_calls",
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "refusal": null,
+        "reasoning": "The user is asking who they should pick up this week. This is a waiver wire question. I should use the get_waiver_targets tool to get free agents ranked by value over replacement with a FAAB guide. The user didn't specify a horizon, but typically for weekly pickups, \"week\" horizon makes sense. I'll use that.",
+        "tool_calls": [
+          {
+            "type": "function",
+            "index": 0,
+            "id": "call-06633e03-e79e-4ae1-8eb7-36e6be23f0bf",
+            "function": {
+              "name": "get_waiver_targets",
+              "arguments": "{\"horizon\":\"week\"}"
+            }
+          }
+        ],
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The user is asking who they should pick up this week. This is a waiver wire question. I should use the get_waiver_targets tool to get free agents ranked by value over replacement with a FAAB guide. The user didn't specify a horizon, but typically for weekly pickups, \"week\" horizon makes sense. I'll use that.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 981,
+    "completion_tokens": 103,
+    "total_tokens": 1084,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 73,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

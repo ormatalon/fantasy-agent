@@ -1,0 +1,44 @@
+{
+ "data": {
+  "get_player_news": [
+   {
+    "metadata": {
+     "analysis": "Anderson finished Week 5 prep with a DNP-LP-FP practice log, and that was enough for the fourth-year pass rusher to avoid an injury designation for Sunday's AFC South showdown. Anderson has 23 tackles (13 solo), including 4.5 sacks, one pass defense, one forced fumble and a fumble recovery through the first four games of the regular season.",
+     "description": "Anderson (ankle) does not have an injury tag against the Titans on Sunday.",
+     "title": "Will Anderson - Good to go against Tennessee",
+     "topic_id": "1414435274666065920"
+    },
+    "player_id": "10892",
+    "published": 1791589918000,
+    "source": "rotowire",
+    "source_key": "641636"
+   },
+   {
+    "metadata": {
+     "analysis": "Anderson will be good to go in his usual role on the Texans defensive line. ",
+     "description": "Will Anderson Jr. is off the injury report for Sunday's game against the Titans. ",
+     "title": "Will Anderson Jr. (ankle) off injury report Sunday ",
+     "topic_id": "1414384942342819840",
+     "url": "https://www.fantasypros.com/nfl/news/613096/will-anderson-jr-ankle-off-injury-report-sunday.php"
+    },
+    "player_id": "10892",
+    "published": 1791578157564,
+    "source": "fantasy_pros",
+    "source_key": "613096"
+   },
+   {
+    "metadata": {
+     "analysis": "Anderson was able to practice in a limited capacity on Thursday after being sidelined due to an ankle issue on Wednesday. He should play in Week 5, barring any setbacks with his recovery.",
+     "description": "Will Anderson Jr. (ankle) was upgraded to a limited participant at practice on Thursday.",
+     "title": "Will Anderson Jr. (ankle) upgraded to limited Thursday",
+     "topic_id": "1414126959092375552",
+     "url": "https://www.fantasypros.com/nfl/news/612925/will-anderson-jr-ankle-upgraded-to-limited-thursday.php"
+    },
+    "player_id": "10892",
+    "published": 1791516649561,
+    "source": "fantasy_pros",
+    "source_key": "612925"
+   }
+  ]
+ }
+}

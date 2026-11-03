@@ -239,10 +239,12 @@ depth order was Sleeper's, which lags real roles.
 - League format must be **derived from the league, never assumed:** PPR/half/
   standard, TE premium, superflex, IDP (only when IDP slots exist), team DEF,
   kicker or not.
-- Injuries affect projections only when a player will not play: on IR or
-  ruled out of the next game (Out, PUP, suspended), his projection for that
-  game is 0. Questionable and Doubtful players keep their projection; their
-  status and news are shown, not priced in. Backups are not bumped.
+- Injuries affect projections only when a player will not play: ruled out of
+  the next game (Out, PUP, suspended), his projection for that game is 0; on
+  IR, 0 until the expected return week, then his healthy projection (0 for all
+  remaining weeks when no return date is known). Questionable and Doubtful
+  players keep their projection; their status and news are shown, not priced
+  in. Backups are not bumped.
 - **Supported leagues:** season-long redraft leagues, with these options:
   - defense: IDP (individual defensive players) or team DEF;
   - scoring: PPR, half-PPR or standard.
@@ -592,7 +594,7 @@ prorated), in two independent seasons.
 | Sleeper terms of use for automated moves | Not reviewed. Must be read before shipping moves to other users |
 | Live checks needing a token or a game in progress | Test questions 4, 7, 20-26 not yet run |
 | In-game schedule `status` value | Capture during a live game |
-| IR in season projections | Treated as 0 for the rest of the season, not until a return week |
+| IR in season projections | Decided: 0 until the expected return week (from the injury source's return date), healthy projection after it; 0 for all remaining weeks when no return date exists. Not backtestable on stored data |
 | Matchup adjustment, IDP matchup model | Off / not built |
 | Rebuilding the nflverse source on Sleeper stats | Would remove the crosswalk; ships only if the backtest holds |
 | Taxi squads | Not handled in the first build |

@@ -1,0 +1,37 @@
+season,season_type,game_type,team,week,gsis_id,position,full_name,first_name,last_name,report_primary_injury,report_secondary_injury,report_status,practice_primary_injury,practice_secondary_injury,practice_status
+2026,REG,REG,ARI,8,00-0032954,G,Isaac Seumalo,Isaac,Seumalo,,,,Not injury related - resting player,,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0033676,T,Elijah Wilkinson,Elijah,Wilkinson,,,,Knee,,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0033890,S,Budda Baker,Bishard,Baker,,,,Not injury related - resting player,,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0034381,LB,Josh Sweat,Josh,Sweat,,,,Not injury related - resting player,,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0035144,LB,Mack Wilson,Lyndell,Wilson,,,,Not injury related - resting player,Knee,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0035258,C,Hjalte Froholdt,Hjalte,Froholdt,Knee,,Questionable,Knee,,Did Not Participate In Practice
+2026,REG,REG,ARI,8,00-0035378,S,Andrew Wingard,Andrew,Wingard,Knee,,Questionable,Knee,,Limited Participation in Practice
+2026,REG,REG,ARI,8,00-0036933,LB,Zaven Collins,Zaven,Collins,,,,Illness,,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0037263,RB,Tyler Allgeier,Tyler,Allgeier,,,,Toe,,Limited Participation in Practice
+2026,REG,REG,ARI,8,00-0038559,WR,Michael Wilson,Michael,Wilson,,,,Ribs,,Limited Participation in Practice
+2026,REG,REG,ARI,8,00-0038571,G,Jon Gaines II,Jon,Gaines,Ankle,,Out,Ankle,,Did Not Participate In Practice
+2026,REG,REG,ARI,8,00-0038984,CB,Kei'Trel Clark,Kei'Trel,Clark,,,,Illness,,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0039807,CB,Max Melton,Malachi,Melton,Knee,,Questionable,Knee,,Limited Participation in Practice
+2026,REG,REG,ARI,8,00-0040706,DT,Walter Nolen,Walter,Nolen,Ankle,,Out,Ankle,,Did Not Participate In Practice
+2026,REG,REG,ARI,8,00-0041027,RB,Jeremiyah Love,Jeremiyah,Love,,,,Ankle,,Full Participation in Practice
+2026,REG,REG,ARI,8,00-0041561,QB,Carson Beck,Carson,Beck,,,,Back,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0031411,LB,DeMarcus Lawrence,DeMarcus,Lawrence,,,,Not injury related - resting player,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0031933,DT,Leonard Williams,Leonard,Williams,,,,Achilles,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0034342,G,Quenton Nelson,Quenton,Nelson,,,,Knee,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0034350,LB,Uchenna Nwosu,Anon,Nwosu,Ankle,,Doubtful,Ankle,,Did Not Participate In Practice
+2026,REG,REG,SEA,8,00-0035704,QB,Drew Lock,Paul,Lock,Elbow,,Questionable,Elbow,,Limited Participation in Practice
+2026,REG,REG,SEA,8,00-0037003,LB,Chazz Surratt,Chazz,Surratt,,,,Calf,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0037545,WR,Rashid Shaheed,Rashid,Shaheed,Knee,,Out,Knee,,Did Not Participate In Practice
+2026,REG,REG,SEA,8,00-0037745,RB,Velus Jones Jr.,Velus,Jones,Hamstring,,Out,Hamstring,,Did Not Participate In Practice
+2026,REG,REG,SEA,8,00-0037821,T,Charles Cross,Charles,Cross,Ankle,,Out,Ankle,,Did Not Participate In Practice
+2026,REG,REG,SEA,8,00-0038488,FB,Brady Russell,Brady,Russell,,,,Wrist,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0038543,WR,Jaxon Smith-Njigba,Jaxon,Smith-Njigba,,,,Not injury related - resting player,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0038694,DT,Brandon Pili,Brandon,Pili,Back,,Questionable,Back,,Did Not Participate In Practice
+2026,REG,REG,SEA,8,00-0038764,LB,Patrick O'Connell,Patrick,O'Connell,Toe,,Questionable,Toe,,Did Not Participate In Practice
+2026,REG,REG,SEA,8,00-0038922,LB,Drake Thomas,Drake,Thomas,,,,Ankle,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0039020,G,Anthony Bradford,Anthony,Bradford,Knee,,Questionable,Knee,,Limited Participation in Practice
+2026,REG,REG,SEA,8,00-0039165,RB,Zach Charbonnet,Zachariah,Charbonnet,,,,Knee,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0039309,DT,Byron Murphy II,Byron,Murphy,,,,Back,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0039815,LB,Tyrice Knight,Tyrice,Knight,,,,Hip,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0040061,LB,Connor O'Toole,Connor,O'Toole,,,,Hamstring,,Full Participation in Practice
+2026,REG,REG,SEA,8,00-0041512,RB,Jadarian Price,Jadarian,Price,,,,Chest,,Full Participation in Practice

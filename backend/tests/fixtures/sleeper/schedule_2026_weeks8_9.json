@@ -1,0 +1,234 @@
+[
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "BUF",
+  "week": 8,
+  "game_id": "202610804",
+  "away": "BAL"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "CIN",
+  "week": 8,
+  "game_id": "202610807",
+  "away": "TEN"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "DAL",
+  "week": 8,
+  "game_id": "202610809",
+  "away": "ARI"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "DEN",
+  "week": 8,
+  "game_id": "202610810",
+  "away": "KC"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "DET",
+  "week": 8,
+  "game_id": "202610811",
+  "away": "MIN"
+ },
+ {
+  "status": "complete",
+  "date": "2026-10-29",
+  "home": "GB",
+  "week": 8,
+  "game_id": "202610812",
+  "away": "CAR"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "JAX",
+  "week": 8,
+  "game_id": "202610815",
+  "away": "IND"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "MIA",
+  "week": 8,
+  "game_id": "202610819",
+  "away": "NE"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "NYJ",
+  "week": 8,
+  "game_id": "202610824",
+  "away": "LV"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "PIT",
+  "week": 8,
+  "game_id": "202610828",
+  "away": "CLE"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-02",
+  "home": "SEA",
+  "week": 8,
+  "game_id": "202610830",
+  "away": "CHI"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "LAR",
+  "week": 8,
+  "game_id": "202610832",
+  "away": "LAC"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "TB",
+  "week": 8,
+  "game_id": "202610833",
+  "away": "ATL"
+ },
+ {
+  "status": "complete",
+  "date": "2026-11-01",
+  "home": "WAS",
+  "week": 8,
+  "game_id": "202610835",
+  "away": "PHI"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "ATL",
+  "week": 9,
+  "game_id": "202610902",
+  "away": "CIN"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-05",
+  "home": "BAL",
+  "week": 9,
+  "game_id": "202610903",
+  "away": "JAX"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "CAR",
+  "week": 9,
+  "game_id": "202610905",
+  "away": "DEN"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "CHI",
+  "week": 9,
+  "game_id": "202610906",
+  "away": "TB"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "IND",
+  "week": 9,
+  "game_id": "202610914",
+  "away": "DAL"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "KC",
+  "week": 9,
+  "game_id": "202610916",
+  "away": "NYJ"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "MIA",
+  "week": 9,
+  "game_id": "202610919",
+  "away": "DET"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-09",
+  "home": "MIN",
+  "week": 9,
+  "game_id": "202610920",
+  "away": "BUF"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "NE",
+  "week": 9,
+  "game_id": "202610921",
+  "away": "GB"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "NO",
+  "week": 9,
+  "game_id": "202610922",
+  "away": "CLE"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "PHI",
+  "week": 9,
+  "game_id": "202610926",
+  "away": "NYG"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "LAC",
+  "week": 9,
+  "game_id": "202610929",
+  "away": "HOU"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "SEA",
+  "week": 9,
+  "game_id": "202610930",
+  "away": "ARI"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "SF",
+  "week": 9,
+  "game_id": "202610931",
+  "away": "LV"
+ },
+ {
+  "status": "pre_game",
+  "date": "2026-11-08",
+  "home": "WAS",
+  "week": 9,
+  "game_id": "202610935",
+  "away": "LAR"
+ }
+]

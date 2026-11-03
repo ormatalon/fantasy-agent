@@ -1,0 +1,54 @@
+{
+  "id": "gen-1793734368-UXgkeY9tG78Gm9NRgAjL",
+  "object": "chat.completion",
+  "created": 1793734368,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "DK Metcalf is on the **PIT** NFL team (Pittsburgh Steelers).",
+        "refusal": null,
+        "reasoning": "The user asked what NFL team DK Metcalf is on. The tool result shows he's on the PIT NFL team (Pittsburgh Steelers). I should provide this information clearly.",
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The user asked what NFL team DK Metcalf is on. The tool result shows he's on the PIT NFL team (Pittsburgh Steelers). I should provide this information clearly.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1116,
+    "completion_tokens": 59,
+    "total_tokens": 1175,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 38,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

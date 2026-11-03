@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setup - mockup</title>
+<style>
+/* Design tokens: see README.md. Colors from AGENT.md. */
+:root {
+  --yellow: #ecad0a;      /* accent lines, highlights */
+  --blue: #209dd7;        /* links, key sections */
+  --purple: #753991;      /* submit and important actions */
+  --purple-dark: #5f2d76; /* purple hover/pressed */
+  --navy: #032147;        /* headings */
+  --gray: #888888;        /* supporting text, labels (large or non-essential text) */
+  --gray-strong: #5c6670; /* supporting text at 12-14px (passes AA) */
+  --text: #1c2733;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --line: #dde3ea;
+  --blue-dark: #0e6f9e;   /* link text on white (passes AA) */
+  --yellow-tint: #fdf4d6;
+  --blue-tint: #e6f4fb;
+  --purple-tint: #f1e8f5;
+  --danger: #b42318;
+  --danger-tint: #fdeceb;
+  --ok: #1a7f4b;
+  --ok-tint: #e5f5ec;
+
+  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --fs-xs: 12px; --fs-sm: 13px; --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px; --fs-2xl: 26px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  --radius: 8px; --radius-sm: 4px;
+  --panel-w: 360px;
+  --topbar-h: 52px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; height: 100vh; margin: 0; font: var(--fs-md)/1.45 var(--font); color: var(--text); background: var(--bg); }
+h1, h2, h3 { color: var(--navy); margin: 0; font-weight: 600; line-height: 1.25; }
+h1 { font-size: var(--fs-2xl); } h2 { font-size: var(--fs-xl); } h3 { font-size: var(--fs-lg); }
+p { margin: 0; }
+a, .link { color: var(--blue-dark); text-decoration: underline; cursor: pointer; background: none; border: 0; font: inherit; padding: 0; }
+.muted { color: var(--gray-strong); }
+.label { font-size: var(--fs-xs); letter-spacing: .04em; text-transform: uppercase; color: var(--gray-strong); font-weight: 600; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* Mockup-only state switcher (not part of the app) */
+.statebar { position: sticky; top: 0; z-index: 50; background: #1c2733; color: #fff; padding: 6px 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: var(--fs-xs); }
+.statebar b { margin-right: 6px; font-weight: 600; }
+.statebar button { font: inherit; color: #fff; background: #3a4756; border: 0; border-radius: 12px; padding: 3px 10px; cursor: pointer; }
+.statebar button[aria-pressed="true"] { background: var(--yellow); color: var(--navy); font-weight: 600; }
+.statebar .size { margin-left: auto; color: #b9c2cc; }
+
+/* Window: the pywebview window. Default 1280x800, minimum 960x640. */
+.window { min-width: 960px; min-height: 640px; flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+
+.topbar { height: var(--topbar-h); flex: none; background: var(--surface); border-bottom: 3px solid var(--yellow); display: flex; align-items: center; gap: var(--s4); padding: 0 var(--s5); }
+.brand { font-weight: 700; color: var(--navy); font-size: var(--fs-lg); }
+.topbar .spacer { flex: 1; }
+
+/* Buttons */
+.btn { font: inherit; font-weight: 600; border-radius: var(--radius-sm); padding: 8px 16px; min-height: 36px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: var(--s2); }
+.btn-primary { background: var(--purple); color: #fff; }
+.btn-primary:hover { background: var(--purple-dark); }
+.btn-secondary { background: var(--surface); color: var(--navy); border-color: var(--navy); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-quiet { background: none; color: var(--blue-dark); border-color: transparent; }
+.btn[disabled] { background: #e3e7ec; color: #8b95a1; border-color: transparent; cursor: not-allowed; }
+.spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; display: inline-block; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } .skel { animation: none !important; } }
+
+/* Inputs */
+.field { display: grid; gap: var(--s1); }
+.field > label { font-weight: 600; color: var(--navy); }
+.input { font: inherit; padding: 8px 12px; min-height: 38px; border: 1px solid #b7c0ca; border-radius: var(--radius-sm); background: #fff; width: 100%; color: var(--text); }
+.input.invalid { border-color: var(--danger); }
+.hint { font-size: var(--fs-sm); color: var(--gray-strong); }
+.err-text { font-size: var(--fs-sm); color: var(--danger); }
+.row { display: flex; gap: var(--s3); align-items: flex-end; }
+.row > .field { flex: 1; }
+
+/* Banners */
+.banner { border-radius: var(--radius-sm); padding: var(--s3) var(--s4); border-left: 4px solid; display: flex; gap: var(--s3); align-items: flex-start; font-size: var(--fs-md); }
+.banner .grow { flex: 1; display: grid; gap: var(--s1); }
+.banner strong { color: var(--navy); }
+.banner-warn { background: var(--yellow-tint); border-color: var(--yellow); }
+.banner-error { background: var(--danger-tint); border-color: var(--danger); }
+.banner-info { background: var(--blue-tint); border-color: var(--blue); }
+.banner-ok { background: var(--ok-tint); border-color: var(--ok); }
+
+/* Chips (text always present, never color alone) */
+.chip { display: inline-block; font-size: var(--fs-xs); font-weight: 700; border-radius: 10px; padding: 1px 8px; line-height: 1.5; border: 1px solid; white-space: nowrap; }
+.chip-q { background: var(--yellow-tint); border-color: var(--yellow); color: #6b4d00; }
+.chip-d { background: #fde6cf; border-color: #d9822b; color: #7a3d00; }
+.chip-o, .chip-ir { background: var(--danger-tint); border-color: var(--danger); color: var(--danger); }
+.chip-bye { background: #eef0f3; border-color: #b7c0ca; color: var(--gray-strong); }
+.chip-rec { background: var(--purple-tint); border-color: var(--purple); color: var(--purple); }
+.chip-free { background: var(--ok-tint); border-color: var(--ok); color: var(--ok); }
+.chip-no { background: #eef0f3; border-color: #b7c0ca; color: var(--gray-strong); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.skel { background: linear-gradient(90deg, #e8ecf1 25%, #f3f5f8 50%, #e8ecf1 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm); height: 14px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+.scroll { flex: 1; overflow-y: auto; padding: var(--s6) var(--s5); }
+.col { max-width: 640px; margin: 0 auto; display: grid; gap: var(--s5); }
+.section { padding: var(--s5); display: grid; gap: var(--s3); }
+.section > .head { display: flex; gap: var(--s3); align-items: baseline; }
+.step { width: 24px; height: 24px; border-radius: 50%; background: var(--navy); color: #fff; font-size: var(--fs-sm); font-weight: 700; display: inline-grid; place-items: center; flex: none; }
+.option { display: grid; grid-template-columns: 20px 1fr auto; gap: var(--s3); align-items: start; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; background: #fff; }
+.option input { margin-top: 3px; accent-color: var(--purple); }
+.option:has(input:checked) { border-color: var(--purple); background: var(--purple-tint); }
+.option.disabled { background: #f6f7f9; cursor: not-allowed; color: var(--gray-strong); }
+.option .title { font-weight: 600; color: var(--navy); }
+.option.disabled .title { color: var(--gray-strong); }
+.option .sub { font-size: var(--fs-sm); color: var(--gray-strong); }
+.options { display: grid; gap: var(--s2); }
+.keysaved { display: flex; gap: var(--s3); align-items: center; justify-content: space-between; padding: var(--s3) var(--s4); background: var(--ok-tint); border-radius: var(--radius-sm); border-left: 4px solid var(--ok); }
+.actions { display: flex; gap: var(--s3); align-items: center; justify-content: flex-end; }
+</style>
+</head>
+<body>
+<div class="statebar" role="toolbar" aria-label="Mockup state">
+  <b>Setup state</b>
+  <button data-s="first">First run</button>
+  <button data-s="finding">Finding leagues</button>
+  <button data-s="notfound">Username not found</button>
+  <button data-s="sleeperdown">Sleeper unreachable</button>
+  <button data-s="one">One league</button>
+  <button data-s="several">Several leagues</button>
+  <button data-s="keybad">Key rejected</button>
+  <button data-s="saving">Saving</button>
+  <button data-s="settings">Settings (already set up)</button>
+  <span class="size">Window 1280x800, minimum 960x640</span>
+</div>
+
+<div class="window">
+  <header class="topbar">
+    <span class="brand">Fantasy Agent</span>
+    <span class="spacer"></span>
+    <span data-states="settings" ><button class="btn btn-quiet">Back to chat</button></span>
+  </header>
+
+  <main class="scroll">
+    <div class="col">
+      <div>
+        <h1 data-states="first finding notfound sleeperdown one several keybad saving">Set up Fantasy Agent</h1>
+        <h1 data-states="settings">Settings</h1>
+        <p class="muted" style="margin-top:6px" data-states="first finding notfound sleeperdown one several keybad saving">Four steps. Changes take effect right away; no restart.</p>
+        <p class="muted" style="margin-top:6px" data-states="settings">Changes take effect right away; no restart.</p>
+      </div>
+
+      <section class="card section" aria-labelledby="h-user">
+        <div class="head"><span class="step">1</span><h2 id="h-user" style="font-size:18px">Sleeper username</h2></div>
+        <div class="row">
+          <div class="field">
+            <label for="user">Username</label>
+            <input id="user" class="input" value="" placeholder="For example: OrMatalon" data-states="first finding notfound sleeperdown">
+            <input class="input" value="OrMatalon" data-states="one several keybad saving settings" aria-label="Username">
+            <span class="err-text" data-states="notfound" role="alert">No Sleeper user named that. Check the spelling.</span>
+          </div>
+          <button class="btn btn-secondary" data-states="first notfound sleeperdown">Find leagues</button>
+          <button class="btn btn-secondary" data-states="finding" disabled><span class="spinner"></span> Finding</button>
+          <button class="btn btn-secondary" data-states="one several keybad saving settings">Find again</button>
+        </div>
+        <span class="hint">Your Sleeper login name, not a league ID. We find your leagues for the current season.</span>
+        <div class="banner banner-error" data-states="sleeperdown" role="alert"><div class="grow"><strong>Could not reach Sleeper.</strong>
+          <span>Check your internet connection and try again.</span></div></div>
+      </section>
+
+      <section class="card section" aria-labelledby="h-league">
+        <div class="head"><span class="step">2</span><h2 id="h-league" style="font-size:18px">League</h2>
+          <span class="muted" data-states="several keybad saving settings">2026 season</span></div>
+
+        <p class="hint" data-states="first notfound sleeperdown">Your leagues appear here after step 1.</p>
+        <div data-states="finding" aria-busy="true" class="options">
+          <div class="skel" style="height:56px"></div><div class="skel" style="height:56px"></div>
+        </div>
+
+        <div data-states="one" class="options">
+          <div class="banner banner-info"><div class="grow"><span>Found one league. We will use it.</span></div></div>
+          <label class="option"><input type="radio" name="l1" checked>
+            <span><div class="title">Or Test League</div><div class="sub">12 fantasy teams &middot; IDP &middot; PPR</div></span><span></span></label>
+        </div>
+
+        <div data-states="several keybad saving settings" class="options" role="radiogroup" aria-label="League">
+          <p class="hint">You are in several leagues. Choose the one to work with. You can switch any time in the chat.</p>
+          <label class="option"><input type="radio" name="l" checked>
+            <span><div class="title">Or Test League</div><div class="sub">12 fantasy teams &middot; IDP &middot; PPR</div></span><span></span></label>
+          <label class="option"><input type="radio" name="l">
+            <span><div class="title">Sunday Sickos</div><div class="sub">10 fantasy teams &middot; Team DEF &middot; Half PPR</div></span><span></span></label>
+          <label class="option disabled"><input type="radio" name="l" disabled>
+            <span><div class="title">Dynasty Dads</div><div class="sub">Dynasty leagues are not supported yet. Season-long redraft only.</div></span><span class="chip chip-no">Not supported</span></label>
+          <label class="option disabled"><input type="radio" name="l" disabled>
+            <span><div class="title">Waiver Wolves</div><div class="sub">The draft has not happened yet. Come back once it is done.</div></span><span class="chip chip-no">Not playable yet</span></label>
+          <label class="option disabled"><input type="radio" name="l" disabled>
+            <span><div class="title">Best Ball Bunch</div><div class="sub">Best ball leagues are not supported yet. Season-long redraft only.</div></span><span class="chip chip-no">Not supported</span></label>
+        </div>
+      </section>
+
+      <section class="card section" aria-labelledby="h-key">
+        <div class="head"><span class="step">3</span><h2 id="h-key" style="font-size:18px">OpenRouter key</h2></div>
+        <p class="muted">The key lets the app ask an AI model your questions. It is stored on this computer only and is never shown again.</p>
+
+        <div class="keysaved" data-states="settings">
+          <span><strong>Key saved on this computer.</strong></span>
+          <button class="btn btn-secondary">Replace key</button>
+        </div>
+
+        <div class="field" data-states="first finding notfound sleeperdown one several keybad saving">
+          <label for="key">Key</label>
+          <input id="key" class="input" type="password" autocomplete="off" placeholder="sk-or-..." data-states="first finding notfound sleeperdown one several saving">
+          <input id="key2" class="input invalid" type="password" autocomplete="off" value="xxxxxxxxxxxx" aria-invalid="true" data-states="keybad">
+          <span class="err-text" data-states="keybad" role="alert">OpenRouter did not accept this key. Check that you copied all of it, or create a new one. Nothing was saved.</span>
+          <span class="hint">No key yet? <a href="#">Create a free OpenRouter account and key</a>. Step by step in the user guide.</span>
+        </div>
+      </section>
+
+      <section class="card section" aria-labelledby="h-model">
+        <div class="head"><span class="step">4</span><h2 id="h-model" style="font-size:18px">Model</h2></div>
+        <p class="muted">Free models work but allow about 50 questions a day. A paid model has no such limit and costs credits on your OpenRouter account.</p>
+        <div class="options" role="radiogroup" aria-label="Model">
+          <label class="option"><input type="radio" name="m" checked>
+            <span><div class="title">Nemotron 3 Ultra <span class="chip chip-rec">Recommended</span></div>
+              <div class="sub">Reliable at looking things up before answering. Slower on long questions.</div>
+              <div class="sub" style="font-size:12px">nvidia/nemotron-3-ultra-550b-a55b:free</div></span><span class="chip chip-free">Free</span></label>
+          <label class="option"><input type="radio" name="m">
+            <span><div class="title">Sample paid model</div>
+              <div class="sub">Faster and more detailed answers. No daily question limit. Uses your credits.</div>
+              <div class="sub" style="font-size:12px">vendor/model-id (sample)</div></span><span class="chip chip-no">Paid</span></label>
+        </div>
+      </section>
+
+      <div class="actions">
+        <span class="muted" data-states="first finding notfound sleeperdown">Find your leagues first.</span>
+        <button class="btn btn-secondary" data-states="settings">Cancel</button>
+        <button class="btn btn-primary" data-states="one several keybad settings">Save and start</button>
+        <button class="btn btn-primary" data-states="first finding notfound sleeperdown" disabled>Save and start</button>
+        <button class="btn btn-primary" data-states="saving" disabled><span class="spinner"></span> Checking key</button>
+      </div>
+      <div style="height:var(--s5)"></div>
+    </div>
+  </main>
+</div>
+<script>
+
+const PANEL_DEFAULT = "pregame";
+function setPanel(s){
+  document.querySelectorAll('[data-pstates]').forEach(e=>{ e.hidden = !e.dataset.pstates.split(' ').includes(s); });
+}
+function setState(s){
+  document.body.dataset.state = s;
+  document.querySelectorAll('[data-states]').forEach(e=>{ e.hidden = !e.dataset.states.split(' ').includes(s); });
+  document.querySelectorAll('.statebar button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.s===s));
+  if (window.onState) window.onState(s);
+}
+document.querySelectorAll('.statebar button').forEach(b=>b.addEventListener('click',()=>setState(b.dataset.s)));
+
+setState(location.hash.slice(1) || 'first');
+</script>
+</body>
+</html>
