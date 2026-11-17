@@ -221,8 +221,13 @@ it fresh per section 5 while the app is open).
   A `null` `matchup_id` covers a first-round bye and an eliminated fantasy team
   alike; the API cannot tell which, so the page says "No matchup this week".
   Regular-season weeks always have one.
+- `points` is `null` until the player's game has started (`GameRef.status`
+  `in_progress` or `complete`), also on a bye and for IR. When no game data is
+  stored yet it is `null` for everyone.
 - `matchup.state` is `not_started` until any starter's game kicks off, `live`
-  while any of the two lineups still has a game in progress, `final` after.
+  while any of the two lineups still has a game in progress, `final` after. It is
+  `null` only when no game data is stored yet (nothing pulled), never a guess.
+  Byes are ignored; both fantasy teams' starters count.
 - If the stored data is old because a refresh failed, `refresh.failed` says so
   and `refresh.stored_at` is the time to show ("data stored on ...").
 - Errors: `no_league`. If nothing is stored at all and Sleeper cannot be
@@ -230,9 +235,18 @@ it fresh per section 5 while the app is open).
 
 ### `POST /api/refresh`
 
-Manual refresh button: re-pulls Sleeper (rosters, matchup, league) and ESPN
-(games, injuries) now. Returns the `GET /panel` body. A failure is not an HTTP
-error: the body carries the stored data and `refresh.failed`.
+Manual refresh button: re-pulls Sleeper (rosters, matchup, league) and forces every
+NFL source (ESPN games and injuries, nflverse files) now. Returns the `GET /panel`
+body. A failure is not an HTTP error: the body carries the stored data and
+`refresh.failed`. `GET /panel` itself never calls the NFL sources: a background loop
+keeps them fresh (section 5 of the data contract).
+
+### `GET /api/sources`
+
+For the status view and for checks: `{ "this_week": 11, "coverage": { "nflverse:injury":
+{ "mapped": 2643, "total": 2649, "gaps": [] }, "nflverse:crosswalk": { "nfl": { "mapped",
+"total", "relevant_mapped", "relevant_total" }, "espn": {...}, "pfr": {...} }, ... },
+"failed": [ Refresh failure objects ] }`. Keys are `<source>:<kind>`.
 
 ## Chat
 

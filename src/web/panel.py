@@ -7,6 +7,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends
 
 from ingestion import sync
+from ingestion.nfl import service as nfl
 from ingestion.sleeper import SleeperError
 from storage.db import get_json, get_setting
 from .errors import ApiError, sleeper_unreachable
@@ -25,23 +26,46 @@ def current_league_id(conn: sqlite3.Connection) -> str:
     return league_id
 
 
-def player_ref(r: sqlite3.Row, slot: str) -> dict:
+def player_ref(conn: sqlite3.Connection, r: sqlite3.Row, slot: str, week: int) -> dict:
     """PlayerRef from a roster_player row joined with the catalog (catalog columns are null if unknown)."""
+    injury = nfl.injury_fact(conn, r["player_id"])
     return {
         "player_id": r["player_id"],
         "name": r["full_name"] or r["player_id"],
         "position": r["position"],
         "nfl_team": r["nfl_team"],
-        "injury_status": r["injury_status"],
+        "injury_status": injury["value"]["designation"] if injury else None,
         "fantasy_status": FANTASY_STATUS[r["role"]],
         "lineup_slot": slot if r["role"] == "starter" else None,
-        "game": None,  # filled by the NFL games source (stage 2.2)
+        "game": nfl.game_ref(conn, r["nfl_team"], week),
     }
+
+
+def matchup_state(conn: sqlite3.Connection, league_id: str, week: int, matchup_id: int) -> str | None:
+    """not_started until a starter's game kicks off, live while any is unfinished, final after.
+
+    None when no game data is stored yet (the NFL schedule has not been pulled).
+    """
+    statuses = []
+    for r in conn.execute(
+        "select p.nfl_team from matchup_player mp join player p on p.player_id = mp.player_id "
+        "join matchup m on m.league_id = mp.league_id and m.week = mp.week and m.roster_id = mp.roster_id "
+        "where mp.league_id = ? and mp.week = ? and m.matchup_id = ? and mp.is_starter = 1",
+        (league_id, week, matchup_id),
+    ):
+        game = nfl.game_ref(conn, r["nfl_team"], week)
+        if game and game["status"] != "bye":
+            statuses.append(game["status"])
+    if not statuses:
+        return None
+    if all(s == "not_started" for s in statuses):
+        return "not_started"
+    return "final" if all(s == "complete" for s in statuses) else "live"
 
 
 def build_panel(conn: sqlite3.Connection, league_id: str) -> dict:
     league = conn.execute("select * from league where league_id = ?", (league_id,)).fetchone()
-    week = get_json(conn, "nfl_state", {}).get("week")
+    week = nfl.this_week(conn)
     user_id = get_setting(conn, "sleeper_user_id")
     teams = conn.execute(
         "select * from fantasy_team where league_id = ? order by wins desc, points_for desc", (league_id,)
@@ -68,11 +92,13 @@ def build_panel(conn: sqlite3.Connection, league_id: str) -> dict:
     def slot(label: str, role: str, r: sqlite3.Row | None) -> dict:
         if r is None:
             return {"slot": label, "role": role, "player": None, "points": None}
+        ref = player_ref(conn, r, label, week)
+        started = ref["game"] and ref["game"]["status"] in ("in_progress", "complete")
         return {
             "slot": label,
             "role": role,
-            "player": player_ref(r, label),
-            "points": None if r["role"] == "reserve" else points.get(r["player_id"]),
+            "player": ref,
+            "points": points.get(r["player_id"]) if started and r["role"] != "reserve" else None,
         }
 
     by_index = {r["slot_index"]: r for r in rows if r["role"] == "starter"}
@@ -94,12 +120,11 @@ def build_panel(conn: sqlite3.Connection, league_id: str) -> dict:
             (league_id, week, mine["matchup_id"], me["roster_id"]),
         ).fetchone()
         if opp:
-            # state (not_started, live, final) needs game states from stage 2.2
             matchup = {
                 "opponent_fantasy_team": opp["name"],
                 "my_score": mine["points"],
                 "opponent_score": opp["points"],
-                "state": None,
+                "state": matchup_state(conn, league_id, week, mine["matchup_id"]),
             }
 
     catalog = conn.execute("select max(fetched_at) from player").fetchone()[0]
@@ -114,19 +139,21 @@ def build_panel(conn: sqlite3.Connection, league_id: str) -> dict:
         "as_of": {
             "rosters": league["fetched_at"],
             "matchup": mine["fetched_at"] if mine else None,
-            "games": None,
-            "injuries": catalog,
+            "games": conn.execute("select max(fetched_at) from nfl_game").fetchone()[0],
+            "injuries": conn.execute("select max(fetched_at) from nfl_injury").fetchone()[0] or catalog,
         },
         "refresh": {"stored_at": min(stored), "failed": sync.failures(conn)},
     }
 
 
-def panel_after(conn: sqlite3.Connection, max_age: timedelta) -> dict:
+def panel_after(conn: sqlite3.Connection, max_age: timedelta, force_nfl: bool = False) -> dict:
     league_id = current_league_id(conn)
     try:
         sync.ensure_fresh(conn, league_id, max_age)
     except SleeperError:
         raise sleeper_unreachable() from None
+    if force_nfl:
+        nfl.refresh(conn, force=True)
     return build_panel(conn, league_id)
 
 
@@ -137,4 +164,10 @@ def get_panel(conn=Depends(db)):
 
 @router.post("/refresh")
 def post_refresh(conn=Depends(db)):
-    return panel_after(conn, timedelta(0))
+    return panel_after(conn, timedelta(0), force_nfl=True)
+
+
+@router.get("/sources")
+def get_sources(conn=Depends(db)):
+    """Per-source state: crosswalk coverage, the schedule's this-week rule and the failures."""
+    return {"this_week": nfl.this_week(conn), "coverage": nfl.coverage(conn), "failed": sync.failures(conn)}

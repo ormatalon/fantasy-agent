@@ -15,6 +15,7 @@ from .league_format import league_format, league_info
 from .sleeper import SleeperError
 
 CATALOG_MAX_AGE = timedelta(hours=20)
+SOURCE_NAMES = {"sleeper": "Sleeper", "espn": "ESPN", "nflverse": "nflverse"}
 refresh_lock = threading.Lock()
 
 
@@ -83,13 +84,13 @@ def stored_age(conn: sqlite3.Connection, source: str, scope: str) -> timedelta |
 
 def failures(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute(
-        "select source, scope, last_ok_at, last_error from refresh_log where last_error is not null"
+        "select source, scope, last_ok_at, last_error from refresh_log where last_error is not null and scope not like 'news:%'"
     ).fetchall()
     return [
         {
             "code": "refresh_failed",
             "source": r["source"],
-            "message": "Could not refresh from Sleeper.",
+            "message": f"Could not refresh from {SOURCE_NAMES.get(r['source'], r['source'])}.",
             "since": r["last_ok_at"],
         }
         for r in rows
@@ -245,7 +246,7 @@ def _write_transactions(conn, league_id: str, transactions: list[dict]) -> None:
     with tx(conn):
         for t in transactions:
             conn.execute(
-                "insert or replace into transaction_log values (?,?,?,?,?,?,?,?,?,?,?)",
+                "insert or replace into transaction_log values (?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     league_id,
                     t["transaction_id"],
@@ -258,6 +259,7 @@ def _write_transactions(conn, league_id: str, transactions: list[dict]) -> None:
                     json.dumps(t.get("roster_ids")),
                     json.dumps(t.get("waiver_budget")),
                     json.dumps(t.get("draft_picks")),
+                    json.dumps(t.get("settings")),
                 ),
             )
 

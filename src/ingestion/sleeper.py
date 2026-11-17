@@ -77,3 +77,52 @@ def get_league_rosters(league_id: str) -> list[dict]:
     if body.get("errors") or not body.get("data"):
         raise SleeperError(f"Sleeper GraphQL league_rosters: {body.get('errors')}")
     return body["data"]["league_rosters"]
+
+
+def get_stats(season: int, week: int) -> list[dict]:
+    """Actual stats of one week (undocumented REST, same keys as the projections)."""
+    try:
+        r = client.get(f"https://api.sleeper.app/stats/nfl/{season}/{week}", params={"season_type": "regular"})
+        r.raise_for_status()
+        return r.json()
+    except httpx.HTTPError as e:
+        raise SleeperError(f"Sleeper stats {season}/{week}: {e}") from e
+
+
+NEWS_QUERY = """
+query($sport: String, $player_id: String, $limit: Int) {
+  get_player_news(sport: $sport, player_id: $player_id, limit: $limit) {
+    player_id source source_key published metadata
+  }
+}
+"""
+
+
+def get_player_news(player_id: str, limit: int = 5) -> list[dict]:
+    """Latest news items for one player (RotoWire prose), newest first."""
+    try:
+        r = client.post(
+            GRAPHQL,
+            json={"query": NEWS_QUERY, "variables": {"sport": "nfl", "player_id": player_id, "limit": limit}},
+        )
+        r.raise_for_status()
+        body = r.json()
+    except httpx.HTTPError as e:
+        raise SleeperError(f"Sleeper GraphQL get_player_news: {e}") from e
+    if body.get("errors") or not body.get("data"):
+        raise SleeperError(f"Sleeper GraphQL get_player_news: {body.get('errors')}")
+    return body["data"]["get_player_news"]
+
+
+def get_projections(season: int, week: int | None = None) -> list[dict]:
+    """Projections of one week, or the whole-season ones when week is None (undocumented REST).
+
+    Rows: player_id, week, opponent, last_modified (ms) and stats (the projected stat lines).
+    """
+    path = f"{season}/{week}" if week else str(season)
+    try:
+        r = client.get(f"https://api.sleeper.app/projections/nfl/{path}", params={"season_type": "regular"})
+        r.raise_for_status()
+        return r.json()
+    except httpx.HTTPError as e:
+        raise SleeperError(f"Sleeper projections {path}: {e}") from e

@@ -1,6 +1,7 @@
 """LeagueInfo and LeagueFormat from raw Sleeper league json (docs/data-contract.md section 8)."""
 
 IDP_SLOTS = {"DL", "DE", "DT", "LB", "DB", "CB", "S", "IDP_FLEX"}
+RESERVE_ALLOW = {"na": "NA", "doubtful": "Doubtful", "dnr": "DNR", "out": "Out", "sus": "Sus", "cov": "COV"}
 WAIVER_TYPES = {0: "rolling", 1: "reverse_standings", 2: "faab"}
 
 
@@ -20,6 +21,13 @@ def defense(positions: list[str]) -> str:
     if IDP_SLOTS & set(positions):
         return "idp"
     return "team_def" if "DEF" in positions else "none"
+
+
+def ir_allowed(settings: dict) -> list[str]:
+    """Designations that may sit in an IR slot: "IR" always, plus one per reserve_allow_* key set to 1."""
+    if not settings.get("reserve_slots"):
+        return []
+    return ["IR", *(label for key, label in RESERVE_ALLOW.items() if settings.get(f"reserve_allow_{key}") == 1)]
 
 
 def league_format(league: dict, fantasy_teams: list[dict] | None = None) -> dict:
@@ -44,6 +52,7 @@ def league_format(league: dict, fantasy_teams: list[dict] | None = None) -> dict
         "slots": slots,
         "bench_size": positions.count("BN"),
         "ir_slots": settings.get("reserve_slots", 0),
+        "ir_allowed_designations": ir_allowed(settings),
         "taxi_slots": settings.get("taxi_slots", 0),
         "num_fantasy_teams": settings.get("num_teams", league.get("total_rosters")),
         "waiver_type": waiver_type,

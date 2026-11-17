@@ -1,7 +1,7 @@
 import copy
 
 from ingestion.league_format import league_format, league_info
-from conftest import TEST_LEAGUE, fixture
+from ingestion.tests.support import TEST_LEAGUE, fixture
 
 
 def leagues():
@@ -54,3 +54,12 @@ def test_only_in_season_is_selectable():
     pre = info["Or 8-Team League"]
     assert pre["supported"] and not pre["selectable"] and pre["not_selectable_reason"] == "pre_draft"
     assert info["Or Test League"]["league_id"] == TEST_LEAGUE
+
+
+def test_ir_allowed_designations():
+    ls = leagues()
+    assert league_format(ls["Or Test League"])["ir_allowed_designations"] == []  # no IR slots
+    assert league_format(ls["FantaSteelers"])["ir_allowed_designations"] == ["IR", "NA", "Doubtful", "DNR", "Out", "Sus", "COV"]
+    steel = copy.deepcopy(ls["FantaSteelers"])
+    steel["settings"].update(reserve_allow_out=0, reserve_allow_doubtful=0, reserve_allow_cov=0)
+    assert league_format(steel)["ir_allowed_designations"] == ["IR", "NA", "DNR", "Sus"]

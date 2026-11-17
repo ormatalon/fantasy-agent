@@ -5,7 +5,7 @@ import pytest
 
 from ingestion import sync
 from ingestion.sleeper import SleeperError
-from conftest import MY_USER, TEST_LEAGUE, fixture
+from ingestion.tests.support import MY_USER, TEST_LEAGUE, fixture
 
 
 def test_discover_lists_leagues_as_league_info(fake):
@@ -34,7 +34,7 @@ def test_refresh_stores_league_rosters_matchups_transactions(conn, fake):
     ).fetchall()
     assert [r[0] for r in stored] == live["starters"]
     # the first sync backfills weeks 1 to 9
-    assert conn.execute("select count(distinct week) from matchup").fetchone()[0] == 9
+    assert conn.execute("select count(distinct week) from matchup").fetchone()[0] == 11
     assert conn.execute("select count(*) from transaction_log").fetchone()[0] > 0
     assert conn.execute("select count(*) from player").fetchone()[0] == 69
     fmt = json.loads(conn.execute("select format from league").fetchone()[0])

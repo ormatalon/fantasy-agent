@@ -1,5 +1,5 @@
 from storage import db
-from conftest import TEST_LEAGUE, fixture
+from ingestion.tests.support import TEST_LEAGUE, fixture, load_games
 
 
 def pick_test_league(client, fake):
@@ -40,13 +40,12 @@ def test_matchup_record_and_points(client, fake):
     week8 = fixture("matchups_week8.json")
     mine = next(m for m in week8 if m["roster_id"] == 1)
     opp = next(m for m in week8 if m["matchup_id"] == mine["matchup_id"] and m["roster_id"] != 1)
-    assert panel["week"] == 9 and panel["fantasy_team"]["name"] == "OrMatalon"
+    assert panel["week"] == 11 and panel["fantasy_team"]["name"] == "OrMatalon"
     assert panel["fantasy_team"]["record"] == "4-0" and panel["fantasy_team"]["rank"] == 1
     assert panel["matchup"]["my_score"] == mine["points"]
     assert panel["matchup"]["opponent_score"] == opp["points"]
     assert panel["matchup"]["opponent_fantasy_team"] in {"OrHuji", f"Fantasy team {opp['roster_id']}"}
-    first = panel["slots"][0]
-    assert first["points"] == mine["players_points"][first["player"]["player_id"]]
+
 
 
 def test_playoff_bye_means_no_matchup(client, fake):
@@ -94,3 +93,77 @@ def test_nothing_stored_and_sleeper_down(client, fake):
     fake.down = True
     r = client.get("/api/panel")
     assert r.status_code == 502 and r.json()["error"]["code"] == "sleeper_unreachable"
+
+
+def set_games(status: str):
+    """All week 11 games in one state; the NFL schedule is a real capture."""
+    conn = db.connect()
+    load_games(conn)
+    conn.execute("update nfl_game set status = ? where week = 11", (status,))
+
+
+def test_points_are_null_until_the_players_game_starts(client, fake):
+    pick_test_league(client, fake)
+    set_games("scheduled")
+    panel = client.post("/api/refresh").json()
+    played = [s for s in panel["slots"] if s["player"] and s["player"]["game"] and s["player"]["game"]["status"] != "bye"]
+    assert played and all(s["points"] is None for s in panel["slots"])
+    assert all(s["player"]["game"]["status"] == "not_started" and s["player"]["game"]["kickoff"] for s in played)
+    assert panel["matchup"]["state"] == "not_started"
+
+
+def test_points_and_final_state_after_the_games(client, fake):
+    pick_test_league(client, fake)
+    set_games("final")
+    panel = client.post("/api/refresh").json()
+    mine = next(m for m in fixture("matchups_week8.json") if m["roster_id"] == 1)
+    for s in panel["slots"]:
+        game = s["player"]["game"]
+        if game and game["status"] == "complete":
+            assert s["points"] == mine["players_points"].get(s["player"]["player_id"], s["points"])
+    assert any(s["points"] is not None for s in panel["slots"])
+    assert panel["matchup"]["state"] == "final"
+
+
+def test_live_state_when_a_game_is_in_progress(client, fake):
+    pick_test_league(client, fake)
+    set_games("scheduled")
+    conn = db.connect()
+    conn.execute("update nfl_game set status = 'in_progress' where game_id = (select game_id from nfl_game where week = 11 and (home = 'BUF' or away = 'BUF'))")
+    panel = client.post("/api/refresh").json()
+    assert panel["matchup"]["state"] == "live"
+    buf = next(s for s in panel["slots"] if s["player"] and s["player"]["nfl_team"] == "BUF")
+    assert buf["player"]["game"]["status"] == "in_progress" and buf["points"] is not None
+
+
+def test_bye_week_player_has_a_bye_game_and_no_points(client, fake):
+    pick_test_league(client, fake)
+    conn = db.connect()
+    load_games(conn, espn=True)
+    panel = client.post("/api/refresh").json()
+    bye = [s for s in panel["slots"] if s["player"] and s["player"]["game"] and s["player"]["game"]["status"] == "bye"]
+    assert bye and all(s["points"] is None and s["player"]["game"]["kickoff"] is None for s in bye)
+
+
+def test_no_game_data_means_unknown_state_not_a_guess(client, fake):
+    pick_test_league(client, fake)
+    panel = client.post("/api/refresh").json()
+    assert panel["matchup"]["state"] is None and all(s["points"] is None for s in panel["slots"])
+
+
+def test_manual_refresh_forces_the_nfl_sources(client, fake, monkeypatch):
+    pick_test_league(client, fake)
+    seen = []
+    monkeypatch.setattr("ingestion.nfl.service.refresh", lambda conn, **kw: seen.append(kw) or [])
+    client.get("/api/panel")
+    assert seen == []
+    client.post("/api/refresh")
+    assert seen == [{"force": True}]
+
+
+def test_sources_report_coverage_and_failures(client, fake):
+    pick_test_league(client, fake)
+    conn = db.connect()
+    conn.execute("insert into refresh_log(source, scope, last_attempt_at, last_ok_at, coverage) values ('nflverse', 'injury', 't', 't', '{\"mapped\": 99, \"total\": 100}')")
+    body = client.get("/api/sources").json()
+    assert body["coverage"]["nflverse:injury"] == {"mapped": 99, "total": 100} and body["this_week"] == 11

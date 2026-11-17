@@ -4,7 +4,7 @@ from web import setup
 from web.errors import ApiError
 from web.main import app
 from storage import db
-from conftest import TEST_LEAGUE
+from ingestion.tests.support import TEST_LEAGUE
 
 
 def accept_key(monkeypatch):
@@ -30,7 +30,7 @@ def test_one_league_is_chosen_automatically(client, fake, monkeypatch):
     body = r.json()
     assert r.status_code == 200 and body["key"] == "saved"
     assert body["current_league"]["name"] == "Or Test League"
-    assert body["current_league"]["this_week"] == 9 and body["current_league"]["last_completed_week"] == 8
+    assert body["current_league"]["this_week"] == 11 and body["current_league"]["last_completed_week"] == 10
     assert body["setup_complete"] is True and body["needs_league_choice"] is False
 
 

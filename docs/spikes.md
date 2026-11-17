@@ -78,8 +78,12 @@ default.** Still free and routes tools correctly.
 - Inactives: core `.../events/{event}/competitions/{event}/competitors/{team}/roster`
   has `didNotPlay` per player (9 of 59 for CHI @ SEA). Whether it is populated
   before kickoff is NOT verified (all `active` flags were false after the
-  game). Check on the next game day (Thu 2026-11-05 BAL vs JAX, 20:15 ET;
-  inactives are due about 90 minutes before). Until then inactives are a gap.
+  game). Stage 2.2 update (2026-11-17): no pre-kickoff capture of the 2026-11-05
+  game was taken, so it is still unverified. After the game, JAX at BAL shows
+  `didNotPlay: true` for exactly 8 BAL players (the usual inactive count), so the
+  flag marks real inactives; `active` is false for everyone. The stored rule treats
+  "no one marked" as not announced yet. Next chance: capture the roster of a
+  Thursday game 90 minutes before kickoff.
 - Ids: ESPN ids appear in the nflverse rosters (`espn_id`, 75%) and depth charts
   (100%); Sleeper's catalog carries `espn_id` for only 23% of active players.
 

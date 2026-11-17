@@ -12,7 +12,7 @@ def tables(conn):
 def test_creates_database_and_applies_schema(tmp_path):
     conn = db.connect(tmp_path / "new" / "fantasy.db")
     db.migrate(conn)
-    assert conn.execute("pragma user_version").fetchone()[0] == 1
+    assert conn.execute("pragma user_version").fetchone()[0] == 3
     assert {"settings", "chat_message", "roster_diff", "league", "projection", "refresh_log"} <= tables(conn)
 
 

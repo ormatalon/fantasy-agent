@@ -7,7 +7,8 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from ingestion import sync
+from ingestion import leagues as league_choice, sync
+from ingestion.nfl import service as nfl
 from ingestion.sleeper import SleeperError
 from storage.db import connect, get_json, get_setting, set_settings, tx
 from .errors import ApiError, sleeper_unreachable
@@ -33,7 +34,7 @@ def build_state(conn: sqlite3.Connection) -> dict:
     row = conn.execute("select * from league where league_id = ?", (league_id,)).fetchone() if league_id else None
     current = None
     if row:
-        week = get_json(conn, "nfl_state", {}).get("week")
+        week = nfl.this_week(conn)
         current = {
             "league_id": row["league_id"],
             "name": row["name"],
@@ -52,14 +53,6 @@ def build_state(conn: sqlite3.Connection) -> dict:
         "current_league": current,
         "refresh": {"stored_at": row["fetched_at"] if row else None, "failed": sync.failures(conn)},
     }
-
-
-def select_league(conn: sqlite3.Connection, league_id: str) -> None:
-    try:
-        sync.refresh(conn, league_id)
-    except SleeperError:
-        raise sleeper_unreachable() from None
-    set_settings(conn, {"current_league_id": league_id})
 
 
 @router.get("/state")
@@ -111,7 +104,7 @@ def put_settings(body: SettingsBody, conn=Depends(db)):
         if current not in selectable:
             set_settings(conn, {"current_league_id": ""})
             if len(selectable) == 1:
-                select_league(conn, selectable[0])
+                _select(conn, selectable[0])
     return {**build_state(conn), "key": "saved" if key else "unchanged"}
 
 
@@ -120,6 +113,13 @@ def delete_key(conn=Depends(db)):
     with tx(conn):
         conn.execute("delete from settings where key = 'openrouter_api_key'")
     return build_state(conn)
+
+
+def _select(conn: sqlite3.Connection, league_id: str) -> None:
+    try:
+        league_choice.select_league(conn, league_id)
+    except SleeperError:
+        raise sleeper_unreachable() from None
 
 
 def _discover(username: str) -> dict:
@@ -148,29 +148,16 @@ class LeagueBody(BaseModel):
     league_name: str | None = None
 
 
-def resolve_league(leagues: list[dict], body: LeagueBody) -> dict:
-    """By id, or by name: exact (any case), then a unique prefix."""
-    if body.league_id:
-        match = [l for l in leagues if l["league_id"] == body.league_id]
-    else:
-        name = (body.league_name or "").strip().lower()
-        match = [l for l in leagues if l["name"].lower() == name]
-        if not match and name:
-            match = [l for l in leagues if l["name"].lower().startswith(name)]
-    if len(match) != 1:
-        names = [l["name"] for l in leagues]
-        raise ApiError(
-            "league_not_found",
-            404,
-            "No league with that name. Your leagues: " + (", ".join(names) or "none") + ".",
-            available=names,
-        )
-    return match[0]
-
-
 @router.put("/league")
 def put_league(body: LeagueBody, conn=Depends(db)):
-    league = resolve_league(get_json(conn, "leagues", []), body)
+    try:
+        league = league_choice.resolve_league(get_json(conn, "leagues", []), body.league_id, body.league_name)
+    except league_choice.LeagueNotFound as e:
+        raise ApiError(
+            "league_not_found", 404,
+            "No league with that name. Your leagues: " + (", ".join(e.available) or "none") + ".",
+            available=e.available,
+        ) from None
     if not league["selectable"]:
         reason = league["not_selectable_reason"]
         if league["unsupported_reason"]:
@@ -181,5 +168,8 @@ def put_league(body: LeagueBody, conn=Depends(db)):
                 unsupported_reason=reason,
             )
         raise ApiError("league_not_playable", 409, f"{league['name']} is not in season ({reason}).", reason=reason)
-    select_league(conn, league["league_id"])
+    try:
+        league_choice.select_league(conn, league["league_id"])
+    except SleeperError:
+        raise sleeper_unreachable() from None
     return build_state(conn)
