@@ -95,6 +95,7 @@
       }
     ],
     "changes": [],
+    "slot_changes": [],
     "mine": {
       "mean": 108.2,
       "variance": 300.0
@@ -223,6 +224,28 @@
         }
       }
     ],
+    "slot_changes": [
+      {
+        "player": {
+          "player_id": "11632",
+          "name": "Malik Nabers",
+          "position": "WR",
+          "nfl_team": "NYG",
+          "injury_status": null,
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "FLEX",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "JAX",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "from_slot": "FLEX",
+        "to_slot": "WR"
+      }
+    ],
     "mine": {
       "mean": 112.4,
       "variance": 310.0
@@ -340,6 +363,28 @@
             }
           ]
         }
+      }
+    ],
+    "slot_changes": [
+      {
+        "player": {
+          "player_id": "11632",
+          "name": "Malik Nabers",
+          "position": "WR",
+          "nfl_team": "NYG",
+          "injury_status": null,
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "FLEX",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "JAX",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "from_slot": "FLEX",
+        "to_slot": "WR"
       }
     ],
     "mine": {

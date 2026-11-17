@@ -1,0 +1,65 @@
+{
+  "id": "gen-1794902095-H6sNWPMZ0q16fe7PrPiu",
+  "object": "chat.completion",
+  "created": 1794902095,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "tool_calls",
+      "native_finish_reason": "tool_calls",
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "refusal": null,
+        "reasoning": "The user is asking about \"Williams\" - this could refer to multiple players. I need to check if there's a Williams on their roster first, or if they're asking about a specific player. Let me check their roster from the context. Looking at the roster: Josh Allen, Jaylen Warren, Ashton Jeanty, Christian Watson, Parker Washington, Brock Bowers, Malik Nabers, Jared Goff, Will Anderson Jr., Devin Lloyd, Spencer Shrader, Jacksonville Jaguars defense, and bench: Saquon Barkley, Greg Rousseau, Kenneth Walker III, Puka Nacua, Denver Broncos defense. No Williams on the roster.\n\nCould be asking about a free agent or another player. I should use get_player to search for \"Williams\" but that might return multiple candidates. Let me use get_player with name \"Williams\" to see what comes up.",
+        "tool_calls": [
+          {
+            "type": "function",
+            "index": 0,
+            "id": "call-ce2fb2b6-3b8e-40c3-8809-d99dffc8ec6e",
+            "function": {
+              "name": "get_player",
+              "arguments": "{\"name\":\"Williams\"}"
+            }
+          }
+        ],
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The user is asking about \"Williams\" - this could refer to multiple players. I need to check if there's a Williams on their roster first, or if they're asking about a specific player. Let me check their roster from the context. Looking at the roster: Josh Allen, Jaylen Warren, Ashton Jeanty, Christian Watson, Parker Washington, Brock Bowers, Malik Nabers, Jared Goff, Will Anderson Jr., Devin Lloyd, Spencer Shrader, Jacksonville Jaguars defense, and bench: Saquon Barkley, Greg Rousseau, Kenneth Walker III, Puka Nacua, Denver Broncos defense. No Williams on the roster.\n\nCould be asking about a free agent or another player. I should use get_player to search for \"Williams\" but that might return multiple candidates. Let me use get_player with name \"Williams\" to see what comes up.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5897,
+    "completion_tokens": 200,
+    "total_tokens": 6097,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 4384,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 175,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

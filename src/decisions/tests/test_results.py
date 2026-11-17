@@ -123,3 +123,17 @@ def test_full_season_projections_use_the_stored_weights_and_overlay_from_this_we
         week=week, weights=weights, overlay_from=overlay_from) or ([], {}))
     projection_tool.get_projections(league, LEAGUE, position="RB", horizon="full_season")
     assert seen == {"week": 1, "weights": {"sleeper": 1.0, "nflverse": 0.0}, "overlay_from": 11}
+
+
+def test_trending_is_not_a_projection_and_says_so_when_no_player_is_known(league, monkeypatch):
+    from decisions import trending
+
+    real = fixture("trending_add_24h.json")  # none of these ids is in the league's catalog
+    seed_projections(league, unprojected=[("def_st_td", 6.0)])
+    monkeypatch.setattr(trending.sleeper, "get_trending", lambda kind, hours, limit: real[:3])
+    r = trending.get_trending_players(league, LEAGUE)
+    assert r["rows"] == [] and r["unprojected_scoring_items"] == []  # the league has an unprojected item; trending carries none
+    assert r["summary"] == "Sleeper returned 3 trending players that are not in the local player list, so none can be shown."
+    assert len(r["warnings"]) == 1 and all(x["player_id"] in r["warnings"][0] for x in real[:3])
+    monkeypatch.setattr(trending.sleeper, "get_trending", lambda kind, hours, limit: [])
+    assert trending.get_trending_players(league, LEAGUE)["summary"] == "Sleeper returned no trending add data for the last 24 hours."

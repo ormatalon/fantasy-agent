@@ -178,3 +178,41 @@ def test_ir_eligibility_is_read_only_from_the_leagues_allowed_designations(leagu
     for allowed, flagged in ((["IR", "PUP"], 0), (["IR"], 1)):
         league.execute("update league set format = ?", (json.dumps({**fmt, "ir_slots": 1, "ir_allowed_designations": allowed}),))
         assert len(rec(league)["ir_flags"]) == flagged
+
+
+def moves(plan):
+    return [(c["slot"], c["player_in"]["name"], c["player_out"]["name"] if c["player_out"] else None, c["mean_gain"]) for c in plan["changes"]]
+
+
+def test_changes_are_moves_against_the_current_lineup_and_their_gains_add_up(league):
+    # Barkley and Nabers come off my bench, Watson and Washington (my weakest starters) go out
+    seed_projections(league, default=10.0, means={NABERS: 14.0, BARKLEY: 15.0, WATSON: 5.0, "9487": 4.0, WARREN: 11.0})
+    r = rec(league)
+    ex, current = r["expected"], r["current"]
+    assert moves(ex) == [("SUPER_FLEX", "Saquon Barkley", "Parker Washington", 11.0), ("WR", "Malik Nabers", "Christian Watson", 9.0)]
+    assert sum(c["mean_gain"] for c in ex["changes"]) == pytest.approx(ex["mine"]["mean"] - current["mine"]["mean"], abs=0.1)
+    starting = {s["player"]["player_id"] for s in current["lineup"] if s["player"]}
+    ins, outs = [c["player_in"]["player_id"] for c in ex["changes"]], [c["player_out"]["player_id"] for c in ex["changes"]]
+    assert not set(ins) & starting and set(outs) <= starting and len(set(ins + outs)) == 4  # nobody appears twice
+    assert all(c["mean_gain"] >= 0 and "upside" not in c["why"]["summary"] for c in ex["changes"])
+    assert all(x["code"] != "variance" for c in ex["changes"] for x in c["why"]["reasons"])  # variance belongs to the high-risk plan
+
+
+def test_a_starter_who_only_changes_slots_is_listed_apart_from_the_swaps(league):
+    # Goff (QB, 30) takes SUPER_FLEX; Watson (12) moves from there to FLEX, so Warren (5) is the one who goes out
+    bench = dict.fromkeys(["10892", "11439", NABERS, BARKLEY], 0.0)
+    seed_projections(league, default=10.0, means={GOFF: 30.0, WATSON: 12.0, WARREN: 5.0, **bench})
+    ex = rec(league)["expected"]
+    assert moves(ex) == [("SUPER_FLEX", "Jared Goff", "Jaylen Warren", 25.0)]
+    assert [(c["player"]["name"], c["from_slot"], c["to_slot"]) for c in ex["slot_changes"]] == [("Christian Watson", "SUPER_FLEX", "FLEX")]
+    r = rec(league)
+    assert "move Christian Watson from SUPER_FLEX to FLEX" in r["summary"]
+
+
+def test_only_the_high_risk_plan_trades_points_for_upside(league):
+    bench = dict.fromkeys(["10892", "11439", GOFF, BARKLEY], 0.0)
+    seed_projections(league, default=20.0, means={WARREN: 12.0, NABERS: 11.0, **bench}, variances={WARREN: 4.0, NABERS: 200.0})
+    r = rec(league)
+    assert r["expected"]["changes"] == []
+    (change,) = r["high_risk"]["changes"]
+    assert change["mean_gain"] == -1.0 and "more upside" in change["why"]["summary"]

@@ -1,6 +1,8 @@
 # API contract (v1)
 
-HTTP API of the local FastAPI server, used by the Next.js page (`design/`).
+HTTP API of the local FastAPI server. The NiceGUI page (`src/ui`, built to
+`design/`) calls the same backend functions in process; the HTTP routes stay
+for other clients and tests.
 Only what v1 needs. Terminology (`AGENT.md`): **fantasy team** is a manager's
 roster in a Sleeper league; **NFL team** is a real franchise.
 
@@ -38,7 +40,7 @@ rules: section 5 there.
 | `key_missing` | 409 | chat | `question_kept: true` | no OpenRouter key stored |
 | `key_invalid` | 401 | chat | `question_kept: true` | OpenRouter returned 401 for the stored key (it uses 401 for missing and invalid alike; the server tells them apart because it knows whether a key is stored) |
 | `quota_exceeded` | 429 | chat | `remaining`, `limit`, `model`, `resets_at` (always null in v1: `GET /api/v1/key` returns only `used`, `limit`, `remaining`, spikes Model; the quota message must not promise a reset time), `question_kept: true` | daily free-model limit (OpenRouter `GET /api/v1/key` `free_model_daily_requests`, which costs no request) or a 429 mid-question. The `/key` pre-check applies only when the chosen model id ends in `:free` |
-| `provider_error` | 502 | chat | `question_kept: true` | model provider failed after 2 retries (network, 5xx, HTTP 200 with an `error` body) |
+| `provider_error` | 502 | chat | `question_kept: true` | model provider failed after 2 retries (network, 5xx, HTTP 200 with an `error` body). When the provider reports it is overloaded, the message is "The model provider is busy right now. Try again in a minute." |
 | `too_many_turns` | 502 | chat | `max_model_turns: 6`, `question_kept: true` | the 6th model turn, sent with no tools, still returned no answer text |
 | `question_in_progress` | 409 | chat | | one question at a time |
 | `internal_error` | 500 | any | | bug; nothing was changed in Sleeper (v1 never writes) |
@@ -125,7 +127,7 @@ tests). `200` with the `GET /state` body (`key_set: false`); chat then returns
 ```json
 { "models": [ { "id": "nvidia/nemotron-3-ultra-550b-a55b:free", "name": "Nemotron 3 Ultra",
                 "free": true, "recommended": true,
-                "note": "Free, reliable with tools, about 50 questions a day." } ] }
+                "note": "Free. Calls tools reliably in our checks. About 50 requests a day, roughly 25 questions." } ] }
 ```
 
 Static list in the backend (default pinned per `docs/spikes.md`, Model).

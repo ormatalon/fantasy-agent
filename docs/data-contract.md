@@ -705,18 +705,21 @@ class Matchup:
 class LineupPlan:
     mode: str                            # "expected" | "high_risk"
     lineup: list[Slot]                   # full lineup, slot order as Sleeper, repeats kept
-    changes: list[Change]                # vs. the lineup set in Sleeper; [] = keep it
+    changes: list[Change]                # moves against the lineup set in Sleeper; [] = keep it
+    slot_changes: list[dict]             # starters who only change slots: [{"player": PlayerRef, "from_slot", "to_slot"}]
     mine: LineupTotals                   # projected total of this lineup
     spread: float | None                 # mine.mean - opponent.mean; None with no opponent
     win_probability: float | None        # Normal(spread / sqrt(mine.var + opp.var)) , 0-1; None with no opponent
     why: Why
 
 class Change:
-    slot: str                            # compared per slot type; repeated slots listed separately
+    slot: str                            # the slot player_in starts in
     player_out: PlayerRef | None
     player_in: PlayerRef
     mean_gain: float                     # player_in mean - player_out mean
     why: Why
+    # Pairing: incoming players (best first) against outgoing starters (weakest first), so every pair's gain is
+    # real and the gains add up to the plan's. A negative mean_gain ("more upside") appears only in high_risk.
 
 class LineupResult(DecisionEnvelope):
     current: LineupPlan                  # the lineup set in Sleeper, changes = []
@@ -1187,7 +1190,7 @@ class ProjectionsResult(DecisionEnvelope):   # kind "projections"
                                              #  "sources", "return_week", "return_date", "return_date_source", "return_date_as_of"}
                                              # (section 7 columns of the player's row)
 class TrendingResult(DecisionEnvelope):      # kind "trending"; as_of {"trending": AsOf}
-    type: str                                # "add" | "drop"
+    type: str                                # "add" | "drop"; unprojected_scoring_items is [] (not a projection)
     hours: int
     rows: list[dict]                         # {"rank", "player": PlayerRef, "count"}
 ```

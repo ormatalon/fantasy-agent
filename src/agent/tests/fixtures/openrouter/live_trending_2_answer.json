@@ -1,0 +1,54 @@
+{
+  "id": "gen-1794949672-gDjz1ioRU3cUmnQK2uVz",
+  "object": "chat.completion",
+  "created": 1794949672,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "The most added players across all Sleeper leagues in the last 24 hours (context only, not a projection):\n\n1. **Michael Mayer**, TE, LV — added in 1,195,830 leagues\n2. **Xavier Hutchinson**, WR, HOU (Questionable) — added in 982,121 leagues\n3. **Ryan Flournoy**, WR, DAL — added in 609,752 leagues\n4. **Seth McGowan**, RB, IND — added in 606,384 leagues\n5. **Mark Andrews**, TE, BAL — added in 573,021 leagues\n6. **Pat Bryant**, WR, DEN — added in 552,544 leagues\n7. **Jordyn Tyson**, WR, NO — added in 542,352 leagues\n8. **Detroit Lions**, DEF, DET — added in 496,557 leagues\n9. **Bo Nix**, QB, DEN — added in 267,174 leagues\n10. **Chase McLaughlin**, K, TB — added in 263,656 leagues\n\nSource: Sleeper trending data as of Tuesday 11-17 23:07.",
+        "refusal": null,
+        "reasoning": "The user asked who is trending up in adds. The tool returned the most added players across all Sleeper leagues in the last 24 hours. I should present this information clearly, noting it's context only, not a projection. I'll list the top players with their positions, NFL teams, and add counts.",
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The user asked who is trending up in adds. The tool returned the most added players across all Sleeper leagues in the last 24 hours. I should present this information clearly, noting it's context only, not a projection. I'll list the top players with their positions, NFL teams, and add counts.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5741,
+    "completion_tokens": 356,
+    "total_tokens": 6097,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 65,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

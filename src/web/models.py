@@ -6,7 +6,7 @@ MODELS = [
         "name": "Nemotron 3 Ultra",
         "free": True,
         "recommended": True,
-        "note": "Free. Calls tools reliably in our checks. About 50 questions a day.",
+        "note": "Free. Calls tools reliably in our checks. About 50 requests a day, roughly 25 questions.",
     },
     {
         "id": "nvidia/nemotron-3.5-super-vl:free",

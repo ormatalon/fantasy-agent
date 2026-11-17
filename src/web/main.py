@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from . import panel, setup
+from . import chat, panel, setup
 from .errors import ApiError, api_error_handler
 from ingestion.nfl import service as nfl
 from storage import db
@@ -49,6 +49,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1
 app.add_exception_handler(ApiError, api_error_handler)
 app.include_router(setup.router)
 app.include_router(panel.router)
+app.include_router(chat.router)
 
 
 @app.get("/api/health")

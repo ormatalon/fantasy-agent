@@ -1,0 +1,11 @@
+{
+  "error": {
+    "message": "Provider returned error",
+    "code": 503,
+    "metadata": {
+      "raw": "{\"message\":\"Service temporarily overloaded\",\"type\":\"Overloaded\",\"code\":503}",
+      "provider_name": "Nvidia",
+      "is_byok": false
+    }
+  }
+}

@@ -102,13 +102,24 @@ def recommend_lineup(conn: sqlite3.Connection, league_id: str, week: int | None 
             out["win_probability"] = round(win_probability(mean - opp[0], var + opp[1]), 2)
         else:
             out["spread"] = out["win_probability"] = None
-        for i, (slot, was, now) in enumerate(zip(v.slots, current, lineup)):
-            if was != now and now:
-                change = {"slot": slot, "player_out": v.ref(was, week) if was else None, "player_in": v.ref(now, week),
-                          "mean_gain": r1(v.mean(now, week) - (v.mean(was, week) if was else 0.0))}  # fmt: skip
-                change["why"] = _change_why(v, week, was, now, mode == "high_risk")
-                change["why"]["summary"] = change["why"]["summary"].format(slot=slot)
-                out["changes"].append(change)
+        # Moves against the lineup set in Sleeper: who comes in, who goes out (best incoming against the weakest
+        # outgoing), so each pair's gain is real and the gains add up to the plan's. Starters who only change
+        # slots are listed apart.
+        before, after = {p for p in current if p}, {p for p in lineup if p}
+        incoming = sorted(after - before, key=lambda p: -v.mean(p, week))
+        outgoing = sorted(before - after, key=lambda p: v.mean(p, week))
+        for i, into in enumerate(incoming):
+            was = outgoing[i] if i < len(outgoing) else None
+            slot = v.slots[lineup.index(into)]
+            change = {"slot": slot, "player_out": v.ref(was, week) if was else None, "player_in": v.ref(into, week),
+                      "mean_gain": r1(v.mean(into, week) - (v.mean(was, week) if was else 0.0))}  # fmt: skip
+            change["why"] = _change_why(v, week, was, into, mode == "high_risk")
+            change["why"]["summary"] = change["why"]["summary"].format(slot=slot)
+            out["changes"].append(change)
+        out["slot_changes"] = [
+            {"player": v.ref(p, week), "from_slot": v.slots[current.index(p)], "to_slot": v.slots[lineup.index(p)]}
+            for p in current if p in after and v.slots[current.index(p)] != v.slots[lineup.index(p)]
+        ]  # fmt: skip
         return out
 
     def solve(score) -> list[str | None]:
@@ -145,7 +156,9 @@ def recommend_lineup(conn: sqlite3.Connection, league_id: str, week: int | None 
         warnings.append(f"no projection for {v.ref(pid, week)['name']}")
 
     moves = [f"{c['player_in']['name']} over {c['player_out']['name'] if c['player_out'] else 'the empty slot'} at {c['slot']}" for c in ex["changes"]]
+    shifts = [f"{c['player']['name']} from {c['from_slot']} to {c['to_slot']}" for c in ex["slot_changes"]]
     summary = "Start " + "; start ".join(moves) if moves else "Keep the lineup set in Sleeper"
+    summary += "".join(f"; move {s}" for s in shifts)
     summary += f"; the expected-points lineup projects {ex['mine']['mean']:.1f}" + (f" to {opp[0]:.1f}." if opp else ".")
     result = v.envelope("lineup", summary, warnings, week)
     matchup = {"opponent_fantasy_team": v.names[opponent_id], "opponent_fantasy_team_id": opponent_id,
