@@ -12,7 +12,7 @@ def tables(conn):
 def test_creates_database_and_applies_schema(tmp_path):
     conn = db.connect(tmp_path / "new" / "fantasy.db")
     db.migrate(conn)
-    assert conn.execute("pragma user_version").fetchone()[0] == 3
+    assert conn.execute("pragma user_version").fetchone()[0] == 4
     assert {"settings", "chat_message", "roster_diff", "league", "projection", "refresh_log"} <= tables(conn)
 
 
@@ -45,3 +45,21 @@ def test_failed_migration_rolls_back_and_names_the_file(tmp_path):
         db.migrate(conn, folder)
     assert conn.execute("pragma user_version").fetchone()[0] == 1
     assert "b" not in tables(conn)
+
+
+def test_old_sleeper_catalog_and_stats_errors_are_dropped(tmp_path):
+    from ingestion import sync
+
+    old = tmp_path / "migrations_0003"
+    old.mkdir()
+    for f in db.MIGRATIONS.glob("000[123]_*.sql"):
+        shutil.copy(f, old)
+    conn = db.connect(tmp_path / "fantasy.db")
+    db.migrate(conn, old)
+    for scope in ("catalog", "stats", "projections", "projections_ros", "league"):
+        sync._log(conn, "sleeper", scope, "down")
+    assert len(sync.failures(conn)) == 5
+
+    db.migrate(conn)
+    assert [r["scope"] for r in conn.execute("select scope from refresh_log")] == ["league"]
+    assert len(sync.failures(conn)) == 1

@@ -28,25 +28,48 @@ def return_week(return_date: str, games: dict[int, str], from_week: int) -> int 
     return next((w for w in sorted(games) if from_week <= w <= LAST_WEEK and games[w][:10] >= return_date), None)
 
 
-def _zero(week: int, reason: str, healthy: Blended | None) -> dict:
+def sleeper_only(b: Blended) -> Blended | None:
+    """The Sleeper part of a blended row, as Sleeper projects it; None when Sleeper has no row."""
+    own = next((p for p in b.sources if p["source"] == "sleeper"), None)
+    return own and Blended(b.player_id, b.week, own["mean"], own["variance"], [{**own, "weight": 1.0}])
+
+
+def healthy_part(b: Blended) -> Blended:
+    """The blend of the sources that project him to play. One source's zero for an injured player (Sleeper
+    projects 0 for players on IR) is not a healthy projection."""
+    live = [p for p in b.sources if p["mean"] > 0]
+    if not live or len(live) == len(b.sources):
+        return b
+    total = sum(p["weight"] for p in live)
+    parts = [{**p, "weight": p["weight"] / total} for p in live]
+    m = sum(p["weight"] * p["mean"] for p in parts)
+    var = sum(p["weight"] * (p["variance"] + (p["mean"] - m) ** 2) for p in parts)
+    return Blended(b.player_id, b.week, m, var, parts)
+
+
+def _zero(week: int, reason: str, b: Blended | None) -> dict:
     return {"week": week, "mean": 0.0, "variance": 0.0, "games": reason != "bye", "zero_reason": reason,
-            "healthy": healthy.mean if healthy else None, "sources": []}  # fmt: skip
+            "healthy": healthy_part(b).mean if b else None, "sources": []}  # fmt: skip
 
 
-def player_weeks(blended: dict[int, Blended], games: dict[int, str], injury: dict | None, from_week: int) -> list[dict]:
+def player_weeks(blended: dict[int, Blended], games: dict[int, str], injury: dict | None, from_week: int,
+                 overlay_from: int | None = None) -> list[dict]:  # fmt: skip
     """One dict per week from `from_week` through 18, with the injury overlay applied.
 
     blended: week -> Blended for this player; games: week -> kickoff of his NFL team's games (no entry = bye);
     injury: the injury fact value (designation, return_date, return_date_source, return_date_as_of) or None.
-    Out, PUP and Sus zero the next game only. IR zeroes the weeks before the expected return week; with no
-    return date the rows are left as they are (build gives such players Sleeper's own rows). Nothing else
-    changes a projection.
+    Out, PUP and Sus zero the next game only. IR zeroes the weeks before the expected return week and projects
+    his healthy blend from it; with no return date he gets Sleeper's own rows. `healthy` is set on every row of
+    an injured player. Nothing else changes a projection. Weeks before `overlay_from` (default `from_week`) are
+    played or past: the injury state of today does not apply to them.
     """
+    overlay_from = overlay_from or from_week
     designation = (injury or {}).get("designation")
-    next_game = min((w for w in games if w >= from_week), default=None)
+    injured = designation in RULED_OUT or designation == "IR"
+    next_game = min((w for w in games if w >= overlay_from), default=None)
     ret = None
     if designation == "IR" and injury.get("return_date"):
-        ret = return_week(injury["return_date"], games, from_week) or LAST_WEEK + 1  # after week 18: never
+        ret = return_week(injury["return_date"], games, overlay_from) or LAST_WEEK + 1  # after week 18: never
     out = []
     for w in range(from_week, LAST_WEEK + 1):
         b = blended.get(w)
@@ -54,14 +77,20 @@ def player_weeks(blended: dict[int, Blended], games: dict[int, str], injury: dic
             out.append(_zero(w, "bye", None))
         elif b is None:
             continue
+        elif w < overlay_from:
+            out.append({"week": w, "mean": b.mean, "variance": b.variance, "games": True, "zero_reason": None,
+                        "healthy": None, "sources": b.sources})  # fmt: skip
         elif ret is not None and w < ret:
             out.append(_zero(w, "ir", b))
         elif designation in RULED_OUT and w == next_game:
             out.append(_zero(w, RULED_OUT[designation], b))
         else:
-            out.append({"week": w, "mean": b.mean, "variance": b.variance, "games": True, "zero_reason": None,
-                        "healthy": b.mean if designation in RULED_OUT or designation == "IR" else None,
-                        "sources": b.sources})  # fmt: skip
+            row = b
+            if designation == "IR":
+                row = healthy_part(b) if ret is not None else sleeper_only(b)
+            if row is not None:
+                out.append({"week": w, "mean": row.mean, "variance": row.variance, "games": True, "zero_reason": None,
+                            "healthy": healthy_part(b).mean if injured else None, "sources": row.sources})  # fmt: skip
     return out
 
 
@@ -77,14 +106,15 @@ def _sources_total(weeks: list[dict]) -> list[dict]:
     return [{"source": k, "weight": sum(a["weight"]) / len(a["weight"]), "mean": a["mean"], "variance": a["variance"]} for k, a in acc.items()]
 
 
-def player_rows(league_id: str, season: int, player_id: str, weeks: list[dict], injury: dict | None, games: dict[int, str], now: str) -> list[dict]:
+def player_rows(league_id: str, season: int, player_id: str, weeks: list[dict], injury: dict | None, games: dict[int, str], now: str,
+                overlay_from: int | None = None) -> list[dict]:  # fmt: skip
     """The week rows plus the one rest-of-season row (the sum of the weeks, which follows the same overlay)."""
     if not weeks:
         return []
     ir = injury if (injury or {}).get("designation") == "IR" and injury.get("return_date") else {}
     common = {
         "league_id": league_id, "season": season, "player_id": player_id, "computed_at": now,
-        "return_week": return_week(ir["return_date"], games, weeks[0]["week"]) if ir else None,
+        "return_week": return_week(ir["return_date"], games, overlay_from or weeks[0]["week"]) if ir else None,
         "return_date": ir.get("return_date"), "return_date_source": ir.get("return_date_source"),
         "return_date_as_of": ir.get("return_date_as_of"),
     }  # fmt: skip
@@ -95,20 +125,15 @@ def player_rows(league_id: str, season: int, player_id: str, weeks: list[dict], 
         for wk in weeks
     ]  # fmt: skip
     zeroed = next((wk["zero_reason"] for wk in weeks if wk["zero_reason"] not in (None, "bye")), None)
+    injured = any(wk["healthy"] is not None for wk in weeks)  # on IR or ruled out, zeroed or not
     healthy = [wk["healthy"] if wk["healthy"] is not None else wk["mean"] for wk in weeks]
     rows.append(
         {**common, "horizon": "ros", "week": weeks[0]["week"], "mean": sum(wk["mean"] for wk in weeks),
          "variance": sum(wk["variance"] for wk in weeks), "n_games": sum(wk["games"] for wk in weeks),
-         "zero_reason": zeroed, "mean_if_healthy": sum(healthy) if zeroed else None,
+         "zero_reason": zeroed, "mean_if_healthy": sum(healthy) if injured else None,
          "sources": json.dumps(_sources_total(weeks))}
     )  # fmt: skip
     return rows
-
-
-def sleeper_only(b: Blended) -> Blended | None:
-    """The Sleeper part of a blended row, as Sleeper projects it; None when Sleeper has no row."""
-    own = next((p for p in b.sources if p["source"] == "sleeper"), None)
-    return own and Blended(b.player_id, b.week, own["mean"], own["variance"], [{**own, "weight": 1.0}])
 
 
 def team_games(conn: sqlite3.Connection, season: int) -> dict[str, dict[int, str]]:
@@ -120,8 +145,10 @@ def team_games(conn: sqlite3.Connection, season: int) -> dict[str, dict[int, str
 
 
 def build(conn: sqlite3.Connection, league_id: str, season: int, from_week: int, sources: list[ProjectionSource],
-          weights: dict[str, float] = DEFAULT_WEIGHTS, now: str | None = None) -> tuple[list[dict], dict]:  # fmt: skip
-    """Artifact rows and meta for one league. from_week is this week; from_week=1 gives the full season."""
+          weights: dict[str, float] = DEFAULT_WEIGHTS, now: str | None = None,
+          overlay_from: int | None = None) -> tuple[list[dict], dict]:  # fmt: skip
+    """Artifact rows and meta for one league. from_week is this week; from_week=1 gives the full season, with
+    overlay_from=this week so that today's injuries do not rewrite weeks already played."""
     now = now or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     scoring = json.loads(conn.execute("select scoring_settings from league where league_id = ?", (league_id,)).fetchone()[0])
     players = {r["player_id"]: r for r in conn.execute("select player_id, position, nfl_team from player where active = 1")}
@@ -139,10 +166,8 @@ def build(conn: sqlite3.Connection, league_id: str, season: int, from_week: int,
             continue
         fact = service.injury_fact(conn, pid)
         injury = fact["value"] if fact else None
-        if injury and injury["designation"] == "IR" and not injury["return_date"]:  # no date: Sleeper's own rows
-            bw = {w: o for w, b in bw.items() if (o := sleeper_only(b))}
         games = schedule.get(p["nfl_team"], {})
-        rows += player_rows(league_id, season, pid, player_weeks(bw, games, injury, from_week), injury, games, now)
+        rows += player_rows(league_id, season, pid, player_weeks(bw, games, injury, from_week, overlay_from), injury, games, now, overlay_from)
     active = [s for s in sources if weights.get(s.name, 0) > 0]
     meta = {
         "league_id": league_id,

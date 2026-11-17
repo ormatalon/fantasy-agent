@@ -59,7 +59,16 @@ def test_only_in_season_is_selectable():
 def test_ir_allowed_designations():
     ls = leagues()
     assert league_format(ls["Or Test League"])["ir_allowed_designations"] == []  # no IR slots
-    assert league_format(ls["FantaSteelers"])["ir_allowed_designations"] == ["IR", "NA", "Doubtful", "DNR", "Out", "Sus", "COV"]
+    assert league_format(ls["FantaSteelers"])["ir_allowed_designations"] == ["IR", "PUP", "NA", "Doubtful", "DNR", "Out", "Sus", "COV"]
     steel = copy.deepcopy(ls["FantaSteelers"])
     steel["settings"].update(reserve_allow_out=0, reserve_allow_doubtful=0, reserve_allow_cov=0)
-    assert league_format(steel)["ir_allowed_designations"] == ["IR", "NA", "DNR", "Sus"]
+    assert league_format(steel)["ir_allowed_designations"] == ["IR", "PUP", "NA", "DNR", "Sus"]
+
+
+def test_roster_size_is_the_active_limit_and_ir_taxi_are_separate():
+    steel = copy.deepcopy(leagues()["FantaSteelers"])
+    steel["settings"]["taxi_slots"] = 3
+    fmt = league_format(steel)
+    assert fmt["roster_size"] == len(steel["roster_positions"]) == len(fmt["slots"]) + fmt["bench_size"]
+    assert (fmt["ir_slots"], fmt["taxi_slots"]) == (2, 3)
+    assert "PUP" in fmt["ir_allowed_designations"]

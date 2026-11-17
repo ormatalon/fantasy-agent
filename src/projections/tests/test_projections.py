@@ -288,3 +288,39 @@ def test_a_player_on_a_new_nfl_team_is_projected_only_when_that_team_plays():
     assert MAHOMES not in {r.player_id for r in two_seasons(teams=moved).weekly(2025, [1])}
     moved = {MAHOMES: {1: "BUF"}}
     assert MAHOMES in {r.player_id for r in two_seasons(teams=moved).weekly(2025, [1])}
+
+
+def test_an_ir_players_healthy_value_ignores_the_source_that_projects_him_at_zero():
+    # Sleeper lists IR players with empty rows (Achane, Hurts on 2026-11-17); nflverse still has his games
+    sources = [{"source": "sleeper", "weight": 0.9, "mean": 0.0, "variance": 0.0},
+               {"source": "nflverse", "weight": 0.1, "mean": 12.0, "variance": 30.0}]  # fmt: skip
+    games = kickoffs()
+    blended = {w: artifact.Blended("p", w, 1.2, 3.0, sources) for w in games}
+    dated = by_week(artifact.player_weeks(blended, games, {"designation": "IR", "return_date": "2026-12-06"}, 9))
+    assert (dated[9]["mean"], dated[9]["healthy"]) == (0.0, 12.0)
+    assert dated[13]["mean"] == 12.0 and [s["source"] for s in dated[13]["sources"]] == ["nflverse"]
+    undated = by_week(artifact.player_weeks(blended, games, {"designation": "IR", "return_date": None}, 9))
+    assert (undated[9]["mean"], undated[9]["healthy"]) == (0.0, 12.0)  # Sleeper's own row (0), healthy kept for the stash
+
+
+def test_the_ros_row_of_an_ir_player_with_no_return_date_keeps_his_healthy_value():
+    # Sleeper lists him at 0, nflverse at 12 a game: his weekly rows are Sleeper's 0, his healthy value is 12 a game
+    sources = [{"source": "sleeper", "weight": 0.9, "mean": 0.0, "variance": 0.0},
+               {"source": "nflverse", "weight": 0.1, "mean": 12.0, "variance": 30.0}]  # fmt: skip
+    games = kickoffs(skip=(12,))
+    injury = {"designation": "IR", "return_date": None}
+    blended = {w: artifact.Blended("p", w, 1.2, 3.0, sources) for w in games}
+    rows = artifact.player_rows("L", 2026, "p", artifact.player_weeks(blended, games, injury, 9), injury, games, "t")
+    week, ros = by_week([r for r in rows if r["horizon"] == "week"]), rows[-1]
+    assert week[9]["mean_if_healthy"] == 12.0 and ros["mean"] == 0.0 and ros["zero_reason"] is None
+    assert ros["mean_if_healthy"] == pytest.approx(12.0 * 9)  # 9 games, the bye adds nothing
+
+
+def test_a_full_season_overlay_starts_at_this_week_not_week_one():
+    games = kickoffs(first_week=1)
+    blended = weeks_of(games=games)
+    out = by_week(artifact.player_weeks(blended, games, {"designation": "Out"}, 1, overlay_from=9))
+    assert out[1]["mean"] == 10.0 and out[8]["mean"] == 10.0 and out[9]["zero_reason"] == "out" and out[10]["mean"] == 10.0
+    ir = by_week(artifact.player_weeks(blended, games, {"designation": "IR", "return_date": "2026-12-06"}, 1, overlay_from=9))
+    assert [ir[w]["zero_reason"] for w in (1, 8)] == [None, None] and ir[1]["mean"] == 10.0  # games he already played
+    assert [ir[w]["zero_reason"] for w in (9, 12)] == ["ir", "ir"] and ir[13]["zero_reason"] is None

@@ -509,7 +509,7 @@ decision reads it; none computes its own projection.
 | `variance` | real | 0 if zeroed |
 | `n_games` | int | games scheduled (`week`: 1, or 0 on a bye; `ros`: weeks left minus byes), zeroed games included |
 | `zero_reason` | text null | `ir`, `out`, `pup`, `suspended`, `bye`, or null |
-| `mean_if_healthy` | real null | set for every row of a player on IR or ruled out, zeroed or not: the mean without the injury (stash needs it) |
+| `mean_if_healthy` | real null | set for every row of a player on IR or ruled out, zeroed or not: the blend of the sources that project him to play, so a source's 0 for an injured player (Sleeper lists IR players at 0) is left out (stash needs it) |
 | `return_week` | int null | IR players only: the expected return week, derived from `return_date` (below); null when none |
 | `return_date` | text null | the injury fact's `return_date` (ISO YYYY-MM-DD) behind `return_week`; null = unknown, never guessed |
 | `return_date_source` | text null | the injury fact's `return_date_source` (ESPN `details.returnDate`, a news estimate, not an official report); set when `return_date` is |
@@ -519,7 +519,7 @@ decision reads it; none computes its own projection.
 
 Primary key: (`league_id`, `season`, `player_id`, `horizon`, `week`).
 `week` rows exist for this week through week 18; `ros` has one row per player
-(from this week). Full season is `ros` with `from_week=1`, computed on demand,
+(from this week). Full season is `ros` with `from_week=1`, computed on demand with the stored weights and the injury overlay applied only from this week (weeks already played are not rewritten),
 not stored.
 
 Injury overlay (the only one; no other injury adjustment, backups not bumped):
@@ -538,8 +538,7 @@ Injury overlay (the only one; no other injury adjustment, backups not bumped):
   after week 18 gives all weeks 0.
 - IR with no `return_date` from any source (owner decision): Sleeper's own weekly
   rows as they are, not the blend and not 0. Weeks Sleeper has no row for get no
-  row. `zero_reason` is null, `return_week` null, `mean_if_healthy` set. Decisions
-  add a warning that no return date is known.
+  row. `zero_reason` is null, `return_week` null, `mean_if_healthy` set.
 - The `ros` row is the sum of its weekly rows, so it follows these rules. The
   return date is a source's estimate, not a certainty; decisions that depend
   on it quote `return_week`, `return_date` and `return_date_source` in a
@@ -595,7 +594,7 @@ class LeagueFormat:
     faab_remaining: dict[int, int]      # fantasy_team_id -> dollars, faab only
     trade_deadline_week: int | None
     playoff_start_week: int
-    roster_size: int                    # starters + bench + ir (+ taxi), used by the roster-spot rule
+    roster_size: int                    # the active limit, starters + bench (IR and taxi are ir_slots and taxi_slots and do not count), used by the roster-spot rule
 ```
 
 Rules:
@@ -633,7 +632,7 @@ class PlayerRef:                         # label for any player in any result
     name: str
     position: str                        # Sleeper fantasy position (QB, RB, WR, TE, K, DEF, DL, LB, DB)
     nfl_team: str | None                 # abbreviation; None = free agent / unsigned
-    injury_status: str | None            # Sleeper designation as shown in the app (Questionable, Out, IR ...)
+    injury_status: str | None            # designation by the injury facts' precedence (official report, ESPN, Sleeper catalog), section 4
     fantasy_status: str                  # "mine_starter" | "mine_bench" | "mine_ir" | "fantasy_team:<name>" | "free_agent"
     lineup_slot: str | None              # slot as set in Sleeper when fantasy_status is mine_starter ("FLEX", "QB"); else None
     game: GameRef | None                 # the result's week; None when no NFL team
@@ -708,8 +707,8 @@ class LineupPlan:
     lineup: list[Slot]                   # full lineup, slot order as Sleeper, repeats kept
     changes: list[Change]                # vs. the lineup set in Sleeper; [] = keep it
     mine: LineupTotals                   # projected total of this lineup
-    spread: float                        # mine.mean - opponent.mean
-    win_probability: float               # Normal(spread / sqrt(mine.var + opp.var)) , 0-1
+    spread: float | None                 # mine.mean - opponent.mean; None with no opponent
+    win_probability: float | None        # Normal(spread / sqrt(mine.var + opp.var)) , 0-1; None with no opponent
     why: Why
 
 class Change:
@@ -721,7 +720,7 @@ class Change:
 
 class LineupResult(DecisionEnvelope):
     current: LineupPlan                  # the lineup set in Sleeper, changes = []
-    matchup: Matchup
+    matchup: Matchup | None              # None on a bye or when no matchup is stored (warning added)
     expected: LineupPlan                 # maximises mean
     high_risk: LineupPlan                # maximises mean + k*sd per player (k = 1.0, config)
     locked: list[dict]                   # [{"player": PlayerRef, "side": "starter"|"bench", "reason": "game_started"|"game_final"}]
@@ -738,6 +737,14 @@ player as starter; a change is only listed when `mean_gain` >= `min_gain`
 lineup, not the ceiling objective. The agent chooses which plan to present from
 `win_probability` of `expected` versus `high_risk` and `underdog` reason
 items, and says which one it gave.
+
+Live weeks: for both fantasy teams' starters, a game that is final counts the
+points scored (mean = actual from the stored matchup, variance 0); a game in
+progress keeps the pre-game projection (no remaining-game projection exists) and
+adds the warning "games in progress, so their pre-game projections are still used:
+<names>"; a game not started counts the projection. A locked starter is never
+replaced, so the same values appear in all three plans. IR eligibility is read only
+from `LeagueFormat.ir_allowed_designations`.
 
 #### 9.2 Waivers
 
@@ -767,9 +774,9 @@ class WaiverResult(DecisionEnvelope):
 Replacement level = Nth-best rostered player at the position pool, N = fantasy
 teams x slot demand, flex slots splitting credit; pools with no slot demand
 excluded; rostered players with mean 0 excluded (first-build fixes).
-`faab_guide` = `vorp` x `faab_pct_per_vorp` (config, 4%) x `budget.total`,
-rounded, capped at `remaining`; the exact scale for `ros` is set in stage 2.4
-against the first build's behavior.
+`faab_guide` = (`vorp` / games in the horizon) x 4% x `budget.total`, rounded,
+then clamped to `budget.min_bid` and `budget.remaining`; `None` unless the league
+uses FAAB.
 
 #### 9.3 Injured stash
 
@@ -778,7 +785,7 @@ Input: `limit` (default 10), optional `position`.
 ```python
 class StashCandidate:
     rank: int
-    player: PlayerRef                    # free agent with an injury designation (IR/Out/PUP/Doubtful/Questionable)
+    player: PlayerRef                    # free agent listed IR, Out or PUP (Questionable and Doubtful players play)
     healthy_ros_vorp: float              # from mean_if_healthy (section 7), vs ros replacement level
     healthy_ros_mean: float
     injury: dict                         # {"status": str, "body_part": str|None, "source": str, "as_of": ts}
@@ -821,7 +828,7 @@ class TradeEvaluation(DecisionEnvelope):
     mine: TradeSide
     theirs: TradeSide
     deadline: dict                       # {"week": 11, "passed": false}   (week None = no deadline)
-    verdict: str                         # "I gain more" | "they gain more" | "both gain" | "both lose" -- fixed labels from the two signs/sizes
+    verdict: str                         # "I gain more" | "they gain more" | "both gain" | "both lose" | "no change for either" -- fixed labels from the two signs/sizes
 ```
 
 The deadline passing does not block an evaluation; it adds a warning.
@@ -846,7 +853,8 @@ class TradeIdeasResult(DecisionEnvelope):
     deadline: dict                       # as 9.4
 ```
 
-After the deadline: `ideas` = [], warning "trade deadline passed (week N)".
+In v1 ideas are one-for-one (evaluation, 9.4, handles any size). After the deadline:
+`ideas` = [], warning "trade deadline passed (week N)".
 No idea without both value changes populated.
 
 #### 9.6 Week results
@@ -860,11 +868,13 @@ class WeekResults(DecisionEnvelope):
     result: str                          # "win" | "loss" | "tie"
     opponent_top_scorers: list[dict]     # top 3 starters: {"player": PlayerRef, "slot": str, "points": float}
     my_bench: dict                       # {"actual_points": 143.2, "optimal_points": 151.0, "points_left_on_bench": 7.8,
-                                         #  "moves": [{"start": PlayerRef, "bench": PlayerRef, "slot": str, "gain": float}]}
+                                         #  "moves": [{"start": PlayerRef, "bench": PlayerRef | None, "slot": str, "gain": float}]}
+                                         # bench is None when the manager left that slot empty
 ```
 
 Points are actuals from Sleeper matchups (`players_points`), not projections.
 `optimal_points` uses the same lineup optimiser over actual points, no locks.
+`as_of` has one entry, `rosters` ("Sleeper matchups"); `unprojected_scoring_items` is `[]`.
 
 #### 9.7 Season leaders
 
@@ -886,7 +896,34 @@ class LeadersResult(DecisionEnvelope):
 ```
 
 Used by "top RBs so far" and "who leads in actual points"; projections are not
-mixed in (the projection tool is separate, section 11).
+mixed in (the projection tool is separate, section 11). `as_of` has one entry,
+`games` ("Sleeper stats"); `unprojected_scoring_items` is `[]` (actual stats cover
+every scoring item).
+
+#### 9.8 Projections
+
+Input: `player_ids` or `position`, `horizon` (`week` default, `ros`, `full_season`;
+full season is built on demand from week 1), `week` (horizon `week` only, default
+this week), `limit` (default 10).
+
+```python
+class ProjectionRow:
+    rank: int                            # by mean
+    player: PlayerRef
+    mean: float
+    variance: float
+    n_games: int
+    zero_reason: str | None              # section 7
+    sources: list[dict]                  # section 7
+    return_week: int | None              # IR players: section 7
+    return_date: str | None
+    return_date_source: str | None
+    return_date_as_of: str | None
+
+class ProjectionsResult(DecisionEnvelope):   # kind "projections"
+    horizon: str                         # "week" | "ros" | "full_season"
+    rows: list[ProjectionRow]            # a requested player with no row is a warning, not a row
+```
 
 ### 10. Backtest outputs
 
@@ -1007,8 +1044,8 @@ the paired 95% interval of the error difference excludes 0. Rest of season:
   name falls back to the manager's `display_name` when `metadata.team_name` is
   absent. Current week comes from Sleeper `state.week`, not `settings.leg`.
 - O3 (closed, owner decision): IR players are projected from an expected
-  return week (section 7), 0 before it, and 0 throughout when no return date
-  exists. Backend supplies `return_date`, `return_date_source` and `return_date_as_of` on the `injury` fact (ESPN only; coverage checked in 2.3).
+  return week (section 7), 0 before it, and Sleeper's own rows when no return
+  date exists. Backend supplies `return_date`, `return_date_source` and `return_date_as_of` on the `injury` fact (ESPN only; coverage checked in 2.3).
   PRD 4.3 and PRD 8 ("IR in season projections") still describe the old rule
   and need the lead's update.
 
@@ -1111,8 +1148,9 @@ and the section 4 injury fact, printed as is):
 - with a date: `RETURN: week 13 (return date 2026-12-06, source ESPN injuries,
   as of Tue 11-03 20:57; a news estimate, not an official report). Weeks
   before 13 project 0 (on IR)`;
-- without: `RETURN: unknown (no source has a return date). Projected 0 for
-  every remaining week (on IR)`, and the same text in WARNINGS.
+- without: `RETURN: unknown (no source has a return date). Sleeper's own
+  weekly projections are used (on IR)`, and the same text in WARNINGS (added by the
+  tool wrapper, not by the decision result).
 
 Rendered text carries no internal field names (`zero_reason`,
 `win_probability` ...), so the model has none to copy (TEST_QUESTIONS T1 rule

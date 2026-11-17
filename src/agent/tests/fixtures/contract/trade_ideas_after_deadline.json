@@ -1,0 +1,55 @@
+{
+  "kind": "trade_ideas",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 12,
+  "summary": "No trade ideas: the trade deadline passed (week 11).",
+  "as_of": {
+    "projections": {
+      "as_of": "2026-11-03T10:45:00Z",
+      "source_label": "projections (Sleeper and nflverse blend)"
+    },
+    "rosters": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper rosters"
+    },
+    "injuries": {
+      "as_of": "2026-11-03T11:00:00Z",
+      "source_label": "official NFL injury report via nflverse"
+    },
+    "news": null,
+    "games": {
+      "as_of": "2026-11-03T12:20:00Z",
+      "source_label": "ESPN scoreboard"
+    }
+  },
+  "unprojected_scoring_items": [
+    {
+      "key": "def_st_td",
+      "value": 6.0
+    },
+    {
+      "key": "fgm_50_59",
+      "value": 5.0
+    },
+    {
+      "key": "idp_def_td",
+      "value": 6.0
+    },
+    {
+      "key": "pts_allow_0",
+      "value": 10.0
+    }
+  ],
+  "warnings": [
+    "trade deadline passed (week 11)"
+  ],
+  "ideas": [],
+  "searched_fantasy_teams": [
+    "OrHuji"
+  ],
+  "deadline": {
+    "week": 11,
+    "passed": true
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "kind": "projections",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 9,
+  "summary": "Rest-of-season projections for 3 players from week 9.",
+  "as_of": {
+    "projections": {
+      "as_of": "2026-11-03T10:45:00Z",
+      "source_label": "projections (Sleeper and nflverse blend)"
+    },
+    "rosters": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper rosters"
+    },
+    "injuries": {
+      "as_of": "2026-11-03T11:00:00Z",
+      "source_label": "official NFL injury report via nflverse"
+    },
+    "news": null,
+    "games": {
+      "as_of": "2026-11-03T12:20:00Z",
+      "source_label": "ESPN scoreboard"
+    }
+  },
+  "unprojected_scoring_items": [
+    {
+      "key": "def_st_td",
+      "value": 6.0
+    },
+    {
+      "key": "fgm_50_59",
+      "value": 5.0
+    },
+    {
+      "key": "idp_def_td",
+      "value": 6.0
+    },
+    {
+      "key": "pts_allow_0",
+      "value": 10.0
+    }
+  ],
+  "warnings": [],
+  "horizon": "ros",
+  "rows": [
+    {
+      "rank": 1,
+      "player": {
+        "player_id": "4866",
+        "name": "Saquon Barkley",
+        "position": "RB",
+        "nfl_team": "PHI",
+        "injury_status": null,
+        "fantasy_status": "mine_bench",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "mean": 120.4,
+      "variance": 400.0,
+      "n_games": 9,
+      "zero_reason": null,
+      "sources": [
+        {
+          "source": "sleeper",
+          "weight": 0.5,
+          "mean": 118.0,
+          "variance": 380.0
+        },
+        {
+          "source": "nflverse",
+          "weight": 0.5,
+          "mean": 122.8,
+          "variance": 420.0
+        }
+      ],
+      "return_week": null,
+      "return_date": null,
+      "return_date_source": null,
+      "return_date_as_of": null
+    },
+    {
+      "rank": 2,
+      "player": {
+        "player_id": "6904",
+        "name": "Jalen Hurts",
+        "position": "QB",
+        "nfl_team": "PHI",
+        "injury_status": "IR",
+        "fantasy_status": "fantasy_team:OrHuji",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "mean": 80.0,
+      "variance": 300.0,
+      "n_games": 5,
+      "zero_reason": "ir",
+      "sources": [
+        {
+          "source": "sleeper",
+          "weight": 1.0,
+          "mean": 80.0,
+          "variance": 300.0
+        }
+      ],
+      "return_week": 13,
+      "return_date": "2026-12-06",
+      "return_date_source": "espn",
+      "return_date_as_of": "2026-11-03T18:57:00Z"
+    },
+    {
+      "rank": 3,
+      "player": {
+        "player_id": "3973",
+        "name": "Myles Garrett",
+        "position": "DE",
+        "nfl_team": "LAR",
+        "injury_status": "IR",
+        "fantasy_status": "fantasy_team:OrHuji",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "mean": 12.0,
+      "variance": 30.0,
+      "n_games": 8,
+      "zero_reason": null,
+      "sources": [
+        {
+          "source": "sleeper",
+          "weight": 1.0,
+          "mean": 12.0,
+          "variance": 30.0
+        }
+      ],
+      "return_week": null,
+      "return_date": null,
+      "return_date_source": null,
+      "return_date_as_of": null
+    }
+  ]
+}

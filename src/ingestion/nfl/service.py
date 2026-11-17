@@ -17,6 +17,8 @@ from .crosswalk import FANTASY_POSITIONS, Crosswalk
 from .espn import EspnSource
 from .nflverse import NflverseSource
 
+# refresh_log sources: "sleeper" is only the league refresh (league, rosters, matchups, transactions, state),
+# so a failed stats or projections pull does not read as missing roster moves
 # (source, kind, seconds between pulls normally, seconds in the game window; None = not pulled then)
 STEPS = [
     ("nflverse", "schedule", 7200, 7200),
@@ -27,9 +29,9 @@ STEPS = [
     ("nflverse", "usage", 21600, 21600),
     ("espn", "injury", 1800, 120),
     ("espn", "inactive", None, 120),
-    ("sleeper", "stats", 21600, 1800),
-    ("sleeper", "projections", 21600, 1800),       # this week: every 30 min in the game window, so a pull exists shortly before each kickoff
-    ("sleeper", "projections_ros", 86400, 86400),  # later weeks and the season total
+    ("sleeper_stats", "stats", 21600, 1800),
+    ("sleeper_projections", "projections", 21600, 1800),       # this week: every 30 min in the game window, so a pull exists shortly before each kickoff
+    ("sleeper_projections", "projections_ros", 86400, 86400),  # later weeks and the season total
 ]
 ESPN_BACKOFF = timedelta(minutes=10)
 
@@ -82,8 +84,11 @@ def in_game_window(conn: sqlite3.Connection, now: datetime) -> bool:
     return row is not None
 
 
-def game_ref(conn: sqlite3.Connection, nfl_team: str | None, week: int) -> dict | None:
-    """GameRef (data-contract section 9) for an NFL team in a week; None when the NFL team is unknown or has no game."""
+def game_ref(conn: sqlite3.Connection, nfl_team: str | None, week: int, now: datetime | None = None) -> dict | None:
+    """GameRef (data-contract section 9) for an NFL team in a week; None when the NFL team is unknown or has no game.
+
+    A game still stored as scheduled whose kickoff has passed reads in_progress: only ESPN reports live games.
+    """
     if not nfl_team:
         return None
     g = conn.execute(
@@ -92,7 +97,10 @@ def game_ref(conn: sqlite3.Connection, nfl_team: str | None, week: int) -> dict 
     ).fetchone()
     if g:
         home = g["home"] == nfl_team
-        return {"status": GAME_STATUS[g["status"]], "opponent_nfl_team": g["away"] if home else g["home"],
+        status = GAME_STATUS[g["status"]]
+        if status == "not_started" and g["kickoff_utc"] and g["kickoff_utc"] <= iso(now or datetime.now(UTC)):
+            status = "in_progress"
+        return {"status": status, "opponent_nfl_team": g["away"] if home else g["home"],
                 "home": home, "kickoff": g["kickoff_utc"], "status_as_of": g["as_of"]}
     t = conn.execute("select bye_week from nfl_team where abbr = ?", (nfl_team,)).fetchone()
     if t and t["bye_week"] == week:
@@ -227,7 +235,7 @@ def refresh(conn: sqlite3.Connection, now: datetime | None = None, force: bool =
             if not games:
                 continue
         try:
-            if source == "sleeper":
+            if source.startswith("sleeper"):
                 if kind == "stats":
                     sleeper_facts.refresh_stats(conn, s, _stat_weeks(conn, s, week))
                 elif kind == "projections":
@@ -342,11 +350,13 @@ def injury_fact(conn, player_id: str, now: datetime | None = None) -> dict | Non
         cands.append(("sleeper", p["injury_status"], p["practice_participation"], p["injury_body_part"], None, p["fetched_at"], p["fetched_at"], None))
     if not cands:
         return None
-    first = cands[0]
-    also = [{"source": c[0], "value": c[1], "as_of": c[5]} for c in cands[1:] if c[1] != first[1]]
+    # a midweek nflverse row has no designation: take it from the best source that has one, practice from the first that has one
+    first = next((c for c in cands if c[1]), cands[0])
+    practice = next((c[2] for c in cands if c[2]), None)
+    also = [{"source": c[0], "value": c[1], "as_of": c[5]} for c in cands if c is not first and c[1] != first[1]]
     dated = [c for c in cands if c[7]]
     best = max(dated, key=lambda c: c[5]) if dated else None
-    value = {"designation": first[1], "practice_status": first[2], "body_part": first[3], "detail": first[4],
+    value = {"designation": first[1], "practice_status": practice, "body_part": first[3], "detail": first[4],
              "return_date": best[7] if best else None, "return_date_source": best[0] if best else None,
              "return_date_as_of": best[5] if best else None}
     return _fact("injury", player_id, p["nfl_team"] if p else None, week if first[0] == "nflverse" else None,
@@ -444,7 +454,7 @@ def player_facts(conn, player_id: str, now: datetime | None = None) -> dict:
     return {
         "player": dict(p) if p else None,
         "roster": roster, "injury": injury, "depth": depth, "usage": usage, "inactive": inactive, "news": news,
-        "game": game_ref(conn, roster["nfl_team"], week) if roster else None,
+        "game": game_ref(conn, roster["nfl_team"], week, now) if roster else None,
         "set": fact_set(conn, facts, gaps + news_gaps + _gaps(conn, week)),
     }
 

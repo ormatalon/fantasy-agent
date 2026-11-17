@@ -53,6 +53,8 @@ class FakeSleeper:
                 return httpx.Response(200, json=self.matchups)
             case ["league", _, "transactions", _]:
                 return httpx.Response(200, json=fixture("transactions_week8.json"))
+            case ["players", "nfl", "trending", kind]:
+                return httpx.Response(200, json=fixture(f"trending_{kind}_24h.json"))
             case ["players", "nfl"]:
                 return httpx.Response(200, json=fixture("players_or_test_league.json"))
         return httpx.Response(404)

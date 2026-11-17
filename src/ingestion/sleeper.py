@@ -57,6 +57,19 @@ def get_players_catalog() -> dict[str, dict]:
     return _get("/players/nfl")
 
 
+def get_trending(kind: str = "add", hours: int = 24, limit: int = 25) -> list[dict]:
+    """Most added or dropped players over the last hours, as Sleeper gives them: [{player_id, count}].
+
+    kind is "add" or "drop". Public REST; a defense shows up with its abbreviation as player_id.
+    """
+    try:
+        r = client.get(f"{REST}/players/nfl/trending/{kind}", params={"lookback_hours": hours, "limit": limit})
+        r.raise_for_status()
+        return r.json()
+    except httpx.HTTPError as e:
+        raise SleeperError(f"Sleeper trending {kind}: {e}") from e
+
+
 ROSTERS_QUERY = """
 query($league_id: Snowflake!) {
   league_rosters(league_id: $league_id) {

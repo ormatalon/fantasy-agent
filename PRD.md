@@ -292,12 +292,14 @@ facts (projection, variance, injury, matchup, replacement level, news).
   horizons (this week, rest of season), shown both when the user doesn't say
   which. Weekly targets must exclude players whose game started or who are on
   bye. Bids must respect the league's waiver type and remaining budget.
-- **Injured stash:** unrostered injured players ranked by healthy
-  rest-of-season value, with the latest news on their return.
+- **Injured stash:** unrostered injured players (IR, Out, PUP; Questionable
+  and Doubtful players play, so they are not stash candidates) ranked by
+  healthy rest-of-season value, with the latest news on their return.
 - **Trades:** evaluate any proposed trade by value change, default
   rest-of-season. The product should also **find** trade ideas: for a target
   player or a positional need, suggest offers to specific fantasy teams that
-  improve my value while plausibly helping theirs.
+  improve my value while plausibly helping theirs. v1 suggests one-for-one
+  offers; evaluation handles any size.
   - Asked about a specific fantasy team, look only at that one. Asked in
     general, first ask which of my players I am willing to trade.
   - "Plausibly helping theirs" means the trade raises the value of their

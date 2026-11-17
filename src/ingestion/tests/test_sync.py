@@ -3,7 +3,7 @@ from datetime import timedelta
 
 import pytest
 
-from ingestion import sync
+from ingestion import sleeper, sync
 from ingestion.sleeper import SleeperError
 from ingestion.tests.support import MY_USER, TEST_LEAGUE, fixture
 
@@ -88,3 +88,15 @@ def test_ensure_fresh_skips_a_recent_pull(conn, fake):
     assert fake.calls == []
     sync.ensure_fresh(conn, TEST_LEAGUE, timedelta(0))
     assert "/graphql" in fake.calls
+
+
+def test_get_trending_returns_sleepers_list_as_is(fake):
+    assert sleeper.get_trending("add", 24, 10) == fixture("trending_add_24h.json")
+    assert sleeper.get_trending("drop") == fixture("trending_drop_24h.json")
+    assert fake.calls == ["/v1/players/nfl/trending/add", "/v1/players/nfl/trending/drop"]
+
+
+def test_failed_on_demand_nfl_team_roster_is_not_a_refresh_failure(conn):
+    for source, scope in [("espn", "roster:SEA"), ("espn", "injury"), ("nflverse", "depth")]:
+        sync._log(conn, source, scope, "429")
+    assert sorted(f["source"] for f in sync.failures(conn)) == ["espn", "nflverse"]

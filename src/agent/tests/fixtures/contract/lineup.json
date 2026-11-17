@@ -1,0 +1,382 @@
+{
+  "kind": "lineup",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 9,
+  "summary": "Start Barkley over Watson at FLEX; the expected-points lineup projects 112.4 to 98.0.",
+  "as_of": {
+    "projections": {
+      "as_of": "2026-11-03T10:45:00Z",
+      "source_label": "projections (Sleeper and nflverse blend)"
+    },
+    "rosters": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper rosters"
+    },
+    "injuries": {
+      "as_of": "2026-11-03T11:00:00Z",
+      "source_label": "official NFL injury report via nflverse"
+    },
+    "news": null,
+    "games": {
+      "as_of": "2026-11-03T12:20:00Z",
+      "source_label": "ESPN scoreboard"
+    }
+  },
+  "unprojected_scoring_items": [
+    {
+      "key": "def_st_td",
+      "value": 6.0
+    },
+    {
+      "key": "fgm_50_59",
+      "value": 5.0
+    },
+    {
+      "key": "idp_def_td",
+      "value": 6.0
+    },
+    {
+      "key": "pts_allow_0",
+      "value": 10.0
+    }
+  ],
+  "warnings": [],
+  "current": {
+    "mode": "expected",
+    "lineup": [
+      {
+        "slot": "QB",
+        "player": {
+          "player_id": "4984",
+          "name": "Josh Allen",
+          "position": "QB",
+          "nfl_team": "BUF",
+          "injury_status": null,
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "QB",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean": 22.4,
+        "variance": 40.0
+      },
+      {
+        "slot": "FLEX",
+        "player": {
+          "player_id": "8167",
+          "name": "Christian Watson",
+          "position": "WR",
+          "nfl_team": "GB",
+          "injury_status": "Questionable",
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "FLEX",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean": 10.9,
+        "variance": 30.0
+      },
+      {
+        "slot": "SUPER_FLEX",
+        "player": null,
+        "mean": null,
+        "variance": null
+      }
+    ],
+    "changes": [],
+    "mine": {
+      "mean": 108.2,
+      "variance": 300.0
+    },
+    "spread": 10.2,
+    "win_probability": 0.68,
+    "why": {
+      "summary": "Your lineup as set in Sleeper.",
+      "reasons": []
+    }
+  },
+  "matchup": {
+    "opponent_fantasy_team": "OrHuji",
+    "opponent_fantasy_team_id": 2,
+    "opponent_lineup_source": "set_in_sleeper",
+    "opponent": {
+      "mean": 98.0,
+      "variance": 280.0
+    }
+  },
+  "expected": {
+    "mode": "expected",
+    "lineup": [
+      {
+        "slot": "QB",
+        "player": {
+          "player_id": "4984",
+          "name": "Josh Allen",
+          "position": "QB",
+          "nfl_team": "BUF",
+          "injury_status": null,
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "QB",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean": 22.4,
+        "variance": 40.0
+      },
+      {
+        "slot": "FLEX",
+        "player": {
+          "player_id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "nfl_team": "PHI",
+          "injury_status": null,
+          "fantasy_status": "mine_bench",
+          "lineup_slot": null,
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean": 15.1,
+        "variance": 30.0
+      },
+      {
+        "slot": "SUPER_FLEX",
+        "player": null,
+        "mean": null,
+        "variance": null
+      }
+    ],
+    "changes": [
+      {
+        "slot": "FLEX",
+        "player_out": {
+          "player_id": "8167",
+          "name": "Christian Watson",
+          "position": "WR",
+          "nfl_team": "GB",
+          "injury_status": "Questionable",
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "FLEX",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "player_in": {
+          "player_id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "nfl_team": "PHI",
+          "injury_status": null,
+          "fantasy_status": "mine_bench",
+          "lineup_slot": null,
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean_gain": 4.2,
+        "why": {
+          "summary": "Barkley projects 4.2 more points than Watson at FLEX.",
+          "reasons": [
+            {
+              "code": "projection_edge",
+              "player_ids": [
+                "4866",
+                "8167"
+              ],
+              "values": {
+                "in_mean": 15.1,
+                "out_mean": 10.9,
+                "gain": 4.2
+              },
+              "text": "Barkley projects 15.1, Watson 10.9."
+            }
+          ]
+        }
+      }
+    ],
+    "mine": {
+      "mean": 112.4,
+      "variance": 310.0
+    },
+    "spread": 14.4,
+    "win_probability": 0.71,
+    "why": {
+      "summary": "One change raises the projected total.",
+      "reasons": []
+    }
+  },
+  "high_risk": {
+    "mode": "high_risk",
+    "lineup": [
+      {
+        "slot": "QB",
+        "player": {
+          "player_id": "4984",
+          "name": "Josh Allen",
+          "position": "QB",
+          "nfl_team": "BUF",
+          "injury_status": null,
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "QB",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean": 22.4,
+        "variance": 40.0
+      },
+      {
+        "slot": "FLEX",
+        "player": {
+          "player_id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "nfl_team": "PHI",
+          "injury_status": null,
+          "fantasy_status": "mine_bench",
+          "lineup_slot": null,
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean": 15.1,
+        "variance": 30.0
+      },
+      {
+        "slot": "SUPER_FLEX",
+        "player": null,
+        "mean": null,
+        "variance": null
+      }
+    ],
+    "changes": [
+      {
+        "slot": "FLEX",
+        "player_out": {
+          "player_id": "8167",
+          "name": "Christian Watson",
+          "position": "WR",
+          "nfl_team": "GB",
+          "injury_status": "Questionable",
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "FLEX",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "player_in": {
+          "player_id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "nfl_team": "PHI",
+          "injury_status": null,
+          "fantasy_status": "mine_bench",
+          "lineup_slot": null,
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "mean_gain": 4.2,
+        "why": {
+          "summary": "Barkley projects 4.2 more points than Watson at FLEX.",
+          "reasons": [
+            {
+              "code": "projection_edge",
+              "player_ids": [
+                "4866",
+                "8167"
+              ],
+              "values": {
+                "in_mean": 15.1,
+                "out_mean": 10.9,
+                "gain": 4.2
+              },
+              "text": "Barkley projects 15.1, Watson 10.9."
+            }
+          ]
+        }
+      }
+    ],
+    "mine": {
+      "mean": 111.0,
+      "variance": 360.0
+    },
+    "spread": 13.0,
+    "win_probability": 0.69,
+    "why": {
+      "summary": "Same change; no higher-variance option helps.",
+      "reasons": []
+    }
+  },
+  "locked": [
+    {
+      "player": {
+        "player_id": "4984",
+        "name": "Josh Allen",
+        "position": "QB",
+        "nfl_team": "BUF",
+        "injury_status": null,
+        "fantasy_status": "mine_starter",
+        "lineup_slot": "QB",
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "side": "starter",
+      "reason": "game_started"
+    }
+  ],
+  "ir_flags": [],
+  "empty_slots": [
+    "SUPER_FLEX"
+  ]
+}

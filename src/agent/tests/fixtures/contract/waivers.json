@@ -1,0 +1,171 @@
+{
+  "kind": "waivers",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 9,
+  "summary": "Top pickup this week: Tetairoa McMillan; rest of season: Tetairoa McMillan.",
+  "as_of": {
+    "projections": {
+      "as_of": "2026-11-03T10:45:00Z",
+      "source_label": "projections (Sleeper and nflverse blend)"
+    },
+    "rosters": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper rosters"
+    },
+    "injuries": {
+      "as_of": "2026-11-03T11:00:00Z",
+      "source_label": "official NFL injury report via nflverse"
+    },
+    "news": null,
+    "games": {
+      "as_of": "2026-11-03T12:20:00Z",
+      "source_label": "ESPN scoreboard"
+    }
+  },
+  "unprojected_scoring_items": [
+    {
+      "key": "def_st_td",
+      "value": 6.0
+    },
+    {
+      "key": "fgm_50_59",
+      "value": 5.0
+    },
+    {
+      "key": "idp_def_td",
+      "value": 6.0
+    },
+    {
+      "key": "pts_allow_0",
+      "value": 10.0
+    }
+  ],
+  "warnings": [
+    "no projection for Jaxon Smith-Njigba"
+  ],
+  "lists": [
+    {
+      "horizon": "week",
+      "candidates": [
+        {
+          "rank": 1,
+          "player": {
+            "player_id": "12526",
+            "name": "Tetairoa McMillan",
+            "position": "WR",
+            "nfl_team": "CAR",
+            "injury_status": null,
+            "fantasy_status": "free_agent",
+            "lineup_slot": null,
+            "game": {
+              "status": "not_started",
+              "opponent_nfl_team": "MIA",
+              "home": true,
+              "kickoff": "2026-11-08T18:00:00Z",
+              "status_as_of": "2026-11-03T12:20:00Z"
+            }
+          },
+          "mean": 11.3,
+          "vorp": 2.4,
+          "replacement": {
+            "pool": "WR",
+            "rank_n": 24,
+            "points": 8.9
+          },
+          "faab_guide": null,
+          "why": {
+            "summary": "McMillan is 2.4 over the WR replacement level.",
+            "reasons": [
+              {
+                "code": "replacement_level",
+                "player_ids": [
+                  "12526"
+                ],
+                "values": {
+                  "vorp": 2.4
+                },
+                "text": "2.4 points over replacement."
+              }
+            ]
+          }
+        }
+      ],
+      "excluded": [
+        {
+          "player": {
+            "player_id": "7547",
+            "name": "Amon-Ra St. Brown",
+            "position": "WR",
+            "nfl_team": "DET",
+            "injury_status": null,
+            "fantasy_status": "free_agent",
+            "lineup_slot": null,
+            "game": {
+              "status": "not_started",
+              "opponent_nfl_team": "MIA",
+              "home": true,
+              "kickoff": "2026-11-08T18:00:00Z",
+              "status_as_of": "2026-11-03T12:20:00Z"
+            }
+          },
+          "reason": "game_started"
+        }
+      ]
+    },
+    {
+      "horizon": "ros",
+      "candidates": [
+        {
+          "rank": 1,
+          "player": {
+            "player_id": "12526",
+            "name": "Tetairoa McMillan",
+            "position": "WR",
+            "nfl_team": "CAR",
+            "injury_status": null,
+            "fantasy_status": "free_agent",
+            "lineup_slot": null,
+            "game": {
+              "status": "not_started",
+              "opponent_nfl_team": "MIA",
+              "home": true,
+              "kickoff": "2026-11-08T18:00:00Z",
+              "status_as_of": "2026-11-03T12:20:00Z"
+            }
+          },
+          "mean": 98.6,
+          "vorp": 21.0,
+          "replacement": {
+            "pool": "WR",
+            "rank_n": 24,
+            "points": 77.6
+          },
+          "faab_guide": null,
+          "why": {
+            "summary": "McMillan is 21.0 over the WR replacement level.",
+            "reasons": [
+              {
+                "code": "replacement_level",
+                "player_ids": [
+                  "12526"
+                ],
+                "values": {
+                  "vorp": 21.0
+                },
+                "text": "21.0 points over replacement."
+              }
+            ]
+          }
+        }
+      ],
+      "excluded": []
+    }
+  ],
+  "budget": {
+    "type": "rolling",
+    "total": null,
+    "remaining": null,
+    "min_bid": null
+  }
+}

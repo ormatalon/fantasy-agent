@@ -15,7 +15,7 @@ from .league_format import league_format, league_info
 from .sleeper import SleeperError
 
 CATALOG_MAX_AGE = timedelta(hours=20)
-SOURCE_NAMES = {"sleeper": "Sleeper", "espn": "ESPN", "nflverse": "nflverse"}
+SOURCE_NAMES = {"sleeper": "Sleeper", "sleeper_stats": "Sleeper stats", "sleeper_projections": "Sleeper projections", "sleeper_catalog": "Sleeper players catalog", "espn": "ESPN", "nflverse": "nflverse"}
 refresh_lock = threading.Lock()
 
 
@@ -84,7 +84,7 @@ def stored_age(conn: sqlite3.Connection, source: str, scope: str) -> timedelta |
 
 def failures(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute(
-        "select source, scope, last_ok_at, last_error from refresh_log where last_error is not null and scope not like 'news:%'"
+        "select source, scope, last_ok_at, last_error from refresh_log where last_error is not null and scope not like 'news:%' and scope not like 'roster:%'"
     ).fetchall()
     return [
         {
@@ -100,7 +100,7 @@ def failures(conn: sqlite3.Connection) -> list[dict]:
 # players catalog
 
 def refresh_players(conn: sqlite3.Connection) -> dict | None:
-    age = stored_age(conn, "sleeper", "catalog")
+    age = stored_age(conn, "sleeper_catalog", "catalog")
     if age is not None and age < CATALOG_MAX_AGE:
         return None
 
@@ -133,7 +133,7 @@ def refresh_players(conn: sqlite3.Connection) -> dict | None:
             conn.execute("delete from player")
             conn.executemany("insert into player values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
-    return _run(conn, "sleeper", "catalog", fetch)
+    return _run(conn, "sleeper_catalog", "catalog", fetch)
 
 
 # league state

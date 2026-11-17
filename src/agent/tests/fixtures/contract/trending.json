@@ -1,0 +1,56 @@
+{
+  "kind": "trending",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 9,
+  "summary": "Most added across Sleeper in the last 24 hours: Tetairoa McMillan.",
+  "as_of": {
+    "trending": {
+      "as_of": "2026-11-03T12:00:00Z",
+      "source_label": "Sleeper trending"
+    }
+  },
+  "unprojected_scoring_items": [
+    {
+      "key": "def_st_td",
+      "value": 6.0
+    },
+    {
+      "key": "fgm_50_59",
+      "value": 5.0
+    },
+    {
+      "key": "idp_def_td",
+      "value": 6.0
+    },
+    {
+      "key": "pts_allow_0",
+      "value": 10.0
+    }
+  ],
+  "warnings": [],
+  "type": "add",
+  "hours": 24,
+  "rows": [
+    {
+      "rank": 1,
+      "player": {
+        "player_id": "12526",
+        "name": "Tetairoa McMillan",
+        "position": "WR",
+        "nfl_team": "CAR",
+        "injury_status": null,
+        "fantasy_status": "free_agent",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "count": 41210
+    }
+  ]
+}

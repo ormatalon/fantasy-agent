@@ -61,9 +61,11 @@ def test_designation_matches_official_report(nfl):
         if not pid:
             continue
         fact = service.injury_fact(conn, pid, NOW)
-        assert fact["source"] == "nflverse" and fact["week"] == 10
-        assert fact["value"]["designation"] == (r["report_status"] or None)
-        assert fact["value"]["practice_status"] == (r["practice_status"] or None)
+        if r["report_status"]:  # a row without a designation defers to ESPN or Sleeper for it
+            assert fact["source"] == "nflverse" and fact["week"] == 10
+            assert fact["value"]["designation"] == r["report_status"]
+        if r["practice_status"]:
+            assert fact["value"]["practice_status"] == r["practice_status"]
         checked += 1
     assert checked > 20
     assert any(f["value"]["designation"] == "Questionable" for p in service.team_roster(conn, "ARI", now=NOW)["players"] if (f := p["injury"]))
@@ -141,10 +143,20 @@ def test_unknown_name_does_not_guess(conn, monkeypatch):
 def test_games_kickoff_and_this_week(conn):
     load_games(conn)
     assert service.this_week(conn) == 11
-    ref = service.game_ref(conn, "KC", 11)
+    ref = service.game_ref(conn, "KC", 11, NOW)
     assert ref["status"] == "not_started" and ref["opponent_nfl_team"] and ref["kickoff"].endswith("Z")
     thu = conn.execute("select * from nfl_game where week = 11 order by kickoff_utc").fetchone()
     assert thu["kickoff_utc"] == "2026-11-20T01:15:00Z"  # Thursday 20:15 US Eastern
+
+
+def test_kicked_off_game_reads_in_progress_without_espn(conn):
+    load_games(conn)
+    kickoff = datetime(2026, 11, 20, 1, 15, tzinfo=UTC)
+    thu = conn.execute("select home from nfl_game where week = 11 and kickoff_utc = '2026-11-20T01:15:00Z'").fetchone()[0]
+    assert service.game_ref(conn, thu, 11, kickoff - timedelta(minutes=1))["status"] == "not_started"
+    assert service.game_ref(conn, thu, 11, kickoff)["status"] == "in_progress"
+    conn.execute("update nfl_game set status = 'final' where home = ? and week = 11", (thu,))
+    assert service.game_ref(conn, thu, 11, kickoff + timedelta(hours=4))["status"] == "complete"
 
 
 def test_espn_state_overrides_and_brings_byes(conn):
@@ -265,3 +277,34 @@ def test_news_label_follows_the_rows_own_source(nfl, monkeypatch):
     facts, _ = service.news_facts(conn, pid, now=NOW)
     labels = {f["source"]: f["source_label"] for f in facts}
     assert labels == {"sleeper": "Sleeper news (RotoWire)", "test": "test news"}
+
+
+def test_espn_out_is_not_hidden_by_a_midweek_nflverse_row_without_designation(nfl):
+    conn, _ = nfl
+    pid = next(r["player_id"] for r in conn.execute("select * from nfl_injury where source = 'espn'") if r["designation"] == "Out")
+    conn.execute("delete from nfl_injury where source = 'nflverse' and player_id = ?", (pid,))
+    conn.execute("insert into nfl_injury(player_id, season, week, source, designation, practice_status, as_of, fetched_at)"
+                 " values (?, 2026, 11, 'nflverse', null, 'Did Not Participate In Practice', '2026-11-19T20:00:00Z', '2026-11-19T20:00:00Z')", (pid,))
+    v = service.injury_fact(conn, pid, NOW)
+    assert v["source"] == "espn" and v["value"]["designation"] == "Out"
+    assert v["value"]["practice_status"] == "Did Not Participate In Practice"
+
+
+def test_failed_stats_step_reports_its_own_source(conn, monkeypatch):
+    load_catalog(conn, monkeypatch)
+    load_games(conn)
+    make_refresh(conn, monkeypatch, SourceError("down"))
+
+    def down(*a):
+        raise service.sleeper.SleeperError("stats down")
+
+    monkeypatch.setattr(service.sleeper_facts, "refresh_stats", down)
+    failed = service.refresh(conn, datetime.now(UTC), force=True)
+    assert "sleeper_stats" in {f["source"] for f in failed} and "sleeper" not in {f["source"] for f in failed}
+
+
+def test_game_without_kickoff_time_is_not_started(conn):
+    load_games(conn)
+    conn.execute("update nfl_game set kickoff_utc = null where week = 11")
+    team = conn.execute("select home from nfl_game where week = 11").fetchone()[0]
+    assert service.game_ref(conn, team, 11, NOW)["status"] == "not_started"

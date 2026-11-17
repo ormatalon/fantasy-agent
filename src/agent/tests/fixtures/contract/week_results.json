@@ -1,0 +1,95 @@
+{
+  "kind": "week_results",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 8,
+  "summary": "Week 8: you won 180.7 to 130.4 against OrHuji; 7.8 points left on your bench.",
+  "as_of": {
+    "projections": null,
+    "rosters": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper matchups"
+    },
+    "injuries": null,
+    "news": null,
+    "games": null
+  },
+  "unprojected_scoring_items": [],
+  "warnings": [],
+  "mine": {
+    "fantasy_team": "OrMatalon",
+    "fantasy_team_id": 1,
+    "score": 180.66
+  },
+  "opponent": {
+    "fantasy_team": "OrHuji",
+    "fantasy_team_id": 2,
+    "score": 130.38
+  },
+  "result": "win",
+  "opponent_top_scorers": [
+    {
+      "player": {
+        "player_id": "6794",
+        "name": "Justin Jefferson",
+        "position": "WR",
+        "nfl_team": "MIN",
+        "injury_status": null,
+        "fantasy_status": "fantasy_team:OrHuji",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "slot": "WR",
+      "points": 28.4
+    }
+  ],
+  "my_bench": {
+    "actual_points": 180.66,
+    "optimal_points": 188.46,
+    "points_left_on_bench": 7.8,
+    "moves": [
+      {
+        "start": {
+          "player_id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "nfl_team": "PHI",
+          "injury_status": null,
+          "fantasy_status": "mine_bench",
+          "lineup_slot": null,
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "bench": {
+          "player_id": "8167",
+          "name": "Christian Watson",
+          "position": "WR",
+          "nfl_team": "GB",
+          "injury_status": "Questionable",
+          "fantasy_status": "mine_starter",
+          "lineup_slot": "FLEX",
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "slot": "FLEX",
+        "gain": 7.8
+      }
+    ]
+  }
+}

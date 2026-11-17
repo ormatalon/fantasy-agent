@@ -24,10 +24,10 @@ def defense(positions: list[str]) -> str:
 
 
 def ir_allowed(settings: dict) -> list[str]:
-    """Designations that may sit in an IR slot: "IR" always, plus one per reserve_allow_* key set to 1."""
+    """Designations that may sit in an IR slot: "IR" and "PUP" always, plus one per reserve_allow_* key set to 1."""
     if not settings.get("reserve_slots"):
         return []
-    return ["IR", *(label for key, label in RESERVE_ALLOW.items() if settings.get(f"reserve_allow_{key}") == 1)]
+    return ["IR", "PUP", *(label for key, label in RESERVE_ALLOW.items() if settings.get(f"reserve_allow_{key}") == 1)]
 
 
 def league_format(league: dict, fantasy_teams: list[dict] | None = None) -> dict:
@@ -64,7 +64,7 @@ def league_format(league: dict, fantasy_teams: list[dict] | None = None) -> dict
         ),
         "trade_deadline_week": settings.get("trade_deadline") or None,
         "playoff_start_week": settings.get("playoff_week_start"),
-        "roster_size": len(positions) + settings.get("reserve_slots", 0) + settings.get("taxi_slots", 0),
+        "roster_size": len([p for p in positions if p not in ("IR", "TAXI")]),  # active limit: starters + bench
     }
 
 

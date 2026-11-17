@@ -57,13 +57,16 @@ Returned in `/state`, `/panel`, `/refresh` and in the chat `answer` event.
 
 ```json
 { "stored_at": "2026-11-03T12:00:00Z",
-  "failed": [ { "code": "refresh_failed", "source": "sleeper_graphql",
+  "failed": [ { "code": "refresh_failed", "source": "sleeper",
                 "message": "Could not refresh from Sleeper.",
                 "since": "2026-11-03T14:29:00Z" } ] }
 ```
 
 `stored_at` is when the oldest piece the page shows (roster, matchup, game
-states) was fetched. `failed` is empty when all is well.
+states) was fetched. `failed` is empty when all is well. `source` is one of
+`sleeper` (league, rosters, matchups, transactions, NFL state),
+`sleeper_stats`, `sleeper_projections`, `sleeper_catalog`, `espn`, `nflverse`;
+only a `sleeper` failure means the manager's own moves may be missing. A failed on-demand NFL team roster lookup is not listed.
 
 ## Setup and settings
 
