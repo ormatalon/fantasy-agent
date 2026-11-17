@@ -3,7 +3,7 @@
 Findings from task 1.1. Run on 2026-11-03 (Tuesday after the week 8 Monday game;
 Sleeper `state` says `week: 9`, `display_week: 8`, so "this week" = 9).
 Fixtures are real responses trimmed to a few rows, under
-`backend/tests/fixtures/<source>/`.
+`src/ingestion/tests/fixtures/<source>/`.
 
 ## Model
 
@@ -41,7 +41,7 @@ default.** Still free and routes tools correctly.
   auth credentials found","code":401}}`. No HTTP-200 error body appeared in
   this run; the retry rule (200 with `error` and no `choices`) stays from the
   first build, unverified here.
-- Fixtures (`backend/tests/fixtures/openrouter/`): `tool_call_{starters,
+- Fixtures (`src/agent/tests/fixtures/openrouter/`): `tool_call_{starters,
   seattle,fantasy_team,waivers,metcalf}.json`, `final_answer_after_tool.json`,
   `error_401_invalid_key.json`, `error_401_missing_key.json`,
   `key_info_free_tier.json` (trimmed to the quota fields; account ids removed).

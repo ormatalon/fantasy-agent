@@ -1,0 +1,27 @@
+[project]
+name = "fantasy-agent"
+version = "0.1.0"
+description = "Sleeper fantasy football assistant"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.162.0",
+    "httpx>=0.28.1",
+    "uvicorn>=0.54.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=9.2.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Packages live under src/ and import by their folder name (web, ingestion, storage, agent, ...).
+# dev-mode-dirs puts src/ on the path for `uv run`; add new packages to `packages` for the wheel.
+[tool.hatch.build.targets.wheel]
+packages = ["src/web", "src/ingestion", "src/storage"]
+dev-mode-dirs = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["src"]
+pythonpath = ["src"]

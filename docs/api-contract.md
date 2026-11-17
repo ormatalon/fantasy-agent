@@ -1,6 +1,6 @@
 # API contract (v1)
 
-HTTP API of the local FastAPI server, used by the Next.js page (`docs/design/`).
+HTTP API of the local FastAPI server, used by the Next.js page (`design/`).
 Only what v1 needs. Terminology (`AGENT.md`): **fantasy team** is a manager's
 roster in a Sleeper league; **NFL team** is a real franchise.
 
@@ -17,7 +17,7 @@ rules: section 5 there.
   only says whether one is set (`key_set`).
 - Errors outside a chat stream: HTTP status plus
   `{"error": {"code": "...", "message": "...", ...extra}}`. `message` is the
-  user-facing sentence (copy in `docs/design/README.md`); the page keys its
+  user-facing sentence (copy in `design/README.md`); the page keys its
   states on `code`. The same object is the payload of a chat stream `error`
   event.
 - One league is "current" (stored in settings). Endpoints that need it return
@@ -93,10 +93,16 @@ page shows the setup screen. Settings is the same screen with these values.
 Partial update; takes effect at once, no restart.
 
 ```json
-{ "sleeper_username": "OrMatalon", "openrouter_api_key": "sk-or-...", "model": "..." }
+{ "sleeper_username": "OrMatalon", "openrouter_api_key": "sk-or-...", "model": "...",
+  "openrouter_base_url": "https://openrouter.ai/api/v1" }
 ```
 
-- A new key is checked against OpenRouter (`GET /api/v1/key`) before it is
+- `openrouter_base_url` is optional and not shown in the setup screen. It
+  defaults to `https://openrouter.ai/api/v1`; when unset, the env var
+  `OPENROUTER_BASE_URL` is used. Every OpenRouter call (key check, `/key`
+  quota pre-check, chat) uses it, so tests and proxies can point it at a stub
+  that returns a 401 or a quota error. It is never echoed.
+- A new key is checked against `{base_url}/key` (OpenRouter `GET /api/v1/key`) before it is
   stored. Result is distinct: `200` with `"key": "saved"`, or `422 key_rejected`
   (nothing stored, previous key kept). OpenRouter unreachable: `502
   provider_error`, nothing stored. Omitted key: `"key": "unchanged"`.
@@ -104,6 +110,12 @@ Partial update; takes effect at once, no restart.
   playable league exists it becomes current.
 - Response: the `GET /state` body plus `"key": "saved" | "unchanged"`. The key
   value is never echoed.
+
+### `DELETE /api/settings/key`
+
+Clears the stored OpenRouter key (Settings "Remove key", and a clean state for
+tests). `200` with the `GET /state` body (`key_set: false`); chat then returns
+`key_missing`. Idempotent.
 
 ### `GET /api/models`
 
@@ -205,7 +217,7 @@ it fresh per section 5 while the app is open).
   (`playoff_week_start` 15, 6 playoff teams of 8) the week 15 matchups have
   `matchup_id: null` for 2 fantasy teams, weeks 16 and 17 for 2 and 4, and
   week 18 for all 8 (fixture
-  `backend/tests/fixtures/sleeper/matchups_playoff_week15_2025_fantasteelers.json`).
+  `src/ingestion/tests/fixtures/sleeper/matchups_playoff_week15_2025_fantasteelers.json`).
   A `null` `matchup_id` covers a first-round bye and an eliminated fantasy team
   alike; the API cannot tell which, so the page says "No matchup this week".
   Regular-season weeks always have one.
@@ -250,6 +262,31 @@ History is per league. `league_id` defaults to the current league.
   the answer.
 - A `failed` question stays in the thread; the page shows it as a dashed card,
   puts its text back in the input and offers "Ask again".
+
+`GET /api/chat/history?detail=trace` (for the live-check runner and the
+grounding check; local only like everything here) returns every stored row of
+the league in id order, tool rows included, in the shape of
+`chat_message` (`docs/data-contract.md` section 1, "chat_message.meta"):
+
+```json
+{ "league_id": "...",
+  "rows": [ { "id": 40, "role": "user", "content": "...", "created_at": "...", "meta": { "status": "ok" } },
+            { "id": 41, "role": "assistant", "content": "", "created_at": "...",
+              "meta": { "question_id": 40, "model": "...", "turn": 1, "context": "TODAY: ...",
+                        "tool_calls": [ { "id": "call_1", "name": "get_player",
+                                          "arguments": { "name": "DK Metcalf" }, "result_id": 42 } ] } },
+            { "id": 42, "role": "tool", "content": "SUMMARY: ...", "created_at": "...",
+              "meta": { "tool_call_id": "call_1", "name": "get_player", "arguments": { "name": "DK Metcalf" }, "ok": true } },
+            { "id": 43, "role": "assistant", "content": "He is on PIT ...", "created_at": "...",
+              "meta": { "question_id": 40, "turn": 2, "context": "TODAY: ...", "tool_calls": [],
+                        "sources": [ ... ], "refresh": Refresh, "model_turns": 2 } } ] }
+```
+
+It carries the tool arguments, the rendered tool results and the context block
+of each turn, so a check can compare every name in an answer with what the
+model was given. It never contains the OpenRouter key (nothing stores it in a
+row) or reasoning text. Filters: `?question_id=40` returns that question's
+rows only. Built in stage 2.5 with the chat endpoints.
 
 ### `POST /api/chat`
 

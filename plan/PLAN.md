@@ -131,15 +131,15 @@ its owner or a contract change.
 
 | Role | Owns | Responsibilities |
 |---|---|---|
-| backend-developer | `backend/app/main.py`, `backend/app/api/`, `backend/app/ingestion/`, `backend/app/nfl/`, `backend/app/storage/`, `scripts/`, `desktop/`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/`, `.env.example` | API, Sleeper and NFL data sources, crosswalk, storage and migrations, freshness, Docker, Windows installer, CI. Author of `docs/api-contract.md` |
-| data-scientist | `backend/app/projections/`, `backend/app/decisions/`, `backend/app/evaluation/`, `notebooks/` | Projection sources and blend, variance, injury overlay, rest-of-season, lineup ILP, VORP, stash, trade evaluation and ideas, results and leaders, backtest. Author of `docs/data-contract.md` |
-| ai-engineer | `backend/app/agent/` | Framework decision, model choice and verification, tool catalog, per-turn context, system prompt (including the fantasy team / NFL team rule), retries and quota handling, chat history, LangSmith tracing. Author of the agent-tools section of `docs/data-contract.md` |
-| ui-designer | `docs/design/`, `docs/user-guide.md` | Screens (setup, chat with progress, my fantasy team panel), states (loading, empty, error, quota), tokens from the `AGENT.md` colors, desktop window sizes |
-| frontend-developer | `frontend/` | Next.js app built to the design and the API contract |
-| qa-expert | `tests/live/`, `TEST_QUESTIONS.md` | Live-check runner over the API, grounding check, acceptance runs, installer test plan. Reviews every contract for testability |
+| backend-developer | `src/web/`, `src/ingestion/`, `src/storage/`, `pyproject.toml`, `scripts/`, `desktop/`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/`, `.env.example` | API, Sleeper and NFL data sources, crosswalk, storage and migrations, freshness, Docker, Windows installer, CI. Author of `docs/api-contract.md` |
+| data-scientist | `src/projections/`, `src/decisions/`, `src/evaluation/`, `notebooks/` | Projection sources and blend, variance, injury overlay, rest-of-season, lineup ILP, VORP, stash, trade evaluation and ideas, results and leaders, backtest. Author of `docs/data-contract.md` |
+| ai-engineer | `src/agent/` | Framework decision, model choice and verification, tool catalog, per-turn context, system prompt (including the fantasy team / NFL team rule), retries and quota handling, chat history, LangSmith tracing. Author of the agent-tools section of `docs/data-contract.md` |
+| ui-designer | `design/`, `docs/user-guide.md` | Screens (setup, chat with progress, my fantasy team panel), states (loading, empty, error, quota), tokens from the `AGENT.md` colors, desktop window sizes |
+| frontend-developer | `web/` | Next.js app built to the design and the API contract |
+| qa-expert | `tests/`, `TEST_QUESTIONS.md` | Live-check runner over the API, grounding check, acceptance runs, installer test plan. Reviews every contract for testability |
 
-Unit tests live next to the code they test (`backend/tests/<area>/`) and
-belong to that area's owner. Tests use real fixtures (captured API responses,
+Unit tests and their fixtures live next to the code they test
+(`src/<area>/tests/`) and belong to that area's owner; anyone may read them. Tests use real fixtures (captured API responses,
 real headlines).
 
 ---
@@ -158,7 +158,7 @@ approval. Root cause before any fix.
 | 1.2 | `docs/data-contract.md`: SQLite schema and migration rule; source interface; player id crosswalk (Sleeper id as the key, mapping rules for nflverse, ESPN, NFL ids); projection artifact; decision result shapes, each with a structured "why"; freshness and source fields on every NFL fact | data-scientist, backend-developer | 1.1 | Reviewed by ai-engineer and qa-expert; every v1 tool's data has a home |
 | 1.3 | Agent-tools section of the data contract: one tool per question type in PRD 4.5 (v1 subset), inputs, outputs (summary first, labeled facts), what each does not cover; per-turn context block; framework decision with reason | ai-engineer | 1.2 draft | Each `TEST_QUESTIONS.md` v1 check maps to a tool |
 | 1.4 | `docs/api-contract.md`: setup and settings, league list and switch, my fantasy team panel, chat (send, stream progress events, history, start fresh), errors (quota, refresh failed, missing key) | backend-developer | 1.3 | Reviewed by frontend-developer, ai-engineer, qa-expert |
-| 1.5 | Design: setup, chat with progress, my fantasy team panel, all states, in `docs/design/` | ui-designer | 1.4 draft | Owner approves the screens |
+| 1.5 | Design: setup, chat with progress, my fantasy team panel, all states, in `design/` | ui-designer | 1.4 draft | Owner approves the screens |
 | 1.6 | Test plan: rewrite `TEST_QUESTIONS.md` for v1 (drop write checks 22-25 to a v2 list; replace CLI steps with API calls); define the grounding check (every player name, NFL team and role in an answer appears in that turn's tool results) | qa-expert | 1.3, 1.4 | Owner approves the list |
 
 **Phase 1 gate:** owner approves both contracts, the design and the test plan.

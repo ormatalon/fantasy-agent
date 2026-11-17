@@ -25,7 +25,7 @@ each refresh writes in one short transaction.
 
 **Migration rule (in place, upgrades keep data).**
 
-- Migrations are numbered files `backend/app/storage/migrations/NNNN_name.sql`.
+- Migrations are numbered files `src/storage/migrations/NNNN_name.sql`.
   `PRAGMA user_version` holds the last applied number. On start, each pending
   file runs in its own transaction, in order; on failure that file rolls back
   and the app refuses to start, naming the file.
@@ -44,18 +44,38 @@ each refresh writes in one short transaction.
 ```sql
 settings(key text primary key, value text not null)
   -- sleeper_username, sleeper_user_id, current_league_id, model,
-  -- projection_weights (json), openrouter_api_key (plain text in the local
+  -- projection_weights (json), openrouter_base_url (optional; default
+  -- https://openrouter.ai/api/v1, env OPENROUTER_BASE_URL when unset; tests and
+  -- proxies point it elsewhere), openrouter_api_key (plain text in the local
   -- file; never logged, never returned by the API, never in traces or prompts)
 chat_message(id integer primary key, league_id text not null,
   role text not null,                 -- user | assistant | tool
   content text not null, created_at text not null,
-  meta text)                          -- json; ai owns its keys (tool calls, sources and freshness line, error code)
+  meta text)                          -- json, keys below
 roster_diff(id integer primary key, league_id text not null, roster_id integer not null,
   detected_at text not null, added text not null, dropped text not null)  -- json arrays of player ids
 ```
 
 Start fresh deletes that league's `chat_message` rows only. `roster_diff` feeds
 RECENT CHANGES in the context block (section 12).
+
+**`chat_message.meta`** (json, written by `src/agent` through `src/storage`; it
+must never hold the OpenRouter key or any credential). One question is a run
+of rows in id order: the `user` row, then for each model turn that calls tools
+the `assistant` row followed by its `tool` rows, then the final `assistant` row.
+
+| Row | `content` | `meta` keys |
+|---|---|---|
+| `user` | the question text | `status`: `ok` \| `failed`; on failure `error`: the API error object (code, message, extras such as `remaining`, `limit`) |
+| `assistant` | the model's text (empty when it only called tools) | `question_id` (id of its `user` row); `model`; `turn` (1-based); `context` (the full per-turn context block as sent on this turn, section 12); `tool_calls`: `[{"id": "call_..", "name": "get_player", "arguments": {...}, "result_id": <id of the tool row>}]`; on the final row also `sources`: `[{"label","as_of"}]`, `refresh` (the Refresh object), `model_turns`, `usage` (tokens, if the provider gave them) |
+| `tool` | the rendered result text exactly as the model saw it (SUMMARY, AS OF, labeled facts, WARNINGS) | `tool_call_id`, `name`, `arguments`, `ok` (bool) |
+
+`context` is stored on every `assistant` row because it changes between
+turns (a refresh or `switch_league` mid-question). The grounding check and
+the live-check runner read these rows through `GET /api/chat/history?detail=trace`
+(`docs/api-contract.md`); the normal history exposes only user and final
+assistant rows with `sources` and `refresh`. Reasoning text from the model
+(`reasoning`, `reasoning_details`) is not stored here.
 
 **League state (cache; keys are Sleeper's):**
 
@@ -142,14 +162,14 @@ Indexes: `roster_player(league_id, player_id)`, `nfl_injury(player_id, season, w
 `chat_message(league_id, id)`.
 
 Writers: `projection`, `projection_meta`, `source_projection` only from
-`app/projections`; `chat_message` only from `app/agent` through `app/storage`;
-everything else only from `app/ingestion`, `app/nfl` and `app/api`.
+`src/projections`; `chat_message` only from `src/agent` through `src/storage`;
+everything else only from `src/ingestion` and `src/web`.
 
 ### 2. NFL fact source interface
 
 Verdicts and field details: `docs/spikes.md`. v1 sources: `sleeper` (catalog,
 GraphQL news), `nflverse`, `espn`. Each is one module under
-`backend/app/nfl/sources/` (undocumented APIs: one module each, AGENT.md).
+`src/ingestion/nfl/sources/` (undocumented APIs: one module each, AGENT.md).
 Adding a source = one class registered in `sources/__init__.py`; the service
 and the tools do not change.
 
@@ -172,7 +192,7 @@ Rules:
   `refresh_log`, keeps the stored rows, and reports it (section 5).
 - Rows from different sources are stored side by side (the source is part of
   every primary key). Nothing is merged on write.
-- **Choosing between sources happens on read, in `app/nfl/service.py`**, with
+- **Choosing between sources happens on read, in `src/ingestion/nfl/service.py`**, with
   these fixed precedences (first source that has the player wins; every
   source that disagrees is returned in `also`, so the agent can state the
   disagreement):
@@ -188,7 +208,7 @@ Rules:
 | news | `sleeper` (GraphQL, RotoWire prose) | prose is surfaced as is, never parsed into flags |
 
 - Source weights and precedence are configuration (a dict in
-  `app/nfl/config.py`), not code in the tools.
+  `src/ingestion/nfl/config.py`), not code in the tools.
 - Sources that do not need the crosswalk (`espn` scoreboard) still stamp
   `as_of` and `fetched_at`.
 
@@ -246,7 +266,7 @@ for a league lists the real league names.
 ### 4. NFL fact shape (source and freshness)
 
 Every NFL fact, whatever the kind, has these fields; kind-specific fields
-follow. `app/nfl/service.py` returns them with the age rendered by code, so no
+follow. `src/ingestion/nfl/service.py` returns them with the age rendered by code, so no
 tool or model computes an age.
 
 ```python
@@ -290,7 +310,7 @@ return date means `return_date` is null and the projection side must treat it as
 unknown, not as a guess. ESPN's date is a news estimate (RotoWire), not an
 official report; the source label says so. Spike sample: Jeremiyah Love, status
 Out, `returnDate` 2026-12-06, item date 2026-11-03T18:57Z
-(`backend/tests/fixtures/espn/injuries_sample.json`).
+(`src/ingestion/tests/fixtures/espn/injuries_sample.json`).
 
 `source_label` is what the agent says ("per the official injury report,
 Thursday"). A kind with no usable source for a player comes back as a gap,
@@ -405,7 +425,7 @@ Rules:
   `points_variance` (or the position floor when None) plus the weighted
   between-source variance of the means. Position floors are fitted in a
   notebook from backtest residuals and stored in
-  `backend/app/projections/variance_floor.json`. Rest-of-season variance is the
+  `src/projections/variance_floor.json`. Rest-of-season variance is the
   sum of the weekly variances (weeks treated as independent; stated assumption).
 - First v1 sources: `sleeper` (`/projections` weekly rows, which exist for every future
   week; `weekly()` only) and `nflverse` (recent box scores, last N games; supplies
@@ -505,6 +525,7 @@ class LeagueFormat:
     slots: list[str]                    # starting slots in Sleeper order, repeats kept: ["QB","RB","RB","WR","WR","TE","FLEX","SUPER_FLEX","K","DEF"]
     bench_size: int
     ir_slots: int
+    ir_allowed_designations: list[str]  # designations that may sit in an IR slot, Sleeper vocabulary; "IR" always, plus one per reserve_allow_* key set to 1: na->"NA", doubtful->"Doubtful", dnr->"DNR", out->"Out", sus->"Sus", cov->"COV". [] when ir_slots is 0
     taxi_slots: int
     num_fantasy_teams: int
     waiver_type: str                    # "faab" | "rolling" | "reverse_standings"
@@ -524,6 +545,12 @@ Rules:
 - Slot eligibility (what fits FLEX, SUPER_FLEX, IDP_FLEX, DB, DL, LB) is read
   from Sleeper's slot definitions, not reimplemented; granular IDP positions
   map as in the first build (`DB` accepts CB/S/FS/SS; DE/DT/NT pool into `DL`).
+- IR eligibility (lineup `ir_flags`, PRD 4.4): a player in an IR slot is
+  flagged when his `injury_status` is not in `ir_allowed_designations`. Seen
+  in fixtures: FantaSteelers (`reserve_slots` 2) has every `reserve_allow_*` = 1;
+  Or Test League (`reserve_slots` 0) has all 0 and no IR slots. Assumptions to
+  confirm on a league with some keys 0: "IR" is always allowed, and "PUP" (no
+  `reserve_allow_*` key exists for it) is treated like "IR".
 - Raw Sleeper setting keys mapped here (`type`, `best_ball`, `waiver_type`,
   `waiver_budget`, `trade_deadline`, `playoff_week_start`, `reserve_slots`,
   `taxi_slots`) are confirmed against real fixtures in stage 2.1 (open item O2).
@@ -801,9 +828,10 @@ mixed in (the projection tool is separate, section 11).
 
 ### 10. Backtest outputs
 
-One command (`uv run python -m app.evaluation.backtest`, stage 2.3) writes one
-JSON file per run to `backend/app/evaluation/results/<run_id>.json` and prints
-a summary table. Ground truth is actual points from Sleeper `/stats` scored
+One command (`uv run python -m evaluation.backtest`, stage 2.3) writes one
+JSON file per run to `src/evaluation/results/<run_id>.json` and prints
+a summary table. Stage 2.3 adds `projections`, `decisions` and `evaluation` to the
+root pyproject `packages` list. Ground truth is actual points from Sleeper `/stats` scored
 with one fixed reference scoring (full PPR, skill positions QB/RB/WR/TE), so
 the crosswalk is not in the ground truth. IDP and the injury overlay are not
 backtested (PRD 6). All weights, floors and settings used are recorded.
@@ -881,7 +909,7 @@ class TierResult:
 ### 11. Agent tool catalog
 
 v1 is read-only: no move tools, no preference tools, no Sleeper token. One
-tool per question type (PRD 4.5). Tools live in `backend/app/agent/tools.py`
+tool per question type (PRD 4.5). Tools live in `src/agent/tools.py`
 and call decision, NFL-fact and storage functions; they compute nothing
 themselves beyond rendering.
 
@@ -898,7 +926,7 @@ NFL fact, section 4) and renders it as text for the model, in this order:
 4. `WARNINGS:` gaps stated as gaps (`warnings`, `unprojected_scoring_items`).
 
 The same JSON goes to the trace. Rendering is one module
-(`backend/app/agent/render.py`), unit-tested on fixtures.
+(`src/agent/render.py`), unit-tested on fixtures in `src/agent/tests/`.
 
 **Shared rules.**
 
@@ -925,10 +953,10 @@ the model sees it every turn.
 | 2 | `get_my_roster` | none | my lineup as set in Sleeper by slot (repeats kept, empty slots shown as `(empty)`), bench, IR, taxi; per player: position, NFL team, injury designation and practice status with source, this week's game (opponent NFL team, kickoff, `not_started`/`in_progress`/`complete`, bye), IR flags (`ir_flags`) | a recommended lineup (`recommend_lineup`); news (`get_my_roster_news`) |
 | 3 | `get_fantasy_team_roster` | `fantasy_team` (name or manager name) | same shape as tool 2 for that fantasy team, plus its record | NFL teams (`get_nfl_team_roster`); my own (`get_my_roster`) |
 | 4 | `get_nfl_team_roster` | `nfl_team`, optional `position` | current players by position in depth order with labels (`WR1`, `WR2`, `RB1`, `LB1` ...) and which source the order comes from (depth chart or usage); per player: injury designation, practice status (the latest one in the week's report, not a per-day history), inactive (see gaps below), usage where available (snap share, target share, carries, last N games, with source), fantasy status label | fantasy teams (`get_fantasy_team_roster`); one player in detail (`get_player`); practice status by day (not available in v1: the report is weekly) |
-| 5 | `get_player` | `name` | one player: NFL team (with source and as of), position, depth label, injury designation and latest practice status, inactive (see gaps below), this week's game and its status, usage, fantasy status, the latest news items (title, text, published, source) | a list of players (tools 4, 8, 9); value or ranking (`get_projections`) |
+| 5 | `get_player` | `name` | one player: NFL team (with source and as of), position, depth label, injury designation and latest practice status with its report date, inactive (see gaps below), return line (below), this week's game and its status, usage, fantasy status, the latest news items (title, text, published, source) | a list of players (tools 4, 8, 9); value or ranking (`get_projections`) |
 | 6 | `get_my_roster_news` | optional `days` (default 7) | news per player on my roster, newest first, players with decision-relevant items (injury, practice, role) listed first and labeled | one player off my roster (`get_player`) |
 | 7 | `get_transactions` | optional `fantasy_team`, `days` (default 7), `type` (`add`, `drop`, `trade`, `waiver`) | completed transactions in the league: date, fantasy team(s), players added and dropped, FAAB spent | pending waiver claims and open trade offers: not available in v1 (need a Sleeper token); the tool says so |
-| 8 | `get_projections` | `players` (names) **or** `position`; `horizon` (`week` default, `ros`, `full_season`); optional `week`, `limit` (default 10) | per player: mean, variance as a range label, `n_games`, `zero_reason`, contributing sources with weights; ranked when given a position | actual points so far (`get_season_leaders`); pickups (`get_waiver_targets`) |
+| 8 | `get_projections` | `players` (names) **or** `position`; `horizon` (`week` default, `ros`, `full_season`); optional `week`, `limit` (default 10) | per player: mean, variance as a range label, `n_games`, `zero_reason`, contributing sources with weights, return line for IR players (below); ranked when given a position; WARNINGS lists `unprojected_scoring_items` | actual points so far (`get_season_leaders`); pickups (`get_waiver_targets`) |
 | 9 | `get_season_leaders` | optional `position`, `through_week`, `limit` (default 10) | section 9.7 rows: rank, player, actual points in league scoring, games, points per game | projections (`get_projections`) |
 | 10 | `recommend_lineup` | optional `week` | section 9.1: matchup (both fantasy teams' projected totals, spread, win probability) for `current`, `expected` and `high_risk`; changes per plan with `Reason.text`; locked players; IR flags; empty slots | the lineup set in Sleeper (`get_my_roster`) |
 | 11 | `get_waiver_targets` | `horizon` (`week`, `ros`, `both` default), optional `position`, `limit` | section 9.2: one labeled list per horizon (`THIS WEEK`, `REST OF SEASON`), each candidate with mean, VORP, replacement level, FAAB guide; excluded players (game started, bye); budget | injured free agents for later (`get_injured_stash`) |
@@ -967,6 +995,16 @@ Gaps, printed from `NflFactSet.gaps` (section 4) so the model states them:
 - Any other field with no usable source prints `not available: <field> (no
   usable source)`.
 
+**Return line** (tools 5 and 8, every IR player; from the section 7 columns
+and the section 4 injury fact, printed as is):
+
+- with a date: `RETURN: week 13 (return_date 2026-12-06, source ESPN injuries,
+  as of 2026-11-03 18:57; a news estimate, not an official report). Weeks
+  before 13 project 0 (zero_reason ir)`;
+- without: `RETURN: unknown (no source has a return date). Projected 0 for
+  every remaining week (zero_reason ir_no_return_date)`, and the same text in
+  WARNINGS.
+
 **AS OF line.** One entry per source the result used: `source_label` and its
 time, e.g. `AS OF: Sleeper rosters 14:29; official NFL injury report via
 nflverse 13:00; ESPN scoreboard 14:20`. The labels are the section 4
@@ -999,45 +1037,55 @@ nflverse 13:00; ESPN scoreboard 14:20`. The labels are the section 4
 | (model turn) | Thinking |
 | (pre-question refresh) | Refreshing data |
 
-**v1 checks to tools.** Numbers are the current `TEST_QUESTIONS.md`; qa-expert
-renumbers in 1.6. A check passes only through the listed tool.
+**v1 checks to tools.** Numbers are the v1 `TEST_QUESTIONS.md` (47 checks). A
+check passes only through the listed source. "Context" = the section 12 block.
 
-| Check | Question type | Tool(s) |
+| Check | Question type | Tool(s) or source |
 |---|---|---|
-| 1 | season, week, opponent | context block; `get_league_state` |
-| 1b | top 2026 RBs so far | `get_season_leaders` |
-| 2 | last week's result | `get_week_results` |
-| 3 | pickup this week vs. rest of season | `get_waiver_targets` (`both`) |
-| 4 | Thursday player on Friday | `get_player` (game `complete`), then `get_projections` (`ros` or next week) |
-| 5 | my injured players, IR | `get_my_roster` (designations, `ir_flags`) |
-| 6 | injured stash | `get_injured_stash` |
-| 7 | news on another fantasy team's player, on a free agent | `get_player` (twice) |
-| 8 | "Any news on Williams?" | `get_player` returns `AMBIGUOUS` |
-| 9 | IDP or team DEF, PPR | context block (FORMAT line); `get_league_state` |
-| 10 | roster in a league I'm not in | `switch_league` (error lists real leagues) |
-| 11 | injury news to act on after a stale sync | pre-question refresh (code), then `get_my_roster_news` |
-| 12 | why did you bench X | `recommend_lineup` (earlier in the chat; `Change.why`, `current` plan) |
-| 14 | top 5 WRs actual vs. rest of season | `get_season_leaders`, `get_projections` (`position`, `ros`) |
-| 15 | who are my starters | context block (MY ROSTER) or `get_my_roster`, never `recommend_lineup` |
-| 16, 17 | roster reflects a move made in the app | pre-question refresh (code), context block RECENT CHANGES, `get_my_roster` |
-| 18 | Seattle roster | `get_nfl_team_roster` |
-| 19 | DK Metcalf's NFL team, Seahawks WRs | `get_player`, `get_nfl_team_roster` (`position` WR) |
-| 20 | another manager's roster, then the Steelers | `get_fantasy_team_roster`, then `get_nfl_team_roster` |
-| 21 | "Which team is X on?" | `get_player` (prints NFL team and fantasy status, both labeled) |
-| 26 | game window: waivers and lineup | `get_waiver_targets` (excluded `game_started`), `recommend_lineup` (`locked`) |
-| new | standings | `get_league_state` |
-| new | recent league transactions | `get_transactions` |
-| new | trending adds | `get_trending_players` |
-| new | evaluate a trade | `evaluate_trade` |
-| new | trade ideas for a target, general ask | `find_trade_ideas` (general ask returns `NEED`, the model asks) |
-| new | high-risk lineup when an underdog | `recommend_lineup` (`high_risk`, `underdog` reason) |
+| 1 | season, week, opponent | context; `get_league_state` |
+| 2 | standings | `get_league_state` |
+| 3, 4 | IDP or team DEF, PPR (IDP and non-IDP league) | context FORMAT line; `get_league_state` |
+| 5 | roster in a league I'm not in; switch | `switch_league` (error lists real leagues), then `get_my_roster` |
+| 6 | last week's result | `get_week_results` |
+| 7 | top 2026 RBs so far | `get_season_leaders` (`position` RB) |
+| 8 | top 5 WRs actual vs. rest of season | `get_season_leaders`, `get_projections` (`position` WR, `ros`) |
+| 9 | who are my starters | context MY ROSTER or `get_my_roster`, never `recommend_lineup` |
+| 10 | my injured players, IR | `get_my_roster` (designations, `ir_flags`); IR eligibility rule: gap G7, not in this contract yet |
+| 11, 12 | roster reflects a move made in the app | pre-question refresh (code), context RECENT CHANGES and MY ROSTER, `get_my_roster` |
+| 13 | player removed from the local roster | pre-question refresh (code), `get_player` |
+| 14 | injury news to act on after a stale refresh | pre-question refresh (code), `get_my_roster_news` |
+| 15 | Seattle roster | `get_nfl_team_roster` (`nfl_team` SEA) |
+| 16 | DK Metcalf's NFL team, Seahawks WRs | `get_player`, `get_nfl_team_roster` (`position` WR) |
+| 17 | another fantasy team's roster, then the Steelers | `get_fantasy_team_roster`, then `get_nfl_team_roster` |
+| 18 | "Which team is X on?" | `get_player` (NFL team and fantasy status, both labeled) |
+| 19 | "Any news on Williams?" | `get_player` returns `AMBIGUOUS` |
+| 20 | news on another fantasy team's player, on a free agent | `get_player` (twice) |
+| 21 | snap share and target share | `get_player` (usage: snaps labeled nflverse, targets labeled Sleeper stats, each with as of) |
+| 22 | is my starter inactive | `get_player` or `get_my_roster` (inactive gap line); context GAPS |
+| 23 | practice on a given day | `get_player` (latest practice status with report date); context GAPS (per-day practice) |
+| 24 | is my league a guillotine league | context GAPS (guillotine not detectable); no tool needed |
+| 25 | best lineup this week | `recommend_lineup` |
+| 26 | high-risk lineup | `recommend_lineup` (`high_risk`, `underdog` reason) |
+| 27 | why did you bench X | the earlier `recommend_lineup` result, kept in full in history (section 12); a re-call is also a pass |
+| 28 | pickup this week vs. rest of season | `get_waiver_targets` (`both`) |
+| 29 | Thursday player on Friday | `get_player` (game `complete`), then `get_projections` (`ros` or next week) |
+| 30 | game window: waivers and lineup | `get_waiver_targets` (excluded `game_started`), `recommend_lineup` (`locked`) |
+| 31 | injured stash | `get_injured_stash` |
+| 32 | IR player's return and projection | `get_player` and `get_projections` (`week`, then `ros`): the return line |
+| 33 | unprojected scoring rules | `get_projections` (WARNINGS `unprojected_scoring_items`) |
+| 34 | evaluate a trade, 1-for-1 and 2-for-1 | `evaluate_trade` |
+| 35 | trade ideas, general ask | `find_trade_ideas` returns `NEED`, then with `my_tradeable` |
+| 36 | trade ideas with one fantasy team | `find_trade_ideas` (`fantasy_team`) |
+| 37 | trade ideas after the deadline | `find_trade_ideas` (no ideas, deadline warning) |
+| 38 | league moves; pending claims | `get_transactions` (pending claims and open offers: stated v1 gap) |
+| 39 | trending adds | `get_trending_players` |
+| 40-47 | panel, quota, missing key, refresh failure, unsupported league, event order, concurrency, host check | API checks (`docs/api-contract.md`), no agent tool |
 
-Out of v1: 13 (preferences), 22-25 (writes; 22 reads the lineup within 10
-seconds, which the pre-question refresh covers as check 16).
+Out of v1: V1-V5 (preferences and writes).
 
 ### 12. Per-turn context block
 
-Built by code (`backend/app/agent/context.py`) and put at the top of the system
+Built by code (`src/agent/context.py`) and put at the top of the system
 prompt **on every model turn**, not once per question, so a mid-question
 refresh or `switch_league` is seen at once. Facts only, no instructions; the
 rules (terminology, only what it was given, no arithmetic) are the static part
@@ -1059,7 +1107,7 @@ MY ROSTER as set in Sleeper (authoritative, as of 14:29):
   IR: Myles Garrett, NFL TEAM: CLE, IR
 RECENT CHANGES TO MY ROSTER: 2026-11-03 13:50 added Jared Goff (free agent), dropped Drake Maye
 DATA: Sleeper rosters 14:29; official NFL injury report via nflverse 13:00; ESPN injuries 14:15; projections 12:45; Sleeper news 14:10
-GAPS: inactives not available (no usable source before kickoff)
+GAPS: inactives not available (no usable source before kickoff); practice status is the latest in the weekly report, no per-day history; guillotine leagues cannot be detected (Sleeper has no setting for it); pending waiver claims and open trade offers not available in v1
 REFRESH FAILED: news (Sleeper GraphQL timeout at 14:29); using data from 12:00
 ```
 
@@ -1067,6 +1115,10 @@ Rules:
 
 - Lines are omitted when empty (no `REFRESH FAILED` when nothing failed; no
   `RECENT CHANGES` when none since the chat's last question).
+- GAPS carries every standing gap as a fact, so the model states it without a
+  prompt rule: one list in code (`context.py`), each item removed when its
+  source lands (inactives once ESPN `didNotPlay` is verified before a
+  kickoff). Per-player gaps stay in tool output (`NflFactSet.gaps`).
 - Times are the user's local time; `TODAY` comes from the machine clock, the
   week and season from Sleeper's state with the "this week" rule (PRD 4.2).
 - MY ROSTER lines use the same labels as tool 2, so the model sees one format.
@@ -1075,9 +1127,13 @@ Rules:
   history (tools 2, 10, 11, 13, 14), that result is replaced with `[outdated:
   your roster changed at 13:50; call the tool again]` before sending (first
   build).
-- History: the last 40 messages of this league's chat; tool results older than
-  the current question are cut to their SUMMARY line. Reasoning text from the
-  model (`reasoning`, `reasoning_details` in the response) is not sent back.
+- History: the last 40 messages of this league's chat. The latest result of
+  each tool stays in full (so "why did you bench X" answers from the lineup it
+  gave, with no extra request and no chance of a rebuilt projection
+  contradicting it); older results of the same tool are cut to their SUMMARY
+  line. An outdated marker (above) replaces a result in full, which forces a
+  re-call. Reasoning text from the model (`reasoning`, `reasoning_details` in
+  the response) is not sent back.
 
 ### 13. Framework decision
 

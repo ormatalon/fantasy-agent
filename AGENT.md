@@ -5,6 +5,21 @@ is still open. Read it before writing code. "First build:" notes in it are
 guidance, not requirements. `TEST_QUESTIONS.md` holds the live checks for the
 agent's behavior; extend it as features land.
 
+## Agent team ownership
+
+- ai-engineer: src/agent
+- data-scientist: src/projections, src/decisions, src/evaluation, notebooks/
+- backend-developer: src/web (FastAPI app and API), src/ingestion, src/storage,
+  pyproject.toml, scripts/, desktop/, Dockerfile, docker-compose.yml,
+  .github/workflows/, .env.example
+- ui-designer: design/ (spec and mockups only, no code)
+- frontend-developer: web/ (Next.js)
+- qa-expert: tests/ (live checks and acceptance; files bugs as tasks to the
+  owner, doesn't fix code)
+Unit tests and the fixtures they use live in the owner's folder
+(`src/<area>/tests/`); anyone may read another folder's fixtures.
+Never edit another role's folder. Changes to a shared contract go through a message to the affected roles first.
+
 ## Terminology: two kinds of team
 
 This project has exactly two kinds of team. Never write a bare "team" where it
