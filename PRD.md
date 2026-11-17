@@ -241,8 +241,8 @@ depth order was Sleeper's, which lags real roles.
   kicker or not.
 - Injuries affect projections only when a player will not play: ruled out of
   the next game (Out, PUP, suspended), his projection for that game is 0; on
-  IR, 0 until the expected return week, then his healthy projection (0 for all
-  remaining weeks when no return date is known). Questionable and Doubtful
+  IR, 0 until the expected return week, then his healthy projection; when no
+  return date is known, Sleeper's own weekly projections are used as they are. Questionable and Doubtful
   players keep their projection; their status and news are shown, not priced
   in. Backups are not bumped.
 - **Supported leagues:** season-long redraft leagues, with these options:
@@ -518,25 +518,48 @@ Athletic (paywalled).
 
 ### Backtest (weeks 3-17, skill positions, MAE vs. Sleeper-only)
 
+Run `20261117T133522Z` (`src/evaluation/results/`), blend weights 0.9 Sleeper,
+0.1 nflverse:
+
+| Tier | 2024 | 2025 |
+|---|---|---|
+| Sleeper only (baseline) | 5.222 | 5.173 |
+| + blend with nflverse | 5.215 (-0.1%) | 5.165 (-0.1%) |
+| nflverse alone (all weeks) | +9.2% | +8.4% |
+
+N 3,338 (2024) and 3,428 (2025). The blend beats the baseline in both seasons,
+so it passes the gate and ships, but the gain is within noise (not
+significant). nflverse alone is clearly worse; it earns its place only as a
+small corrective weight. A weight sweep put the best nflverse weight at
+0.1-0.15. A rule giving nflverse more weight where Sleeper recently
+over-projected looked better in 2024 (in sample) and 2025; it is deferred until
+it can be retested on 2026 pre-kickoff snapshots.
+
+First build: the table below showed a 3.6% gain for blending. It did not
+reproduce on the rebuilt harness. Matchup never beat the plain blend (a
+24-combination shrinkage/window sweep), and an earlier -7.5% was measured on a
+15% crosswalk sample.
+
 | Tier | 2024 | 2025 |
 |---|---|---|
 | Sleeper only (baseline) | 4.56 | 4.35 |
 | + blend with nflverse | 4.40 (-3.6%) | 4.19 (-3.7%) |
 | + blend + matchup | 4.58 (+0.4%) | 4.34 (-0.2%) |
 
-N about 4,800-5,200 per tier. Blending earns its place; matchup does not (a
-24-combination shrinkage/window sweep never beat plain blend). An earlier
-table showed -7.5% for blending, but it was measured on the 15% crosswalk
-sample: the harness caught its own bad ground truth twice.
-
 Not backtested: the injury overlay (only current injury state was stored, so
 scoring past weeks would leak) and IDP (an IDP's value depends on the opposing
 offense, a separate model).
 
-Rest-of-season projections were never evaluated. They must be: from a past
-week, project the rest of that season and compare with the points actually
-scored over those weeks, against a baseline (Sleeper's season projection,
-prorated), in two independent seasons.
+Rest-of-season projections: from a past week, project the rest of that season
+and compare with the points actually scored over those weeks, against a
+baseline (Sleeper's season projection, prorated), in two independent seasons.
+The second build ran this from weeks 3, 6, 9 and 12, but the stored Sleeper
+rows are stamped after the games, so the weekly-row sums carry knowledge of
+later injuries and their large win is not trusted. Using only the origin
+week's row (leak-free), both Sleeper and the blend are 15-18% worse than the
+prorated baseline. The gate stays open: the product now saves Sleeper's weekly
+projections before kickoff each week (`projection_snapshot`), so 2026 can be
+scored without leakage.
 
 ### Testing expectations
 
@@ -594,7 +617,7 @@ prorated), in two independent seasons.
 | Sleeper terms of use for automated moves | Not reviewed. Must be read before shipping moves to other users |
 | Live checks needing a token or a game in progress | Test questions 4, 7, 20-26 not yet run |
 | In-game schedule `status` value | Capture during a live game |
-| IR in season projections | Decided: 0 until the expected return week (from the injury source's return date), healthy projection after it; 0 for all remaining weeks when no return date exists. Not backtestable on stored data |
+| IR in season projections | Decided: 0 until the expected return week (from the injury source's return date), healthy projection after it; with no return date (most IR players: 16 of 95 offensive IR players had one on 2026-11-17), Sleeper's own weekly projections as they are. Not backtestable on stored data |
 | Matchup adjustment, IDP matchup model | Off / not built |
 | Rebuilding the nflverse source on Sleeper stats | Would remove the crosswalk; ships only if the backtest holds |
 | Taxi squads | Not handled in the first build |
