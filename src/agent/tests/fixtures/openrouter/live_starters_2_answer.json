@@ -1,0 +1,54 @@
+{
+  "id": "gen-1794902085-PgqQQKU6XyJXfkB0kUFq",
+  "object": "chat.completion",
+  "created": 1794902085,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "Your starters as set in Sleeper for week 11:\n\n- **QB**: Josh Allen (BUF)\n- **RB**: Jaylen Warren (PIT)\n- **RB**: Ashton Jeanty (LV)\n- **WR**: Christian Watson (GB)\n- **WR**: Parker Washington (JAX)\n- **TE**: Brock Bowers (LV) \u2014 injury: Out\n- **FLEX**: Malik Nabers (NYG)\n- **SUPER_FLEX**: Jared Goff (DET)\n- **IDP_FLEX**: Will Anderson Jr. (HOU)\n- **IDP_FLEX**: Devin Lloyd (CAR)\n- **K**: Spencer Shrader (IND)\n- **DEF**: Jacksonville Jaguars (JAX)\n\nAll 12 starting slots are filled. This is the lineup currently set in Sleeper, not a recommendation.",
+        "refusal": null,
+        "reasoning": "The user asked \"Who are my starters?\" and I have the roster data from get_my_roster. I need to list the starters as set in Sleeper. The tool returned the lineup with all starting slots filled. I should present this clearly, noting it's the lineup as set in Sleeper, not a recommendation. I'll list each slot and player.",
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The user asked \"Who are my starters?\" and I have the roster data from get_my_roster. I need to list the starters as set in Sleeper. The tool returned the lineup with all starting slots filled. I should present this clearly, noting it's the lineup as set in Sleeper, not a recommendation. I'll list each slot and player.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5145,
+    "completion_tokens": 254,
+    "total_tokens": 5399,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 4384,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 76,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

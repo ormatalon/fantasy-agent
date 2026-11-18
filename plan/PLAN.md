@@ -1,244 +1,237 @@
-# PLAN.md — NFL Fantasy Engine
+# PLAN: Fantasy Agent v1
 
-> A build directive for an AI coding agent. Read this top-to-bottom before writing code. Build **inside-out**: the decision engine (the "brain") first, execution (the "hands") last. Do not skip the evaluation harness — it is how every later claim gets proven. **Work in checkpoints: at the end of every stage, STOP, explain how to test it, and wait for my approval before committing and moving on** (see §4a — Checkpoint protocol).
+The build plan for the rebuild. `PRD.md` is the spec and `AGENT.md` holds the
+fixed rules and stack; this file decides what v1 contains, who owns what, and
+the order of work. Where this plan narrows the PRD for v1, the PRD still
+describes the full product.
 
----
-
-## 1\. Goal
-
-Build an **LLM-orchestrated agent** that plays my Sleeper NFL fantasy league for me. It ingests data, produces adjusted player projections, and recommends the best moves — weekly lineups, waiver/FAAB bids, trades, and draft picks. It notifies me by email, and (later) can enact approved moves in the Sleeper web UI via browser automation.
-
-**This is an agent, not just a pipeline.** An LLM is the orchestrator: it decides which tools to call, interprets news and context, explains its reasoning in natural language, and drives the interaction. The numerical work (projections, optimization) lives in deterministic tools the agent calls — the LLM orchestrates the math, it does not do the math itself.
-
-I am the human-in-the-loop: for a long time, the agent **recommends** and I **approve**. Only after it has proven itself does it get to act on its own.
+Terminology (from `AGENT.md`): **fantasy team** is a manager's roster in a
+Sleeper league; **NFL team** is a real franchise. Never a bare "team".
 
 ---
 
-## 2\. Hard constraints & decisions (already made — do not relitigate)
+## 1. Goal
 
-- **Platform: Sleeper.** Read API is public and keyless. Use it for all reads (league, roster, matchups, players, projections, scoring settings).  
-- **League discovery, not a hardcoded league ID.** The agent takes my Sleeper **username**, not a league ID. It resolves `username -> user_id` (`GET /v1/user/<username>`), then lists that user's leagues for the season (`GET /v1/user/<user_id>/leagues/nfl/<season>`). If there is exactly one league, use it. If there is more than one, **the agent must ask me which league to address** before doing anything else — never guess. Cache the resolved league ID for the session/local storage so it doesn't re-prompt every run.  
-- **Sleeper has no *documented* write API.** Writes go through the undocumented GraphQL API the Sleeper web app itself uses (`src/ingestion/sleeper_graphql.py`), authenticated with the user's own token (`SLEEPER_TOKEN`), always behind the human-approve gate (Stage 5). This replaced the original browser automation, see `plan/sleeper-api.md`. Everything before Stage 5 is read-only.  
-- **Interface, for now: terminal CLI.** No web app, no chat app. The CLI is both the dev surface and the interactive surface.  
-- **Notifications: email.** A small `notify(subject, body)` module sends via Gmail SMTP (app password) or a transactional email API (Resend/SendGrid). Do NOT rely on the Gmail MCP connector for this — it is read/draft-only and cannot send.  
-- **Projections are a blend, not a single source, and the set of sources is open-ended.** Combine multiple source feeds into a baseline, then adjust for (a) opponent matchup and (b) injury/news. Output a mean AND a variance per player. Every source sits behind a common `ProjectionSource` interface so new sources — including **my own ML model** — can be added later just by implementing the interface and adding a weight in `config.py`. Do not hardcode a fixed source list; design for extension from day one.  
-- **Start Stage 1 with two sources: Sleeper + nflverse-derived.** FantasyPros was the intended third source, but its projections load via client-side XHR to `/api/`/`/ajax/` endpoints that its own `robots.txt` explicitly disallows — not just "unofficial," but stated off-limits to crawl. Deferred until either a paid FantasyPros API key is available or another free/legitimate consensus source is picked. Each source's weight lives in `config.py`; a source with weight `0` (or simply commented out) is disabled without touching `blend.py` or any decision module. The blend must tolerate any subset of registered sources being active.  
-- **The LLM agent is the orchestrator (central, not optional).** An LLM sits at the center and runs the operation: it decides which tools to call and when, parses news into structured signal, explains recommendations, and manages the interaction. The decision modules and projection engine are exposed to it as **callable tools**. Access the model via **OpenRouter** (`OPENROUTER_API_KEY` in `.env`), model id `nvidia/nemotron-3-super-120b-a12b:free`; do not self-host early. Keep deterministic math in the tools, never in LLM free-text.  
-- **Agent framework: LangGraph.** Build the orchestrator (`agent/orchestrator.py`) as a LangGraph graph — nodes for plan/tool-call/observe/explain, tool nodes wrapping the modules in `agent/tools.py`, and explicit state for conversation + in-progress recommendation. Use LangGraph specifically for the stateful, multi-step, sometimes-long-running flows where it earns its keep — the draft assistant's poll-and-react loop (Stage 3) and any multi-turn tool-calling sequence (gather projections -> check injury news -> re-rank -> explain). For a single-shot tool call with no branching (e.g., a plain `lineup` CLI invocation), a direct SDK tool-call loop is fine — don't force LangGraph where a linear call suffices. Do not adopt a second agent framework alongside it.
+A desktop app that helps one manager run a Sleeper fantasy league mid-season:
+it reads the league, projects players with mean and variance, recommends
+lineups, waiver pickups, injured stashes and trades, answers questions about
+NFL teams and players, and explains every answer from data the product
+fetched. An LLM orchestrates; deterministic tools compute every number.
+
+### v1 scope
+
+| Area | In v1 |
+|---|---|
+| Setup | Sleeper username, league picker (asks when there are several, remembers the choice, switch by name), OpenRouter key, model choice. Takes effect without restart; the key is never shown back |
+| Leagues | Season-long redraft only: IDP or team DEF; PPR, half-PPR or standard. Other roster settings read as they are. Dynasty, keeper, best ball and guillotine are reported as not supported at setup |
+| Lineup | Best lineup from the one set in Sleeper, respecting locks and IR rules (PRD 4.4), with a why. Expected-points by default; a high-risk, high-reward lineup on request or when the agent judges the matchup calls for it, from a tool's projected totals and win probability |
+| Waivers | VORP ranking for this week and rest of season, FAAB guide within the league's budget, game-started and bye exclusions |
+| Injured stash | Unrostered injured players by healthy rest-of-season value, with return news |
+| Trades | Evaluate a proposed trade (default rest-of-season); find trade ideas for a target player or positional need, naming the other fantasy team and why it plausibly helps them (their starting lineup value rises). Asked about a specific fantasy team, search only that one; asked in general, first ask which of my players I am willing to trade. No suggestions after the trade deadline; uneven trades count roster spots (PRD 4.4) |
+| NFL knowledge | NFL team rosters and depth order, injury designations and practice status, game-day inactives, player news, usage (snaps, targets, carries), season-to-date stats and leaders. All from tools, each fact with source and freshness |
+| Results | Last completed week: both scores, result, opponent's top scorers, points left on my bench |
+| Agent | Chat with per-turn context (date, season, week, league, format, my roster as set in Sleeper, recent changes); persistent chat history per league with "start fresh". The model's own knowledge is used only for phrasing |
+| GUI | Setup screen, chat with progress (current step, elapsed time), my fantasy team panel (roster as set in Sleeper, this week's matchup and score, injury flags) |
+| Observability | Per-question trace of model input, tool calls with arguments and results, tokens, latency, retries. Off by default; never in tests; no credentials |
+| Packaging | Docker image + start/stop scripts (owner and dev path); Windows desktop installer built by CI (friend path); short user guide (install, OpenRouter key, free or paid model, first setup, example questions) |
+| Projections | Sleeper + nflverse blend with mean and variance; IR or ruled-out players projected 0 for that game, no other injury adjustment; scoring only from projected stats, with unprojected scoring items listed; rest-of-season (through week 18) default; weekly and rest-of-season backtests. Matchup adjustment stays off |
+
+### Out of scope for v1
+
+- Any write to Sleeper (lineup, IR, add/drop, waiver claims, trades). v1 is
+  read-only; moves are v2. Nothing in v1 needs a Sleeper token.
+- Android app, Mac build, user-facing CLI, standalone web surface (the Docker
+  path serves the same page locally, but it is not a separate product).
+- Draft assistant, weekly email digest, remembered preferences.
+- Own ML projection model (v2, via notebooks and the backtest gate).
+- Code signing and auto-update.
+- Recommendation screens outside chat (lineup, waiver board, trade evaluator
+  as their own views).
+
+### Free to run
+
+- Default model is a free OpenRouter model, pinned by id, that reliably calls
+  tools. Users bring their own key. A paid model may be chosen in Settings.
+- Data sources are free and legal to use (documented or public APIs, or terms
+  and robots.txt that allow it). No paid feeds.
+- Everything runs on the user's machine; there is no hosted backend.
+
+### Done for v1
+
+1. Every read-only live check in `TEST_QUESTIONS.md` (rewritten for v1, see
+   Phase 3) passes, each through the right tool call. A correct answer
+   without the right tool call is a fail.
+2. A non-technical friend installs the Windows build on a clean machine,
+   enters a username and key, and gets correct answers about their own league
+   (including a non-IDP league).
 
 ---
 
-## 3\. Architecture
-
-An **LLM agent orchestrates** a set of deterministic tools. Data flows through a pipeline with a clean seam between the "brain" (decisions) and the "hands" (execution); the agent sits on top and calls into it:
+## 2. Architecture
 
 ```
-                        +-----------------------------+
-                        |   LLM AGENT (orchestrator)  |
-                        |  plans, calls tools,        |
-                        |  parses news, explains,     |
-                        |  drives interaction         |
-                        +--------------+--------------+
-                                       | calls tools
-   Ingestion  ->  Projection engine  ->  Decision modules  ->  Interface  ->  Execution
-   (read-only)    (mean + variance)      (thin consumers)      (CLI/email)    (browser, last)
+Desktop shell (native window)          Docker (owner/dev)
+        |                                    |
+        +------------ FastAPI (localhost only) ------------+
+        |  serves the NiceGUI page at / (same process)     |
+        |  /api/*  setup, leagues, my fantasy team, chat   |
+        |          (chat streams progress events)          |
+        +---------------------------+----------------------+
+                                    |
+                     Agent: tool-calling loop over OpenRouter
+                     context block rebuilt every model turn
+                                    | calls tools
+      +-------------+---------------+---------------+-------------+
+      |             |               |               |             |
+  Ingestion     NFL facts      Projections      Decisions     Results/leaders
+  (Sleeper REST, (rosters,     (sources ->     (lineup ILP,   (actuals under
+   GraphQL reads, depth, injuries, blend -> mean  VORP, stash,  league scoring)
+   nflverse)     usage, news)   + variance)     trades)
+      |             |               |               |
+      +-------------+------ SQLite (created if missing, migrated in place)
 ```
 
-Everything downstream consumes ONE artifact: a table of **adjusted projected points per player per week, with an uncertainty estimate**. Get that middle layer right and every decision module becomes small. Each module is also exposed as a **tool the agent can call** (with a clear name, input schema, and structured output). Keep the seam clean so the execution layer (email today, WhatsApp/browser later) is swappable without touching the brain.
-
-### Suggested repo layout
-
-```
-nfl-fantasy-engine/
-  README.md
-  PLAN.md
-  pyproject.toml            # or requirements.txt
-  .env.example              # SLEEPER_LEAGUE_ID, EMAIL creds, etc. (never commit real secrets)
-  config.py                 # league id, scoring, source weights, paths
-  data/                     # local cache / storage (gitignored)
-  src/
-    agent/
-      orchestrator.py       # LangGraph graph: plan -> call tools -> explain
-      tools.py              # tool registry: exposes decision modules + engine to the LLM
-      prompts.py            # system prompt, tool descriptions, guardrails
-    ingestion/
-      sleeper.py            # read client: league, rosters, matchups, players, projections, txns
-      news.py               # injury designations + role-change signal
-      id_crosswalk.py       # player id mapping across sources
-    projections/
-      sources/
-        base.py             # ProjectionSource interface (pluggable)
-        sleeper_src.py      # Sleeper projections
-        fantasypros_src.py  # FantasyPros consensus
-        nflverse_src.py     # nflverse-derived
-        my_model_src.py     # MY OWN ML MODEL (future) — same interface, add + weight it
-      blend.py              # weighted baseline across all registered sources
-      matchup.py            # defense pts-allowed-by-position -> per-player multiplier
-      injury.py             # designation discounts + backup bumps
-      engine.py             # orchestrates -> mean + variance per player/week
-    evaluation/
-      backtest.py           # projections vs actual scored points
-      metrics.py            # error vs raw-consensus baseline (per source + blended)
-    decisions/
-      lineup.py             # constrained start/sit optimizer
-      waivers.py            # FAAB bids via value-over-replacement + variance
-      trades.py             # roster value delta evaluation
-      draft.py              # real-time draft tracker + autonomous pick suggestions
-    interface/
-      cli.py                # entry point: print recommendations + "why"
-      notify.py             # email notifier (SMTP / transactional API)
-    execution/
-      browser.py            # Sleeper UI automation (STUB until Stage 5)
-  tests/
-```
-
-### Suggested stack
-
-Python 3.11+, `requests`/`httpx` for Sleeper, `pandas` for data, `pulp` or `OR-Tools` for the lineup optimizer, `pytest` for tests, `nfl_data_py` (nflverse) for historical play-by-play. For the agent layer, **OpenRouter** (`nvidia/nemotron-3-super-120b-a12b:free`) with tool/function calling, orchestrated via **LangGraph** — expose each module as a tool node; keep the graph thin, one node per responsibility. Keep dependencies minimal early.
+- **Frontend:** NiceGUI (`src/ui`), in the FastAPI process, calling the
+  backend modules directly. Same app in the desktop shell (NiceGUI native
+  window via pywebview, bundled with PyInstaller) and in Docker. Chosen over
+  the Next.js version built in 2.6 for one language and one process.
+- **Tracing:** LangSmith free tier, off by default, enabled by env vars.
+- **Backend:** Python, FastAPI, uv. SQLite in the user's app-data folder
+  (desktop) or a Docker volume.
+- **Agent:** OpenRouter via an OpenAI-compatible client. Framework (LangGraph
+  or a plain loop) is the ai-engineer's Phase 1 decision, recorded with a
+  reason. Retries match OpenRouter's HTTP-200 error bodies; a daily quota fails
+  fast with a clear message and keeps the question.
+- **Projection artifact:** one table, per player per week (and rest of
+  season): mean, variance, contributing sources. Every decision reads it; no
+  decision computes its own projections.
+- **Sources:** each behind a common interface with a configurable weight.
+  Projection sources: Sleeper, nflverse. NFL fact sources: Sleeper catalog,
+  nflverse (weekly rosters, depth charts, snap counts, participation), the
+  NFL's official injury reports, ESPN public JSON. Each undocumented API is
+  called from one module only.
+- **Freshness:** data at most 2 hours old, at most 2 minutes on game days
+  while the app is open (PRD 4.2), within each source's limits. My roster,
+  lineup and current-week matchup re-pulled before each question (GraphQL
+  `league_rosters`); players catalog about daily; injuries, inactives and
+  scores from lighter sources on the 2-minute cycle on game days; roster diffs
+  recorded and given to the model; refresh failures reported. "This week" is
+  the next week to be played. Kickoff times come from nflverse or ESPN, since
+  Sleeper's schedule has dates only.
+- **Inaccessible sources** are not used; the product works without them and
+  the agent states the gap.
+- **Security:** port bound to localhost; keys stored locally, never logged,
+  never in traces, never sent to the model.
 
 ---
 
-## 4\. Build stages
+## 3. Roles and ownership
 
-Work stage by stage. Each stage has a definition of done. Do not start a stage before the previous one meets its DoD.
+The team lead (this session) owns `plan/`, `PRD.md`, `AGENT.md`, coordination
+and stage hand-offs. Each folder has one owner; others change it only through
+its owner or a contract change.
 
-### 4a. Checkpoint protocol (MANDATORY between every stage)
+| Role | Owns | Responsibilities |
+|---|---|---|
+| backend-developer | `src/web/`, `src/ingestion/`, `src/storage/`, `pyproject.toml`, `scripts/`, `desktop/`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/`, `.env.example` | API, Sleeper and NFL data sources, crosswalk, storage and migrations, freshness, Docker, Windows installer, CI. Author of `docs/api-contract.md` |
+| data-scientist | `src/projections/`, `src/decisions/`, `src/evaluation/`, `notebooks/` | Projection sources and blend, variance, injury overlay, rest-of-season, lineup ILP, VORP, stash, trade evaluation and ideas, results and leaders, backtest. Author of `docs/data-contract.md` |
+| ai-engineer | `src/agent/` | Framework decision, model choice and verification, tool catalog, per-turn context, system prompt (including the fantasy team / NFL team rule), retries and quota handling, chat history, LangSmith tracing. Author of the agent-tools section of `docs/data-contract.md` |
+| ui-designer | `design/`, `docs/user-guide.md` | Screens (setup, chat with progress, my fantasy team panel), states (loading, empty, error, quota), tokens from the `AGENT.md` colors, desktop window sizes |
+| frontend-developer | `src/ui/` | NiceGUI app built to the design, calling the backend modules |
+| qa-expert | `tests/`, `TEST_QUESTIONS.md` | Live-check runner over the API, grounding check, acceptance runs, installer test plan. Reviews every contract for testability |
 
-At the end of each stage, the agent must **stop and wait for me** — do not roll straight into the next stage. Specifically, at every checkpoint the agent will:
-
-1. **Stop.** Announce the stage is complete and summarize what was built.  
-2. **Explain how to test it.** Give exact commands to run and the expected output, tied to the stage's Definition of Done, so I can verify the checkpoint myself.  
-3. **Wait for my explicit approval.** Do not proceed on assumption. If I request changes, fix and re-present the checkpoint.  
-4. **Only after I approve, commit** that stage as a single, self-contained git commit with a clear message (e.g., `Stage 1: projection blend + matchup/injury adjustments`).  
-5. **Then, and only then, begin the next stage.**
-
-Never bundle two stages into one commit, and never commit an unapproved stage.
-
-### Stage 0 — Data spine (read-only)
-
-- Sleeper read client: given my **username**, resolve `user_id` -> list leagues for the season -> if more than one, **prompt me to pick which league** -> then fetch league, scoring settings, all rosters, my roster, weekly matchups, and the players catalog for the chosen league.  
-- Player ID crosswalk across sources (Sleeper \<-\> nflverse \<-\> FantasyPros). This is unglamorous and everything depends on it — get it solid.  
-- **Local storage holds league-wide state, not just my team** (parquet/SQLite is fine). Persist:  
-  - the full **players catalog** (ids, names, positions, teams, status);  
-  - **every team's roster** in the league, not only mine (needed for waivers, trades, and to know who is actually available);  
-  - **weekly matchups** and results;  
-  - **all league transactions / moves** (adds, drops, waivers, trades) as a history;  
-  - **draft data** (picks, order) when applicable;  
-  - **weekly actual stats**, projections (per source), and pulled news.  
-  - Snapshot with timestamps so history is queryable over time, not just the latest state.  
-- **DoD:** given only my Sleeper username, `cli.py` resolves my league(s) (prompting me to choose if there's more than one), then prints my current roster with names, positions, and this week's opponent, and can list another team's roster and the league's recent transactions from local storage.
-
-### Stage 1 — Projection engine (the core edge)
-
-- Pull base projections from **Sleeper and nflverse-derived** (FantasyPros deferred, see §2); reconcile via the crosswalk.  
-- Implement each feed behind the `ProjectionSource` interface (`projections/sources/`) and blend all **registered** sources — never hardcode the source list. Adding a new source later (including **my own ML model**, `my_model_src.py`) must require only implementing the interface and adding a weight in `config.py`, with no changes to `blend.py` or any decision module.  
-- Weighted-average blend into a baseline (weights live in `config.py`).  
-- Matchup adjustment: compute each defense's points-allowed-by-position from nflverse, convert to a multiplier vs. league average, scale each player. (The "RB vs. worst run defense gets a bump" case must fall out of this.) **Update after Stage 2's backtest: this adjustment, as built, consistently underperforms plain blending (see Stage 2, tested across two independent seasons) and is disabled by default (`config.MATCHUP_ADJUSTMENT_ENABLED = False`) until reworked and re-proven — the underlying multiplier-computation code stays, and the evaluation harness still scores it every run so a future attempt gets an immediate answer.**  
-- Injury/news overlay: apply discounts for Q/D/O designations; bump backups on role changes (e.g., starter ruled out).  
-- **Output a mean AND a variance per player per week.**  
-- **DoD:** engine emits an adjusted projection table; a spot-check of 3–4 players shows the matchup and injury adjustments moving numbers in the correct direction. (Met for injury; matchup's spot-check moved numbers in the *expected* direction — see live 2024 example in Stage 2 — but Stage 2 then showed that direction doesn't reliably beat a simpler baseline, which is exactly what the harness is for.)
-
-### Stage 2 — Evaluation harness (do NOT skip)
-
-- Backtest projections against actual scored points for past weeks.  
-- Report error (MAE/RMSE) and, critically, error **relative to the raw-consensus baseline** — prove the adjustments add value rather than assuming they do.  
-- This becomes the regression guard for every later change to the projection engine.  
-- **DoD:** one command produces an accuracy report vs. baseline over a backtest window.
-- **Data source note:** `nfl_data_py==0.3.3` (the only version ever published — effectively unmaintained) points at a stale nflverse release path that stops at the 2024 season. `src/ingestion/nflverse_client.py` reads nflverse's current asset directly instead, which is what makes the 2025+ backtest below possible. That same investigation also surfaced a real bug: the raw file includes every roster position (OL, DL, LB, punters, ...), not just fantasy-relevant ones, which was quietly inflating match counts with trivial "0 predicted vs. 0 actual" pairs and made the matchup adjustment look far worse than it is. Fixed by filtering to `src/projections/positions.py`'s `SKILL_POSITIONS` everywhere nflverse data is consumed (source, matchup, backtest).
-- **Result (weeks 3-17, skill positions only, both seasons independently — not tuned and evaluated on the same one):**
-
-  | Tier | 2024 MAE | 2024 vs. baseline | 2025 MAE | 2025 vs. baseline |
-  |---|---|---|---|---|
-  | Sleeper only (baseline) | 5.00 | — | 4.80 | — |
-  | + blend (Sleeper + nflverse) | 4.63 | -7.4% | 4.44 | -7.5% |
-  | + blend + matchup | 4.86 | -2.9% | 4.63 | -3.5% |
-
-  Blending clearly beats the single-source baseline in both seasons. The matchup adjustment beats the naive baseline too, but consistently underperforms plain blend — i.e. it adds noise on top of an already-better signal. Confirmed with a 24-combination shrinkage/trailing-window sweep across both seasons: heavier shrinkage monotonically approaches (but in 2024 never quite reaches) blend-only performance, never exceeds it. So it stays disabled by default (`config.MATCHUP_ADJUSTMENT_ENABLED = False`, §2, Stage 1) — this is the harness doing its job twice now: first catching a plausible-sounding adjustment that doesn't help, then catching a bug in its own ground-truth data before that conclusion could be trusted.
-- **Update: the table above covered only ~15% of players.** The crosswalk matched nflverse players to Sleeper by `gsis_id` alone, and Sleeper's catalog carries one for a minority of players (26 of 187 active RBs in 2026), so both the backtest sample (~76 players/week) and the live nflverse source skewed to veterans. With name-based fallback matching (`id_crosswalk.resolve`: gsis, then name+team+position, then a name unique among active players), coverage is ~98% and the same windows give:
-
-  | Tier | 2024 MAE | 2024 vs. baseline | 2025 MAE | 2025 vs. baseline |
-  |---|---|---|---|---|
-  | Sleeper only (baseline) | 4.56 | — | 4.35 | — |
-  | + blend (Sleeper + nflverse) | 4.40 | -3.6% | 4.19 | -3.7% |
-  | + blend + matchup | 4.58 | +0.4% | 4.34 | -0.2% |
-
-  (N ≈ 4,800-5,200 per tier, up from ~1,150.) The conclusions hold in both seasons: blending beats the single source, by about half the margin first reported, and matchup still doesn't earn its place.
-- **Known limitation:** the injury/depth-chart overlay isn't backtested — the local players table only holds *current* injury/depth-chart state, so scoring it against a past week would leak information not available at the time. It's covered by unit tests + a live spot-check instead (Stage 1 DoD) until a historical injury feed exists.
-
-### Stage 3 — Decision modules (thin consumers of Stage 1\)
-
-Order: lineup \-\> waivers \-\> trades \-\> draft. (Move draft earlier only if my draft is imminent.)
-
-- **IDP support added at this stage.** My league starts individual defensive players (`DL`/`LB`/`DB`), not a team defense — discovered when building the lineup optimizer, since those 3 roster slots would otherwise always be empty. Extended: `projections/positions.py` (roster-slot -> granular-position eligibility, e.g. `DB` accepts `CB`/`S`/`FS`/`SS`), both sources (Sleeper's projections endpoint natively covers IDP stat categories; nflverse's raw defensive columns are translated to Sleeper's `idp_*` scoring keys via `projections/idp_stats.py`, sanity-checked against real players — Fred Warner, T.J. Watt, etc. — landing in a plausible range). Matchup and backtest stay offense-only for now (documented in their own modules) — an IDP's value depends on the opposing *offense's* tendencies, not "points allowed by position" the same way, so extending matchup to IDP is a separate future model, not a mechanical filter change.  
-- **Lineup optimizer:** constrained start/sit maximizing expected points under roster slot rules, solved as an ILP (`pulp`) rather than greedy-filled, since a greedy fill of the "most specific" slots first can strand points that a flex slot could have captured better. First end-to-end win.  
-- **Waivers/FAAB:** rank available (non-rostered) players by value-over-replacement (`decisions/vorp.py`); replacement level per position is the Nth-best *rostered* player at that position, where N = num_teams × demand share (a direct slot credits 1.0, a flex-type slot splits credit across its eligible positions). FAAB bid is a simple, clearly-labeled `VOR × 4%` guide, not a bidding strategy. **Fixed a real bug found via live testing against my actual roster:** a position with no roster-slot demand at all (team `DEF` in this IDP league) was defaulting to a `0.0` baseline, making its *entire* projection look like pure value — `rank_by_vorp` now excludes positions with no computed demand instead of defaulting. **Also pools granular IDP positions** (DE/DT/NT → one `DL` baseline, etc.) rather than computing each independently, since a `DL` slot doesn't distinguish between them and per-granular baselines were sparse enough to be meaningless.  
-- **Trades:** score a proposed trade by the change in total projected value, on either horizon (`--season` for full-season totals, default weekly on the CLI; the agent's tool defaults to season, since that's usually what a trade should be judged on). **The earlier weekly-only limitation is closed** — see "Season-long projections" below.  
-- **Draft assistant (autonomous, real-time):** once I activate it for a draft, it runs on its own — no prompting from me per pick. It **polls the live draft**, maintains the board (who's gone, who's left, my roster needs), and the instant it becomes my turn it **proactively pushes a ranked pick suggestion** (with VORP and the "why"). It keeps tracking after each pick without me asking. The only thing I do is activate it at the start and make the actual pick. It advises; it does not auto-pick unless I explicitly grant that later. **Limitation:** pick value uses week-1 projections as a season-long value stand-in (same weekly-only-engine constraint as trades). **Not live-testable this session** — my draft already happened — but validated against the real completed draft: correctly resolved my draft slot (2 of 10) and correctly detected the draft was already complete.  
-- **Season-long projections (added after Stage 3.5).** Sleeper has a season-level endpoint (`/projections/nfl/<season>`, no week segment) returning full projected season stat totals in the *same stat-key namespace* as the weekly one, so `score_stats` applies the league's own scoring to it unchanged. `engine.build_season_projection_table` produces the same artifact shape as the weekly table, with two deliberate differences: **no matchup adjustment** (it's a per-opponent multiplier; there's no single opponent across a season) and **only season-long injury designations apply** (`injury.SEASON_LONG_DESIGNATIONS` — an IR tag should cut a season outlook, a Questionable tag should not). Single-source for now: nflverse is historical box scores and has no forward-looking season projection, so `num_sources` is 1 and the variance floor carries the uncertainty estimate. Exposed as `projections --season`, `trades --season`, and the agent's `get_season_projections` tool. **Still open:** these are full-season totals (`gp: 18`), not rest-of-season — mid-season use should prorate or subtract games played, which is a modeling decision, not a mechanical one.  
-- **Known gap — draft pick suggestions ignore roster need.** `suggest_pick` ranks purely by VORP across all undrafted players; it does not look at what I've already drafted, so it will happily suggest a 4th RB while I have no QB. Visible in `draft --replay`, where the same player tops the list for nine straight rounds. The fix is deterministic and contained (track my own picks \-\> compute unfilled starting slots \-\> weight VORP toward unmet need, plus tier-cliff awareness) and belongs in the **tool**, not the LLM — per §5, need-weighted VORP is arithmetic over ~200 players, which is exactly what the agent layer must not be doing in free text. Deferred, not forgotten.  
-- **DoD:** each module prints a ranked recommendation with a human-readable "why" (the matchup and injury factors that drove it). For the draft assistant specifically: once started, it detects my turn from live draft state and surfaces a suggestion **unprompted**, updating as picks come in — logic verified via unit tests (snake-draft turn detection) and against the real completed draft, pending a live in-progress draft to fully confirm the unprompted-suggestion path.
-
-### Stage 3.5 — Agent orchestrator (the LLM layer itself)
-
-The plan declared the agent "central, not optional" (§2, §3) but never gave it a stage — everything through Stage 3 built the deterministic **tools**; this stage builds the thing that *calls* them. Numbered 3.5 rather than renumbering 4/5, which are referenced elsewhere in this doc.
-
-Strategy: **thin agent, fat tools.** The graph should be boring — plan, call a tool, observe, explain. Every number the agent says must come from a tool call, never from its own reasoning. If the agent ever needs to "estimate" something, that's a signal a tool is missing, not that the prompt needs work.
-
-- **Tool registry (`agent/tools.py`).** Wrap the existing modules as typed tools — each with a name, a description the model can route on, an input schema, and structured output. Initial set: `sync_league`, `get_roster`, `get_league_state` (matchup/opponent/standings), `get_transactions`, `get_projections`, `optimize_lineup`, `get_waiver_targets`, `evaluate_trade`, `suggest_draft_pick`. The decision modules already return dataclasses rather than printed text, which is exactly what makes this a wrapping job and not a rewrite. **Do NOT expose `evaluation/backtest.py`** — it's a dev-side regression guard, not something the agent should be invoking mid-conversation.
-- **Prompts \+ guardrails (`agent/prompts.py`).** System prompt carrying league context (scoring settings, roster slots, IDP format), the hard rule that numbers come only from tool output, the recommend-don't-act posture, and how to explain a recommendation (name the factors — matchup, injury, replacement level — not just the number).
-- **LangGraph graph (`agent/orchestrator.py`).** Explicit state (conversation, league context, in-progress recommendation), nodes for plan \-\> tool-call \-\> observe \-\> explain, conditional edge back into the tool loop, checkpointing so a multi-turn conversation survives. Per §2, keep LangGraph for the stateful/multi-step flows; a single-shot `lineup` CLI call does not need to route through the graph.
-- **Model wiring.** OpenRouter (`nvidia/nemotron-3-super-120b-a12b:free`) via an OpenAI-compatible client with `base_url` pointed at OpenRouter, tools bound to the model. Key already in `.env` as `OPENROUTER_API_KEY`. **Model changed during this stage:** the originally specified `openai/gpt-oss-120b:free` was discontinued by OpenRouter (paid-only now), so candidates were probed for actual tool-call emission before choosing — Nemotron is pinned rather than using the `openrouter/free` auto-router so behavior stays reproducible.
-- **CLI entry.** `cli.py ask "<question>"` for one-shot questions and an interactive `chat` mode for follow-ups. The existing deterministic subcommands stay — the agent is an addition, not a replacement, and is the fallback-free path when I want the raw numbers.
-- **Guardrail tests.** A small set of golden prompts asserting the agent routes to the right tool ("who should I start?" \-\> `optimize_lineup`) and that reported numbers match what the tool returned directly. This is the agent's equivalent of Stage 2's regression guard.
-- **Market + actuals signals (added after the season-projection pass).** Two Sleeper sources that were being left on the table: **trending adds/drops** (`/v1/players/nfl/trending/{add,drop}`, counts across every Sleeper league) is the one signal our own math cannot produce — news and hype, surfaced as context the LLM layers on top of VORP, never as a replacement for it; and **`matchups.players_points`**, actual per-player scored points, which we were already fetching and discarding. The latter powers `decisions/results.py`, which feeds *actual* scores back through the Stage 3 lineup optimizer to compute the best lineup in hindsight — so "points left on the bench" falls out of code that already existed. Exposed as `trending`, `results`, and the agent tools `get_trending_players` / `get_week_results`. Adding `players_points` also motivated a real schema migration (`storage._migrate`) rather than making anyone delete their local DB for a new column.  
-- **Bug found by the results view:** the lineup ILP maximizes points with a `<= 1` per-slot constraint, so a player projected (or scoring) exactly 0.0 was worth the same as an empty slot — the optimizer left slots "(empty)" while an eligible player sat there. Fixed with a tiny per-assignment bonus that breaks ties toward filling a slot, too small to ever outrank a real points difference. This affected live lineup recommendations too, not just the hindsight view.  
-- **News (`ingestion/news.py`) — built.** Sleeper's app uses an **undocumented GraphQL endpoint** (`sleeper.app/graphql`, `get_player_news`) returning per-player `title` / `description` (what happened) / `analysis` (what it means for fantasy) / `url` / `published`. Sleeper's robots.txt is fully permissive (`Allow: /`), unlike the FantasyPros path we declined. Because it's undocumented and can change without notice, **every call to it lives in that one module** — a break is one file to fix, not a hunt. Cached in a `player_news` table; `sync` pulls news for my own roster only (one request per player, so the league's ~200 rostered players would make sync crawl), with `--skip-news` to opt out. Exposed as the `news` command and the agent tools `get_player_news` / `get_roster_news` (capped items-per-player — an unbounded tool is the real context risk, not the window size).
-- **Deliberately stopped at surfacing news, not parsing it into signal.** §2 imagines the LLM turning news into structured signal feeding the injury overlay. The prose was kept instead: `analysis` is already written for fantasy managers, and flattening it into a `starter_out: bool` would discard the nuance ("nice matchup against a defense that just gave up 30") that makes it worth reading at all. With a 262k-token window, ~7k tokens of roster news is ~3% — compression buys nothing here. If the *injury overlay* ever needs machine-readable input, the extraction pass goes on top of this, and the split must hold: the LLM classifies text, a deterministic module computes the adjustment.
-- **Progress output.** A question can take ~30s across several model round-trips (longer when the free tier forces retries), and silence that long is indistinguishable from a hang — the first thing that looked like "no answer" in real use. `ask`/`chat` now stream each tool call as it happens, to **stderr**, so piping stdout still yields just the answer.  
-- **Three real bugs surfaced by live testing, all fixed:** (1) LangGraph runs tool nodes on worker threads, and SQLite connections are thread-bound by default — fixed at the source in `storage.get_connection` with `check_same_thread=False`; (2) OpenRouter reports upstream provider failures as HTTP 200 with the error in the *body*, so the OpenAI SDK's `max_retries` never sees them — free-tier overloads therefore needed an explicit retry wrapper in `orchestrator.py`, not a config flag; (3) model-generated text can contain any Unicode, which crashed the Windows cp1252 console on print — `cli.py` now forces UTF-8 on stdout/stderr, since avoiding stray characters in our own source can't help when the *model* writes the output.  
-- **DoD — met.** `ask "Who should I start this week?"` routes to `recommend_lineup` and returns a lineup whose every player and total (149.5) matches `cli.py lineup` run directly. Asked for a nonexistent player's history and an all-time record, it refused both and named what it *can* retrieve instead, rather than inventing numbers. The agent recommends only — it has no write path until Stage 5.
-
-### Stage 4 — Interface (CLI \+ email)
-
-- CLI subcommands: `lineup`, `waivers`, `trades`, `draft`, each printing recommendations \+ reasons. **Done in Stage 3**, along with `projections`, `backtest`, `news`, `trending`, `results`, `ask` and `chat`.  
-- `notify.py`: `notify(subject, body)` via Gmail SMTP (app password). Validates the app password's shape *before* opening an SMTP connection, so the common mistake (pasting an account password) produces an actionable message instead of an opaque auth failure; spaces are stripped since Google displays app passwords in four groups of four.  
-- `digest.py` \+ the `digest` command: recommended lineup, a **watch list**, the waiver board, and last week's result. **Deliberately deterministic** — this is what an unattended Sunday-morning job sends, so it must not depend on a flaky free-tier model being up. The agent narrates the same data on demand via `ask`; the digest is the version that has to work alone.  
-- **The watch list needed a real filter.** Listing starters "with news" produced a watch list containing the entire lineup, since every starter has news every week. It now flags only injury-adjusted players plus news whose headline suggests a decision (injury, practice status, role/snap change), biased toward false positives — one extra line in an email costs far less than missing a ruled-out starter. A test caught that the first keyword list matched "practice" but not "practi**cing**, which is how the status is actually reported.  
-- Scheduled run: documented in the README as a cron / Task Scheduler pairing of `sync` then `digest --email`.  
-- **DoD — met.** `digest` prints the weekly report to the terminal and `digest --email` delivers it, verified end-to-end against the live league and a real inbox. The app-password validation earned its keep on the way: the first attempt used a Gmail *account* password, which Google has rejected for SMTP since it dropped "less secure app access" in 2022 — the check turned an opaque `535` into a message naming the actual fix.
-
-### Stage 5 — Execution (the "hands", LAST)
-
-- Enact an **approved** move (set lineup, IR, add/drop, waiver claim) through Sleeper's GraphQL API (`src/execution/sleeper_writes.py`), and read it back to confirm. Originally built as browser automation of the Sleeper web UI; replaced once the GraphQL mutations were known (`plan/sleeper-api.md`).  
-- Keep a mandatory human-approve gate before ANY write for a long while.  
-- **DoD:** given an approved recommendation, the agent sets my Sleeper lineup and confirms the result; the approve gate cannot be bypassed.
+Unit tests and their fixtures live next to the code they test
+(`src/<area>/tests/`) and belong to that area's owner; anyone may read them. Tests use real fixtures (captured API responses,
+real headlines).
 
 ---
 
-## 5\. Guiding principles
+## 4. Phases
 
-- **Stop at every checkpoint.** Finish a stage, explain how to test it, wait for approval, commit, then continue (§4a). Never skip ahead.  
-- **Agent orchestrates, tools compute.** The LLM plans and calls tools; deterministic modules do the math. Never put numeric computation in LLM free-text.  
-- **Design for new projection sources.** Sources are pluggable; my own ML model is a first-class future source that must drop in without touching the blend or decision code.  
-- **Brain before hands.** No execution code until decisions are trustworthy.  
-- **Evaluation right after projections.** If a change doesn't beat the consensus baseline in the backtest, it doesn't ship.  
-- **Human-approve gate** on every write until the engine has earned autonomy.  
-- **One projection artifact** feeds everything — resist duplicating projection logic inside decision modules.  
-- **Mean and variance, always.** Uncertainty is what makes bids and start/sit smart.  
-- **Secrets in env vars**, never committed. Provide `.env.example`.
+AGENT.md applies throughout: each stage ends with a stop, a summary, exact test
+commands and the owner's approval; one stage per commit, committed only after
+approval. Root cause before any fix.
+
+### Phase 1: contracts and design
+
+| # | Task | Owner | Depends on | Acceptance |
+|---|---|---|---|---|
+| 1.1 | Spikes: confirm the default model is still free and calls tools reliably (5 tool-routing prompts); check access and terms for the NFL injury report, ESPN JSON and nflverse 2026 in-season files (depth, snaps, participation); confirm GraphQL `league_rosters` and news still work | ai-engineer (model), backend-developer (sources) | none | Short findings note in `docs/spikes.md` with captured sample responses saved as fixtures; each source marked usable or not, with the reason |
+| 1.2 | `docs/data-contract.md`: SQLite schema and migration rule; source interface; player id crosswalk (Sleeper id as the key, mapping rules for nflverse, ESPN, NFL ids); projection artifact; decision result shapes, each with a structured "why"; freshness and source fields on every NFL fact | data-scientist, backend-developer | 1.1 | Reviewed by ai-engineer and qa-expert; every v1 tool's data has a home |
+| 1.3 | Agent-tools section of the data contract: one tool per question type in PRD 4.5 (v1 subset), inputs, outputs (summary first, labeled facts), what each does not cover; per-turn context block; framework decision with reason | ai-engineer | 1.2 draft | Each `TEST_QUESTIONS.md` v1 check maps to a tool |
+| 1.4 | `docs/api-contract.md`: setup and settings, league list and switch, my fantasy team panel, chat (send, stream progress events, history, start fresh), errors (quota, refresh failed, missing key) | backend-developer | 1.3 | Reviewed by frontend-developer, ai-engineer, qa-expert |
+| 1.5 | Design: setup, chat with progress, my fantasy team panel, all states, in `design/` | ui-designer | 1.4 draft | Owner approves the screens |
+| 1.6 | Test plan: rewrite `TEST_QUESTIONS.md` for v1 (drop write checks 22-25 to a v2 list; replace CLI steps with API calls); define the grounding check (every player name, NFL team and role in an answer appears in that turn's tool results) | qa-expert | 1.3, 1.4 | Owner approves the list |
+
+**Phase 1 gate:** owner approves both contracts, the design and the test plan.
+One commit.
+
+### Phase 2: build
+
+Stages are approved and committed one at a time. Work inside a stage can run
+in parallel against the contracts and fixtures.
+
+| # | Stage | Owner | Depends on | Acceptance |
+|---|---|---|---|---|
+| 2.1 | Backend skeleton and data spine: FastAPI serving a placeholder page, settings, league discovery and selection, Sleeper ingestion into SQLite for all fantasy teams (rosters, matchups with per-player points, transactions, players catalog), freshness rules, roster diffs, league format derived from settings | backend-developer | Phase 1 | Given a username: league picker works with one and several leagues; my roster matches the Sleeper app; a move in the app shows on the next request; upgrade keeps existing data |
+| 2.2 | NFL facts: NFL team rosters, depth order, injury designations and practice status, inactives, usage, news, each with source and freshness; crosswalk to Sleeper ids | backend-developer | 2.1 | Seattle roster has no DK Metcalf; a player's designation matches the official report; crosswalk coverage reported per source (target near the first build's 98%) |
+| 2.3 | Projections and backtests: Sleeper and nflverse sources, blend, variance, IR/ruled-out set to 0, rest-of-season and full season, league scoring including IDP; weekly and rest-of-season backtests | data-scientist | 2.1 (fixtures earlier) | One command reproduces both backtests; blend beats Sleeper-only weekly in 2024 and 2025; rest-of-season result reported against the prorated Sleeper baseline in both seasons |
+| 2.4 | Decisions: lineup (expected and high-risk, with projected totals and win probability), waivers (two horizons), injured stash, trade evaluation, trade ideas, week results, season leaders | data-scientist | 2.3, 2.2 for stash news | Unit tests on real fixtures for each PRD 4.4 rule (locks both sides, no empty slot, no IR starter, no equal-value reshuffle, byes, game started, budget, trade deadline, roster spots in uneven trades); trade ideas name a fantasy team and both value changes |
+| 2.5 | Agent: tools wired to 2.1-2.4, per-turn context, prompt, retries and quota, chat history, tracing | ai-engineer | 2.1, tools grow with 2.2-2.4 | Routing checks pass for every tool; numbers in answers match the tool output; tracing off by default and free of credentials |
+| 2.6 | Frontend: setup, chat with streamed progress, my fantasy team panel | frontend-developer | 1.5, API from 2.1/2.5 (mocks earlier) | Works against the real backend in Docker; all designed states reachable |
+| 2.7 | Packaging: Dockerfile, compose, `scripts/start|stop.sh|.bat`; Windows desktop shell and per-user installer built by CI; data in app-data; log file | backend-developer | 2.6 | `scripts/start.bat` serves the app on localhost only; CI produces an installer that runs on a clean Windows VM without admin rights |
+| 2.8 | User guide `docs/user-guide.md`: install, create an OpenRouter account and key, free vs paid model, first setup, example questions | ui-designer | 2.7 | A friend follows it alone in 3.3 |
+
+Order: 2.1, then 2.2 / 2.3 / 2.6 in parallel, then 2.4, 2.5, 2.7. 2.5 and 2.6
+start early on mocks and finish once their dependencies land.
+
+### Phase 3: QA
+
+| # | Task | Owner | Depends on | Acceptance |
+|---|---|---|---|---|
+| 3.1 | Live-check runner: posts each question to the chat API, records tool calls and the answer, applies the grounding check, writes a dated result table | qa-expert | 2.5 | Runs the full list in one sitting within the free daily quota |
+| 3.2 | Full live pass in "Or Test League" (IDP, user OrMatalon) and a non-IDP league; game-window checks (game started, locks) on a Sunday | qa-expert | 3.1, 2.7 | All read-only checks pass (done criterion 1); failures filed with root cause to the owning role |
+| 3.3 | Friend install: clean Windows machine, installer only, setup, five common questions | qa-expert with the owner | 2.7 | Done criterion 2 |
+| 3.4 | Regression: backtest, unit tests and live checks rerun after fixes | qa-expert | 3.2 | Green before the v1 tag |
+
+**Phase 3 gate:** owner signs off v1.
 
 ---
 
-## 6\. Open questions to confirm with me before/while building
+## 5. Contracts
 
-- ~~Is my draft imminent?~~ — **resolved:** already drafted, season underway. Keep the draft assistant last in Stage 3 as originally ordered (lineup -> waivers -> trades -> draft).  
-- ~~My Sleeper league ID / username~~ — **resolved:** no fixed ID. The agent takes my username and discovers the league(s) itself (§2), prompting me to pick if I'm in more than one.  
-- League **scoring format** (PPR / half-PPR / standard) and roster slots — pull from Sleeper settings automatically in Stage 0; I'll confirm once it prints.  
-- ~~Which second projection source to start with~~ — **resolved:** Sleeper + nflverse-derived to start; FantasyPros deferred (robots.txt blocks its data endpoints, see §2), config-driven so it (or another source) can be added later (§2).  
-- ~~Hosted LLM API~~ — **resolved:** OpenRouter (`nvidia/nemotron-3-super-120b-a12b:free`), orchestrated via LangGraph (§2, §3).
+| File | Author | Reviewers | Contents |
+|---|---|---|---|
+| `docs/api-contract.md` | backend-developer | frontend-developer, ai-engineer, qa-expert | HTTP endpoints, request and response shapes, progress event stream, error codes and messages |
+| `docs/data-contract.md` | data-scientist, backend-developer; agent-tools section by ai-engineer | qa-expert | SQLite schema and migrations, source interface, crosswalk, projection artifact, decision results, NFL fact shape with source and freshness, agent tool catalog and per-turn context |
+
+A contract change after Phase 1 goes through its author and is approved by its
+reviewers before code depends on it.
 
 ---
 
-## 7\. First action for the agent
+## 6. Risks
 
-Start **Stage 0**. Scaffold the repo layout above, implement `ingestion/sleeper.py` and `interface/cli.py`, and make the DoD command work: given my Sleeper **username**, discover and (if needed) let me pick my league, then print my roster and this week's opponent, and persist league-wide state (all rosters, transactions, matchups, players) to local storage. Ask me for my Sleeper username (`.env` holds it, not a league ID). Then **honor the checkpoint protocol (§4a): stop, tell me how to test it, wait for my approval, commit Stage 0, and only then continue.**  
+| Risk | Mitigation |
+|---|---|
+| Free model quality (prose arithmetic, unflagged name guesses, long tasks) | Tools return summaries first and labeled facts; grounding check in QA; paid model selectable |
+| Free tier quota (about 50 requests a day) limits live checks and real use | Few model turns per question; fail fast on quota; runner budgets the pass |
+| Pinned free model goes paid or disappears | Spike 1.1 rechecks; model chosen in Settings with a recommended default |
+| Undocumented APIs (Sleeper GraphQL, ESPN) change | One module each; reads fall back to Sleeper REST |
+| NFL injury reports or ESPN not usable under their terms | Spike 1.1 decides; v1 can ship on Sleeper + nflverse with the gap stated |
+| Crosswalk gaps across Sleeper, nflverse, ESPN, NFL ids | Fallback rules from PRD 5; coverage reported per source |
+| nflverse in-season files lag | Freshness shown on every fact; the agent states the date |
+| Windows installer: SmartScreen warning without signing; bundler misses dynamically loaded modules | Install guide covers the warning; CI smoke test starts the bundled app and calls every source |
+| Mid-season start: little stored history | Backfill completed weeks from Sleeper on first sync |
+
+---
+
+## 7. Open questions
+
+1. Non-IDP league for the format checks: the owner creates one (team DEF,
+   drafted so rosters exist) and names it before Phase 3.
+
+Resolved: tracing is LangSmith (free tier, off by default). Desktop shell is
+pywebview + PyInstaller. `PRD.md` carries a v1 scope note pointing here. IDP
+checks run in "Or Test League" (user OrMatalon). Trade ideas scope as in
+section 1.

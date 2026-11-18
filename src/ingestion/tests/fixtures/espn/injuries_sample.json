@@ -1,0 +1,1866 @@
+{
+ "timestamp": "2026-11-03T19:30:07Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "name": "Regular Season",
+  "displayName": "2026"
+ },
+ "injuries": [
+  {
+   "id": "22",
+   "displayName": "Arizona Cardinals",
+   "injuries": [
+    {
+     "id": "645773",
+     "longComment": "A left ankle issue had sidelined Love for the Cardinals' previous two games, but he ended up exiting Sunday's 33-30 overtime win over the Cowboys late in the first quarter after tweaking his opposite ankle. Though the No. 3 overall pick in the 2026 NFL Draft was cleared to play in advance of Week 1 after previously sustaining a right high-ankle sprain in the preseason, he won't be as fortunate this time around after injuring that ankle for the second time in less than three months. The projected 4-to-5-week recovery timeline will give Love a chance at returning to action when first eligible to play Dec. 6 against the Eagles, but at least for the next four games, Tyler Allgeier looks poised to serve as Arizona's lead back. The Cardinals could also look to bring James Conner (foot) back from IR at some point during that four-game stretch.",
+     "shortComment": "Love was diagnosed Tuesday with a right high-ankle sprain, which is expected to send him to injured reserve and keep him out for 4-to-5 weeks, Ian Rapoport of NFL Network reports.",
+     "status": "Out",
+     "date": "2026-11-03T18:57Z",
+     "athlete": {
+      "firstName": "Jeremiyah",
+      "lastName": "Love",
+      "displayName": "Jeremiyah Love",
+      "shortName": "J. Love",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4870808/jeremiyah-love",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/4870808/jeremiyah-love",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4870808&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/4870808/jeremiyah-love",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/4870808/jeremiyah-love",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4870808&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/4870808/jeremiyah-love",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4870808&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/4870808/jeremiyah-love",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4870808&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4870808/jeremiyah-love",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4870808",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4870808.png",
+       "alt": "Jeremiyah Love"
+      },
+      "position": {
+       "id": "9",
+       "name": "Running Back",
+       "displayName": "Running Back",
+       "abbreviation": "RB",
+       "leaf": true
+      },
+      "team": {
+       "id": "22",
+       "uid": "s:20~l:28~t:22",
+       "slug": "arizona-cardinals",
+       "name": "Cardinals",
+       "abbreviation": "ARI",
+       "displayName": "Arizona Cardinals",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:54Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/ari/arizona-cardinals",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/ari/arizona-cardinals",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/ari/arizona-cardinals",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/ari",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/ari",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/arizona-cardinals-tickets--sports-nfl-football/performer/40?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/ari/arizona-cardinals",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/ari",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/ari",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/ari",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "645773",
+         "type": "news",
+         "date": "2026-11-03T18:57Z",
+         "headline": "Love was diagnosed Tuesday with a right high-ankle sprain, which is expected to send him to injured reserve and keep him out for 4-to-5 weeks, Ian Rapoport of NFL Network reports.",
+         "text": "A left ankle issue had sidelined Love for the Cardinals' previous two games, but he ended up exiting Sunday's 33-30 overtime win over the Cowboys late in the first quarter after tweaking his opposite ankle. Though the No. 3 overall pick in the 2026 NFL Draft was cleared to play in advance of Week 1 after previously sustaining a right high-ankle sprain in the preseason, he won't be as fortunate this time around after injuring that ankle for the second time in less than three months. The projected 4-to-5-week recovery timeline will give Love a chance at returning to action when first eligible to play Dec. 6 against the Eagles, but at least for the next four games, Tyler Allgeier looks poised to serve as Arizona's lead back. The Cardinals could also look to bring James Conner (foot) back from IR at some point during that four-game stretch.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4870808/injuries/645773?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "4",
+      "name": "INJURY_STATUS_OUT",
+      "description": "out",
+      "abbreviation": "O"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "OUT",
+       "abbreviation": "OUT"
+      },
+      "type": "Ankle",
+      "location": "Leg",
+      "detail": "Sprain",
+      "side": "Right",
+      "returnDate": "2026-12-06"
+     }
+    },
+    {
+     "id": "-2068527",
+     "longComment": "questionable",
+     "shortComment": "questionable",
+     "status": "Questionable",
+     "date": "2026-11-03T13:03Z",
+     "athlete": {
+      "firstName": "Walter",
+      "lastName": "Nolen III",
+      "displayName": "Walter Nolen III",
+      "shortName": "W. Nolen III",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4685503/walter-nolen-iii",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/4685503/walter-nolen-iii",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4685503&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/4685503/walter-nolen-iii",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/4685503/walter-nolen-iii",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4685503&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/4685503/walter-nolen-iii",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4685503&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/4685503/walter-nolen-iii",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4685503&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4685503/walter-nolen-iii",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4685503",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4685503.png",
+       "alt": "Walter Nolen III"
+      },
+      "position": {
+       "id": "32",
+       "name": "Defensive Tackle",
+       "displayName": "Defensive Tackle",
+       "abbreviation": "DT",
+       "leaf": true
+      },
+      "team": {
+       "id": "22",
+       "uid": "s:20~l:28~t:22",
+       "slug": "arizona-cardinals",
+       "name": "Cardinals",
+       "abbreviation": "ARI",
+       "displayName": "Arizona Cardinals",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:54Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/ari/arizona-cardinals",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/ari/arizona-cardinals",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/ari/arizona-cardinals",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/ari",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/ari",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/arizona-cardinals-tickets--sports-nfl-football/performer/40?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/ari/arizona-cardinals",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/ari",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/ari",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/ari",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "-2068527",
+         "type": "news",
+         "date": "2026-11-03T13:03Z",
+         "headline": "questionable",
+         "text": "questionable",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4685503/injuries/-2068527?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Ankle",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-11-08"
+     }
+    },
+    {
+     "id": "-2068507",
+     "longComment": "questionable",
+     "shortComment": "questionable",
+     "status": "Questionable",
+     "date": "2026-11-03T13:03Z",
+     "athlete": {
+      "firstName": "Jon",
+      "lastName": "Gaines II",
+      "displayName": "Jon Gaines II",
+      "shortName": "J. Gaines II",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4367199/jon-gaines-ii",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/stats/_/id/4367199/jon-gaines-ii",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "stats",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4367199&section=stats",
+        "text": "Stats",
+        "shortText": "Stats",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "splits",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/splits/_/id/4367199/jon-gaines-ii",
+        "text": "Splits",
+        "shortText": "Splits",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/gamelog/_/id/4367199/jon-gaines-ii",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "gamelog",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4367199&section=gamelog",
+        "text": "Game Log",
+        "shortText": "Game Log",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/news/_/id/4367199/jon-gaines-ii",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "news",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4367199&section=news",
+        "text": "News",
+        "shortText": "News",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/bio/_/id/4367199/jon-gaines-ii",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "bio",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4367199&section=bio",
+        "text": "Bio",
+        "shortText": "Bio",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4367199/jon-gaines-ii",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       },
+       {
+        "language": "en-US",
+        "rel": [
+         "overview",
+         "sportscenter",
+         "app",
+         "athlete"
+        ],
+        "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~a:4367199",
+        "text": "Overview",
+        "shortText": "Overview",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "headshot": {
+       "href": "https://a.espncdn.com/i/headshots/nfl/players/full/4367199.png",
+       "alt": "Jon Gaines II"
+      },
+      "position": {
+       "id": "73",
+       "name": "Guard",
+       "displayName": "Guard",
+       "abbreviation": "G",
+       "leaf": false
+      },
+      "team": {
+       "id": "22",
+       "uid": "s:20~l:28~t:22",
+       "slug": "arizona-cardinals",
+       "name": "Cardinals",
+       "abbreviation": "ARI",
+       "displayName": "Arizona Cardinals",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-06-25T18:44Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/ari.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-06-25T18:43Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/grayscale.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "grayscale"
+         ],
+         "lastUpdated": "2026-03-31T12:54Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/8fc7b962-95e1-3cb8-6a7d-b499de9ad546/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:30Z"
+        }
+       ],
+       "links": [
+        {
+         "language": "en-US",
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/_/name/ari/arizona-cardinals",
+         "text": "Clubhouse",
+         "shortText": "Clubhouse",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/roster/_/name/ari/arizona-cardinals",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "roster",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=roster",
+         "text": "Roster",
+         "shortText": "Roster",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/stats/_/name/ari/arizona-cardinals",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "stats",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=stats",
+         "text": "Statistics",
+         "shortText": "Statistics",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/schedule/_/name/ari",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "schedule",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=scores",
+         "text": "Schedule",
+         "shortText": "Schedule",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "photos",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/photos/_/name/ari",
+         "text": "photos",
+         "shortText": "photos",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "tickets",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.vividseats.com/arizona-cardinals-tickets--sports-nfl-football/performer/40?wsUser=717",
+         "text": "Tickets",
+         "shortText": "Tickets",
+         "isExternal": true,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "draftpicks",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/draft/teams/_/name/ari/arizona-cardinals",
+         "text": "Draft Picks",
+         "shortText": "Draft Picks",
+         "isExternal": false,
+         "isPremium": true
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "transactions",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/transactions/_/name/ari",
+         "text": "Transactions",
+         "shortText": "Transactions",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "injuries",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/injuries/_/name/ari",
+         "text": "Injuries",
+         "shortText": "Injuries",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nfl/team/depth/_/name/ari",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        },
+        {
+         "language": "en-US",
+         "rel": [
+          "depthchart",
+          "sportscenter",
+          "app",
+          "team"
+         ],
+         "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:22&section=depthchart",
+         "text": "Depth Chart",
+         "shortText": "Depth Chart",
+         "isExternal": false,
+         "isPremium": false
+        }
+       ]
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "-2068507",
+         "type": "news",
+         "date": "2026-11-03T13:03Z",
+         "headline": "questionable",
+         "text": "questionable",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4367199/injuries/-2068507?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Ankle",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-11-08"
+     }
+    }
+   ]
+  }
+ ]
+}

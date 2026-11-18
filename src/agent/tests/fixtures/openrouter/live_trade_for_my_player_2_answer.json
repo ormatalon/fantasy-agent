@@ -1,0 +1,54 @@
+{
+  "id": "gen-1794985793-lx6wFUOBKENFZghKNTvY",
+  "object": "chat.completion",
+  "created": 1794985793,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "No one‑for‑one trade with OrHuji for Saquon Barkley improves both starting lineups, per the trade finder (as of Wed 11‑18 09:07). If you have a specific multi‑player offer in mind, I can evaluate it with the trade evaluator.",
+        "refusal": null,
+        "reasoning": "The tool says no one-for-one trade with any fantasy team raises both starting lineups. It searched all fantasy teams (since it says \"FANTASY TEAMS SEARCHED:\" with nothing listed, but the prompt had fantasy_team: OrHuji). Actually the tool says \"FANTASY TEAMS SEARCHED:\" empty, but I specified fantasy_team: OrHuji. Maybe it means it searched OrHuji only? But the summary says \"No one-for-one trade with any fantasy team raises both starting lineups.\" That suggests it searched all teams and found none. However, I asked specifically for OrHuji. The tool might have ignored the fantasy_team parameter? Or maybe it means no trade with OrHuji works. The IDEAS: none.\n\nThus, there are no one-for-one trades for Saquon Barkley with OrHuji that help both teams. I should answer that no such trade exists. But maybe I should also check if there are multi-player trades? The tool only finds one-for-one trades. The manager asked \"What could I get from OrHuji for Saquon Barkley?\" Could be a package. But the tool only does one-for-one. I could mention that no one-for-one trade works, but maybe a multi-player trade could be evaluated with evaluate_trade if they propose something. However, I cannot make up trades. I should say no one-for-one trade with OrHuji for Saquon Barkley improves both teams, per the tool. If they have a specific offer in mind, we could evaluate it.\n\nI'll answer: No one-for-one trade with OrHuji for Saquon Barkley raises both starting lineups, per the trade finder. If you have a specific multi-player offer in mind, I can evaluate it.",
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The tool says no one-for-one trade with any fantasy team raises both starting lineups. It searched all fantasy teams (since it says \"FANTASY TEAMS SEARCHED:\" with nothing listed, but the prompt had fantasy_team: OrHuji). Actually the tool says \"FANTASY TEAMS SEARCHED:\" empty, but I specified fantasy_team: OrHuji. Maybe it means it searched OrHuji only? But the summary says \"No one-for-one trade with any fantasy team raises both starting lineups.\" That suggests it searched all teams and found none. However, I asked specifically for OrHuji. The tool might have ignored the fantasy_team parameter? Or maybe it means no trade with OrHuji works. The IDEAS: none.\n\nThus, there are no one-for-one trades for Saquon Barkley with OrHuji that help both teams. I should answer that no such trade exists. But maybe I should also check if there are multi-player trades? The tool only finds one-for-one trades. The manager asked \"What could I get from OrHuji for Saquon Barkley?\" Could be a package. But the tool only does one-for-one. I could mention that no one-for-one trade works, but maybe a multi-player trade could be evaluated with evaluate_trade if they propose something. However, I cannot make up trades. I should say no one-for-one trade with OrHuji for Saquon Barkley improves both teams, per the tool. If they have a specific offer in mind, we could evaluate it.\n\nI'll answer: No one-for-one trade with OrHuji for Saquon Barkley raises both starting lineups, per the trade finder. If you have a specific multi-player offer in mind, I can evaluate it.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5324,
+    "completion_tokens": 441,
+    "total_tokens": 5765,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 4384,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 372,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

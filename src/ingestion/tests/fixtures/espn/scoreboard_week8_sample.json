@@ -1,0 +1,3497 @@
+{
+ "leagues": [
+  {
+   "id": "28",
+   "uid": "s:20~l:28",
+   "name": "National Football League",
+   "abbreviation": "NFL",
+   "slug": "nfl",
+   "season": {
+    "year": 2026,
+    "startDate": "2026-08-06T07:00Z",
+    "endDate": "2027-02-16T07:59Z",
+    "displayName": "2026",
+    "type": {
+     "id": "2",
+     "type": 2,
+     "name": "Regular Season",
+     "abbreviation": "reg"
+    }
+   },
+   "logos": [
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "default"
+     ],
+     "lastUpdated": "2018-06-05T12:07Z"
+    },
+    {
+     "href": "https://a.espncdn.com/i/teamlogos/leagues/500-dark/nfl.png",
+     "width": 500,
+     "height": 500,
+     "alt": "",
+     "rel": [
+      "full",
+      "dark"
+     ],
+     "lastUpdated": "2024-07-22T16:53Z"
+    }
+   ],
+   "calendarType": "list",
+   "calendarIsWhitelist": true,
+   "calendarStartDate": "2026-08-06T07:00Z",
+   "calendarEndDate": "2027-02-16T07:59Z",
+   "calendar": [
+    {
+     "label": "Preseason",
+     "value": "1",
+     "startDate": "2026-08-06T07:00Z",
+     "endDate": "2026-09-06T06:59Z",
+     "entries": [
+      {
+       "label": "Hall of Fame Weekend",
+       "alternateLabel": "HOF",
+       "detail": "Aug 6-12",
+       "value": "1",
+       "startDate": "2026-08-06T07:00Z",
+       "endDate": "2026-08-13T06:59Z"
+      },
+      {
+       "label": "Preseason Week 1",
+       "alternateLabel": "Pre Wk 1",
+       "detail": "Aug 13-19",
+       "value": "2",
+       "startDate": "2026-08-13T07:00Z",
+       "endDate": "2026-08-20T06:59Z"
+      },
+      {
+       "label": "Preseason Week 2",
+       "alternateLabel": "Pre Wk 2",
+       "detail": "Aug 20-26",
+       "value": "3",
+       "startDate": "2026-08-20T07:00Z",
+       "endDate": "2026-08-27T06:59Z"
+      },
+      {
+       "label": "Preseason Week 3",
+       "alternateLabel": "Pre Wk 3",
+       "detail": "Aug 27-Sep 5",
+       "value": "4",
+       "startDate": "2026-08-27T07:00Z",
+       "endDate": "2026-09-06T06:59Z"
+      }
+     ]
+    },
+    {
+     "label": "Regular Season",
+     "value": "2",
+     "startDate": "2026-09-06T07:00Z",
+     "endDate": "2027-01-13T07:59Z",
+     "entries": [
+      {
+       "label": "Week 1",
+       "alternateLabel": "Week 1",
+       "detail": "Sep 6-15",
+       "value": "1",
+       "startDate": "2026-09-06T07:00Z",
+       "endDate": "2026-09-16T06:59Z"
+      },
+      {
+       "label": "Week 2",
+       "alternateLabel": "Week 2",
+       "detail": "Sep 16-22",
+       "value": "2",
+       "startDate": "2026-09-16T07:00Z",
+       "endDate": "2026-09-23T06:59Z"
+      },
+      {
+       "label": "Week 3",
+       "alternateLabel": "Week 3",
+       "detail": "Sep 23-29",
+       "value": "3",
+       "startDate": "2026-09-23T07:00Z",
+       "endDate": "2026-09-30T06:59Z"
+      },
+      {
+       "label": "Week 4",
+       "alternateLabel": "Week 4",
+       "detail": "Sep 30-Oct 6",
+       "value": "4",
+       "startDate": "2026-09-30T07:00Z",
+       "endDate": "2026-10-07T06:59Z"
+      },
+      {
+       "label": "Week 5",
+       "alternateLabel": "Week 5",
+       "detail": "Oct 7-13",
+       "value": "5",
+       "startDate": "2026-10-07T07:00Z",
+       "endDate": "2026-10-14T06:59Z"
+      },
+      {
+       "label": "Week 6",
+       "alternateLabel": "Week 6",
+       "detail": "Oct 14-20",
+       "value": "6",
+       "startDate": "2026-10-14T07:00Z",
+       "endDate": "2026-10-21T06:59Z"
+      },
+      {
+       "label": "Week 7",
+       "alternateLabel": "Week 7",
+       "detail": "Oct 21-27",
+       "value": "7",
+       "startDate": "2026-10-21T07:00Z",
+       "endDate": "2026-10-28T06:59Z"
+      },
+      {
+       "label": "Week 8",
+       "alternateLabel": "Week 8",
+       "detail": "Oct 28-Nov 3",
+       "value": "8",
+       "startDate": "2026-10-28T07:00Z",
+       "endDate": "2026-11-04T07:59Z"
+      },
+      {
+       "label": "Week 9",
+       "alternateLabel": "Week 9",
+       "detail": "Nov 4-10",
+       "value": "9",
+       "startDate": "2026-11-04T08:00Z",
+       "endDate": "2026-11-11T07:59Z"
+      },
+      {
+       "label": "Week 10",
+       "alternateLabel": "Week 10",
+       "detail": "Nov 11-17",
+       "value": "10",
+       "startDate": "2026-11-11T08:00Z",
+       "endDate": "2026-11-18T07:59Z"
+      },
+      {
+       "label": "Week 11",
+       "alternateLabel": "Week 11",
+       "detail": "Nov 18-24",
+       "value": "11",
+       "startDate": "2026-11-18T08:00Z",
+       "endDate": "2026-11-25T07:59Z"
+      },
+      {
+       "label": "Week 12",
+       "alternateLabel": "Week 12",
+       "detail": "Nov 25-Dec 1",
+       "value": "12",
+       "startDate": "2026-11-25T08:00Z",
+       "endDate": "2026-12-02T07:59Z"
+      },
+      {
+       "label": "Week 13",
+       "alternateLabel": "Week 13",
+       "detail": "Dec 2-8",
+       "value": "13",
+       "startDate": "2026-12-02T08:00Z",
+       "endDate": "2026-12-09T07:59Z"
+      },
+      {
+       "label": "Week 14",
+       "alternateLabel": "Week 14",
+       "detail": "Dec 9-15",
+       "value": "14",
+       "startDate": "2026-12-09T08:00Z",
+       "endDate": "2026-12-16T07:59Z"
+      },
+      {
+       "label": "Week 15",
+       "alternateLabel": "Week 15",
+       "detail": "Dec 16-22",
+       "value": "15",
+       "startDate": "2026-12-16T08:00Z",
+       "endDate": "2026-12-23T07:59Z"
+      },
+      {
+       "label": "Week 16",
+       "alternateLabel": "Week 16",
+       "detail": "Dec 23-29",
+       "value": "16",
+       "startDate": "2026-12-23T08:00Z",
+       "endDate": "2026-12-30T07:59Z"
+      },
+      {
+       "label": "Week 17",
+       "alternateLabel": "Week 17",
+       "detail": "Dec 30-Jan 5",
+       "value": "17",
+       "startDate": "2026-12-30T08:00Z",
+       "endDate": "2027-01-06T07:59Z"
+      },
+      {
+       "label": "Week 18",
+       "alternateLabel": "Week 18",
+       "detail": "Jan 6-12",
+       "value": "18",
+       "startDate": "2027-01-06T08:00Z",
+       "endDate": "2027-01-13T07:59Z"
+      }
+     ]
+    },
+    {
+     "label": "Postseason",
+     "value": "3",
+     "startDate": "2027-01-13T08:00Z",
+     "endDate": "2027-02-16T07:59Z",
+     "entries": [
+      {
+       "label": "Wild Card",
+       "alternateLabel": "Wild Card",
+       "detail": "Jan 13-19",
+       "value": "1",
+       "startDate": "2027-01-13T08:00Z",
+       "endDate": "2027-01-20T07:59Z"
+      },
+      {
+       "label": "Divisional Round",
+       "alternateLabel": "Div Rd",
+       "detail": "Jan 20-26",
+       "value": "2",
+       "startDate": "2027-01-20T08:00Z",
+       "endDate": "2027-01-27T07:59Z"
+      },
+      {
+       "label": "Conference Championship",
+       "alternateLabel": "Conf Champ",
+       "detail": "Jan 27-Feb 2",
+       "value": "3",
+       "startDate": "2027-01-27T08:00Z",
+       "endDate": "2027-02-03T07:59Z"
+      },
+      {
+       "label": "Super Bowl",
+       "alternateLabel": "Super Bowl",
+       "detail": "Feb 3-15",
+       "value": "4",
+       "startDate": "2027-02-03T08:00Z",
+       "endDate": "2027-02-16T07:59Z"
+      }
+     ]
+    },
+    {
+     "label": "Off Season",
+     "value": "4",
+     "startDate": "2027-02-16T08:00Z",
+     "endDate": "2027-08-01T06:59Z"
+    }
+   ]
+  }
+ ],
+ "season": {
+  "type": 2,
+  "year": 2026
+ },
+ "week": {
+  "number": 8,
+  "teamsOnBye": [
+   {
+    "id": "18",
+    "uid": "s:20~l:28~t:18",
+    "location": "New Orleans",
+    "name": "Saints",
+    "abbreviation": "NO",
+    "displayName": "New Orleans Saints",
+    "shortDisplayName": "Saints",
+    "isActive": true,
+    "links": [
+     {
+      "rel": [
+       "clubhouse",
+       "desktop",
+       "team"
+      ],
+      "href": "https://www.espn.com/nfl/team/_/name/no/new-orleans-saints",
+      "text": "Clubhouse",
+      "isExternal": false,
+      "isPremium": false
+     }
+    ],
+    "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/no.png",
+    "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/no.png"
+   },
+   {
+    "id": "19",
+    "uid": "s:20~l:28~t:19",
+    "location": "New York",
+    "name": "Giants",
+    "abbreviation": "NYG",
+    "displayName": "New York Giants",
+    "shortDisplayName": "Giants",
+    "isActive": true,
+    "links": [
+     {
+      "rel": [
+       "clubhouse",
+       "desktop",
+       "team"
+      ],
+      "href": "https://www.espn.com/nfl/team/_/name/nyg/new-york-giants",
+      "text": "Clubhouse",
+      "isExternal": false,
+      "isPremium": false
+     }
+    ],
+    "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/nyg.png",
+    "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/nyg.png"
+   },
+   {
+    "id": "25",
+    "uid": "s:20~l:28~t:25",
+    "location": "San Francisco",
+    "name": "49ers",
+    "abbreviation": "SF",
+    "displayName": "San Francisco 49ers",
+    "shortDisplayName": "49ers",
+    "isActive": true,
+    "links": [
+     {
+      "rel": [
+       "clubhouse",
+       "desktop",
+       "team"
+      ],
+      "href": "https://www.espn.com/nfl/team/_/name/sf/san-francisco-49ers",
+      "text": "Clubhouse",
+      "isExternal": false,
+      "isPremium": false
+     }
+    ],
+    "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sf.png",
+    "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/sf.png"
+   },
+   {
+    "id": "34",
+    "uid": "s:20~l:28~t:34",
+    "location": "Houston",
+    "name": "Texans",
+    "abbreviation": "HOU",
+    "displayName": "Houston Texans",
+    "shortDisplayName": "Texans",
+    "isActive": true,
+    "links": [
+     {
+      "rel": [
+       "clubhouse",
+       "desktop",
+       "team"
+      ],
+      "href": "https://www.espn.com/nfl/team/_/name/hou/houston-texans",
+      "text": "Clubhouse",
+      "isExternal": false,
+      "isPremium": false
+     }
+    ],
+    "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/hou.png",
+    "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/hou.png"
+   }
+  ]
+ },
+ "events": [
+  {
+   "id": "401873023",
+   "uid": "s:20~l:28~e:401873023",
+   "date": "2026-10-30T00:15Z",
+   "name": "Carolina Panthers at Green Bay Packers",
+   "shortName": "CAR @ GB",
+   "season": {
+    "year": 2026,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "week": {
+    "number": 8
+   },
+   "competitions": [
+    {
+     "id": "401873023",
+     "uid": "s:20~l:28~e:401873023~c:401873023",
+     "date": "2026-10-30T00:15Z",
+     "attendance": 76957,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "3798",
+      "fullName": "Lambeau Field",
+      "address": {
+       "city": "Green Bay",
+       "state": "WI",
+       "country": "USA"
+      },
+      "indoor": false
+     },
+     "competitors": [
+      {
+       "id": "9",
+       "uid": "s:20~l:28~t:9",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "9",
+        "uid": "s:20~l:28~t:9",
+        "location": "Green Bay",
+        "name": "Packers",
+        "abbreviation": "GB",
+        "displayName": "Green Bay Packers",
+        "shortDisplayName": "Packers",
+        "color": "204e32",
+        "alternateColor": "ffb612",
+        "isActive": true,
+        "venue": {
+         "id": "3798"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/gb/green-bay-packers",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/gb/green-bay-packers",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:9&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/gb/green-bay-packers",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:9&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/gb",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:9&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/gb.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/gb.png"
+       },
+       "score": "27",
+       "linescores": [
+        {
+         "value": 6.0,
+         "displayValue": "6",
+         "period": 1
+        },
+        {
+         "value": 14.0,
+         "displayValue": "14",
+         "period": 2
+        },
+        {
+         "value": 7.0,
+         "displayValue": "7",
+         "period": 3
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 4
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "5-3"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "3-1"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "2-2"
+        }
+       ]
+      },
+      {
+       "id": "29",
+       "uid": "s:20~l:28~t:29",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "29",
+        "uid": "s:20~l:28~t:29",
+        "location": "Carolina",
+        "name": "Panthers",
+        "abbreviation": "CAR",
+        "displayName": "Carolina Panthers",
+        "shortDisplayName": "Panthers",
+        "color": "0085ca",
+        "alternateColor": "000000",
+        "isActive": true,
+        "venue": {
+         "id": "3628"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/car/carolina-panthers",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/car/carolina-panthers",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:29&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/car/carolina-panthers",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:29&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/car",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:29&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/car.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/car.png"
+       },
+       "score": "19",
+       "linescores": [
+        {
+         "value": 3.0,
+         "displayValue": "3",
+         "period": 1
+        },
+        {
+         "value": 7.0,
+         "displayValue": "7",
+         "period": 2
+        },
+        {
+         "value": 3.0,
+         "displayValue": "3",
+         "period": 3
+        },
+        {
+         "value": 6.0,
+         "displayValue": "6",
+         "period": 4
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "3-4"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "1-2"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "2-2"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0.0,
+      "displayClock": "0:00",
+      "period": 4,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "isTBDFlex": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Prime Video"
+       ]
+      }
+     ],
+     "leaders": [
+      {
+       "name": "passingYards",
+       "displayName": "Passing Leader",
+       "shortDisplayName": "PASS",
+       "abbreviation": "PYDS",
+       "leaders": [
+        {
+         "displayValue": "30/41, 288 YDS, 3 TD, 1 INT",
+         "value": 288.0,
+         "athlete": {
+          "id": "4036378",
+          "fullName": "Jordan Love",
+          "displayName": "Jordan Love",
+          "shortName": "J. Love",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4036378/jordan-love"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4036378.png",
+          "jersey": "10",
+          "position": {
+           "abbreviation": "QB"
+          },
+          "team": {
+           "id": "9"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "9"
+         }
+        }
+       ]
+      },
+      {
+       "name": "rushingYards",
+       "displayName": "Rushing Leader",
+       "shortDisplayName": "RUSH",
+       "abbreviation": "RYDS",
+       "leaders": [
+        {
+         "displayValue": "22 CAR, 81 YDS, 1 TD",
+         "value": 81.0,
+         "athlete": {
+          "id": "4241416",
+          "fullName": "Chuba Hubbard",
+          "displayName": "Chuba Hubbard",
+          "shortName": "C. Hubbard",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4241416/chuba-hubbard"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4241416.png",
+          "jersey": "30",
+          "position": {
+           "abbreviation": "RB"
+          },
+          "team": {
+           "id": "29"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "29"
+         }
+        }
+       ]
+      },
+      {
+       "name": "receivingYards",
+       "displayName": "Receiving Leader",
+       "shortDisplayName": "REC",
+       "abbreviation": "RECYDS",
+       "leaders": [
+        {
+         "displayValue": "8 REC, 113 YDS",
+         "value": 113.0,
+         "athlete": {
+          "id": "4248528",
+          "fullName": "Christian Watson",
+          "displayName": "Christian Watson",
+          "shortName": "C. Watson",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4248528/christian-watson"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4248528.png",
+          "jersey": "9",
+          "position": {
+           "abbreviation": "WR"
+          },
+          "team": {
+           "id": "9"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "9"
+         }
+        }
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      },
+      "overtime": {
+       "periods": 1
+      }
+     },
+     "startDate": "2026-10-30T00:15Z",
+     "broadcast": "Prime Video",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Prime Video"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": [],
+     "headlines": [
+      {
+       "type": "Recap",
+       "description": "â€” Jordan Love realizes the Green Bay Packers need to finish better.",
+       "shortLinkText": "Love throws 3 TD passes as the Packers beat the Panthers 27-19"
+      }
+     ]
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/game/_/gameId/401873023/panthers-packers",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "boxscore",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/boxscore/_/gameId/401873023",
+     "text": "Box Score",
+     "shortText": "Box Score",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "pbp",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/playbyplay/_/gameId/401873023",
+     "text": "Play-by-Play",
+     "shortText": "Play-by-Play",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "recap",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/recap?gameId=401873023",
+     "text": "Recap",
+     "shortText": "Recap",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "status": {
+    "clock": 0.0,
+    "displayClock": "0:00",
+    "period": 4,
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  },
+  {
+   "id": "401873026",
+   "uid": "s:20~l:28~e:401873026",
+   "date": "2026-11-01T18:00Z",
+   "name": "Baltimore Ravens at Buffalo Bills",
+   "shortName": "BAL @ BUF",
+   "season": {
+    "year": 2026,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "week": {
+    "number": 8
+   },
+   "competitions": [
+    {
+     "id": "401873026",
+     "uid": "s:20~l:28~e:401873026~c:401873026",
+     "date": "2026-11-01T18:00Z",
+     "attendance": 60642,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "11938",
+      "fullName": "Highmark Stadium",
+      "address": {
+       "city": "Orchard Park",
+       "state": "NY",
+       "country": "USA"
+      },
+      "indoor": false
+     },
+     "competitors": [
+      {
+       "id": "2",
+       "uid": "s:20~l:28~t:2",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "2",
+        "uid": "s:20~l:28~t:2",
+        "location": "Buffalo",
+        "name": "Bills",
+        "abbreviation": "BUF",
+        "displayName": "Buffalo Bills",
+        "shortDisplayName": "Bills",
+        "color": "00338d",
+        "alternateColor": "d50a0a",
+        "isActive": true,
+        "venue": {
+         "id": "3883"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/buf/buffalo-bills",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/buf/buffalo-bills",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:2&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/buf/buffalo-bills",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:2&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/buf",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:2&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/buf.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/buf.png"
+       },
+       "score": "36",
+       "linescores": [
+        {
+         "value": 10.0,
+         "displayValue": "10",
+         "period": 1
+        },
+        {
+         "value": 6.0,
+         "displayValue": "6",
+         "period": 2
+        },
+        {
+         "value": 7.0,
+         "displayValue": "7",
+         "period": 3
+        },
+        {
+         "value": 13.0,
+         "displayValue": "13",
+         "period": 4
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "6-1"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "3-1"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "3-0"
+        }
+       ]
+      },
+      {
+       "id": "33",
+       "uid": "s:20~l:28~t:33",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "33",
+        "uid": "s:20~l:28~t:33",
+        "location": "Baltimore",
+        "name": "Ravens",
+        "abbreviation": "BAL",
+        "displayName": "Baltimore Ravens",
+        "shortDisplayName": "Ravens",
+        "color": "29126f",
+        "alternateColor": "000000",
+        "isActive": true,
+        "venue": {
+         "id": "3814"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/bal/baltimore-ravens",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/bal/baltimore-ravens",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/bal/baltimore-ravens",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/bal",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:33&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/bal.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/bal.png"
+       },
+       "score": "10",
+       "linescores": [
+        {
+         "value": 7.0,
+         "displayValue": "7",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 2
+        },
+        {
+         "value": 3.0,
+         "displayValue": "3",
+         "period": 3
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 4
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "4-4"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "1-2"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "3-2"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0.0,
+      "displayClock": "0:00",
+      "period": 4,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "isTBDFlex": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "CBS"
+       ]
+      }
+     ],
+     "leaders": [
+      {
+       "name": "passingYards",
+       "displayName": "Passing Leader",
+       "shortDisplayName": "PASS",
+       "abbreviation": "PYDS",
+       "leaders": [
+        {
+         "displayValue": "21/34, 289 YDS, 2 TD, 1 INT",
+         "value": 289.0,
+         "athlete": {
+          "id": "3918298",
+          "fullName": "Josh Allen",
+          "displayName": "Josh Allen",
+          "shortName": "J. Allen",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/3918298/josh-allen"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/3918298.png",
+          "jersey": "17",
+          "position": {
+           "abbreviation": "QB"
+          },
+          "team": {
+           "id": "2"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "2"
+         }
+        }
+       ]
+      },
+      {
+       "name": "rushingYards",
+       "displayName": "Rushing Leader",
+       "shortDisplayName": "RUSH",
+       "abbreviation": "RYDS",
+       "leaders": [
+        {
+         "displayValue": "21 CAR, 80 YDS, 1 TD",
+         "value": 80.0,
+         "athlete": {
+          "id": "4379399",
+          "fullName": "James Cook III",
+          "displayName": "James Cook III",
+          "shortName": "J. Cook III",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4379399/james-cook-iii"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4379399.png",
+          "jersey": "4",
+          "position": {
+           "abbreviation": "RB"
+          },
+          "team": {
+           "id": "2"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "2"
+         }
+        }
+       ]
+      },
+      {
+       "name": "receivingYards",
+       "displayName": "Receiving Leader",
+       "shortDisplayName": "REC",
+       "abbreviation": "RECYDS",
+       "leaders": [
+        {
+         "displayValue": "4 REC, 86 YDS, 1 TD",
+         "value": 86.0,
+         "athlete": {
+          "id": "4385690",
+          "fullName": "Dalton Kincaid",
+          "displayName": "Dalton Kincaid",
+          "shortName": "D. Kincaid",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4385690/dalton-kincaid"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4385690.png",
+          "jersey": "86",
+          "position": {
+           "abbreviation": "TE"
+          },
+          "team": {
+           "id": "2"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "2"
+         }
+        }
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      },
+      "overtime": {
+       "periods": 1
+      }
+     },
+     "startDate": "2026-11-01T18:00Z",
+     "broadcast": "CBS",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "CBS"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 50351505,
+       "cerebroId": "6ae7b3b30f7b3f07ac95070c",
+       "source": "espn",
+       "headline": "Baltimore Ravens vs Buffalo Bills: Game Highlights",
+       "description": "Baltimore Ravens vs Buffalo Bills: Game Highlights",
+       "lastModified": "2026-11-01T23:36:22Z",
+       "originalPublishDate": "2026-11-01T21:48:35Z",
+       "duration": 101,
+       "timeRestrictions": {
+        "embargoDate": "2026-11-01T21:48:34Z",
+        "expirationDate": "2026-11-03T21:48:34Z"
+       },
+       "deviceRestrictions": {
+        "devices": [
+         "settop",
+         "tablet",
+         "handset",
+         "ipad",
+         "desktop"
+        ],
+        "type": "whitelist"
+       },
+       "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.jpg",
+       "links": {
+        "api": {
+         "artwork": {
+          "href": "https://artwork.api.espn.com/artwork/collections/media/e30f2c04-9dff-42a3-ae03-5835400a1fd2"
+         },
+         "self": {
+          "href": "https://content.core.api.espn.com/v1/video/clips/50351505"
+         }
+        },
+        "mobile": {
+         "href": "https://watch.auth.api.espn.com/video/auth/brightcove/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351505/game-highlights",
+         "alert": {
+          "href": "https://m.espn.com/general/video/videoAlert?vid=50351505"
+         },
+         "progressiveDownload": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351505/game-highlights"
+         },
+         "source": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+         },
+         "streaming": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351505/game-highlights"
+         }
+        },
+        "source": {
+         "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4",
+         "HD": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+         },
+         "HLS": {
+          "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8",
+          "9x16": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+          },
+          "HD": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+          },
+          "cmaf": {
+           "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8",
+           "9x16": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+           },
+           "cmb": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+           }
+          },
+          "cmb": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+          },
+          "shield": {
+           "href": "https://watch.auth.api.espn.com/video/auth/media/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset"
+          }
+         },
+         "flash": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+         },
+         "full": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+         },
+         "mezzanine": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+         }
+        },
+        "sportscenter": {
+         "href": "sportscenter://x-callback-url/showVideo?videoID=50351505&videoDSI=993e436bddd22"
+        },
+        "web": {
+         "href": "https://www.espn.com/video/clip/_/id/50351505/game-highlights",
+         "self": {
+          "href": "https://www.espn.com/video/clip/_/id/50351505/game-highlights",
+          "dsi": {
+           "href": "https://www.espn.com/video/clip?id=993e436bddd22"
+          }
+         }
+        }
+       },
+       "ad": {
+        "bundle": "sportscenter",
+        "sport": "nfl"
+       },
+       "tracking": {
+        "coverageType": "Final Game Highlight",
+        "leagueName": "NFL",
+        "program": "espnnfl",
+        "sportName": "football",
+        "trackingId": "dm_20261101_NFL_baltimore_ravens_vs_buffalo_bills_game_highlights",
+        "trackingName": "COM_NFL Highlight (Baltimore Ravens vs Buffalo Bills: Game Highlights) 2026/11/01 ESHEET"
+       }
+      }
+     ],
+     "headlines": [
+      {
+       "type": "Recap",
+       "description": "â€” With Josh Allen at quarterback, anything seems possible for the Buffalo Bills â€” including overcoming a sloppy first half.",
+       "shortLinkText": "Bills cruise in 2nd half to 36-10 win over Ravens, who lose QBs Jackson and Huntley to injuries",
+       "video": [
+        {
+         "id": 50351505,
+         "source": "espn",
+         "headline": "Baltimore Ravens vs Buffalo Bills: Game Highlights",
+         "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.jpg",
+         "duration": 101,
+         "tracking": {
+          "coverageType": "Final Game Highlight",
+          "leagueName": "NFL",
+          "program": "espnnfl",
+          "sportName": "football",
+          "trackingId": "dm_20261101_NFL_baltimore_ravens_vs_buffalo_bills_game_highlights",
+          "trackingName": "COM_NFL Highlight (Baltimore Ravens vs Buffalo Bills: Game Highlights) 2026/11/01 ESHEET"
+         },
+         "deviceRestrictions": {
+          "devices": [
+           "settop",
+           "tablet",
+           "handset",
+           "ipad",
+           "desktop"
+          ],
+          "type": "whitelist"
+         },
+         "links": {
+          "api": {
+           "artwork": {
+            "href": "https://artwork.api.espn.com/artwork/collections/media/e30f2c04-9dff-42a3-ae03-5835400a1fd2"
+           },
+           "self": {
+            "href": "https://content.core.api.espn.com/v1/video/clips/50351505"
+           }
+          },
+          "mobile": {
+           "href": "https://watch.auth.api.espn.com/video/auth/brightcove/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351505/game-highlights",
+           "alert": {
+            "href": "https://m.espn.com/general/video/videoAlert?vid=50351505"
+           },
+           "progressiveDownload": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351505/game-highlights"
+           },
+           "source": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+           },
+           "streaming": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351505/game-highlights"
+           }
+          },
+          "source": {
+           "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4",
+           "HD": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+           },
+           "HLS": {
+            "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8",
+            "9x16": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+            },
+            "HD": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+            },
+            "cmaf": {
+             "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8",
+             "9x16": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+             },
+             "cmb": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+             }
+            },
+            "cmb": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/playlist.m3u8"
+            },
+            "shield": {
+             "href": "https://watch.auth.api.espn.com/video/auth/media/e30f2c04-9dff-42a3-ae03-5835400a1fd2/asset"
+            }
+           },
+           "flash": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+           },
+           "full": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+           },
+           "mezzanine": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f/7f7d8d1f-2300-46d7-8dc0-1c13f4effb1f.mp4"
+           }
+          },
+          "sportscenter": {
+           "href": "sportscenter://x-callback-url/showVideo?videoID=50351505&videoDSI=993e436bddd22"
+          },
+          "web": {
+           "href": "https://www.espn.com/video/clip/_/id/50351505/game-highlights",
+           "self": {
+            "href": "https://www.espn.com/video/clip/_/id/50351505/game-highlights",
+            "dsi": {
+             "href": "https://www.espn.com/video/clip?id=993e436bddd22"
+            }
+           }
+          }
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/game/_/gameId/401873026/ravens-bills",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "boxscore",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/boxscore/_/gameId/401873026",
+     "text": "Box Score",
+     "shortText": "Box Score",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "highlights",
+      "desktop"
+     ],
+     "href": "https://www.espn.com/nfl/video?gameId=401873026",
+     "text": "Highlights",
+     "shortText": "Highlights",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "pbp",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/playbyplay/_/gameId/401873026",
+     "text": "Play-by-Play",
+     "shortText": "Play-by-Play",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "recap",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/recap?gameId=401873026",
+     "text": "Recap",
+     "shortText": "Recap",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "status": {
+    "clock": 0.0,
+    "displayClock": "0:00",
+    "period": 4,
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  },
+  {
+   "id": "401873031",
+   "uid": "s:20~l:28~e:401873031",
+   "date": "2026-11-01T18:00Z",
+   "name": "Tennessee Titans at Cincinnati Bengals",
+   "shortName": "TEN @ CIN",
+   "season": {
+    "year": 2026,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "week": {
+    "number": 8
+   },
+   "competitions": [
+    {
+     "id": "401873031",
+     "uid": "s:20~l:28~e:401873031~c:401873031",
+     "date": "2026-11-01T18:00Z",
+     "attendance": 66209,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "3874",
+      "fullName": "Paycor Stadium",
+      "address": {
+       "city": "Cincinnati",
+       "state": "OH",
+       "country": "USA"
+      },
+      "indoor": false
+     },
+     "competitors": [
+      {
+       "id": "4",
+       "uid": "s:20~l:28~t:4",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "4",
+        "uid": "s:20~l:28~t:4",
+        "location": "Cincinnati",
+        "name": "Bengals",
+        "abbreviation": "CIN",
+        "displayName": "Cincinnati Bengals",
+        "shortDisplayName": "Bengals",
+        "color": "fb4f14",
+        "alternateColor": "000000",
+        "isActive": true,
+        "venue": {
+         "id": "3874"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/cin/cincinnati-bengals",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/cin/cincinnati-bengals",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:4&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/cin/cincinnati-bengals",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:4&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/cin",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:4&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/cin.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/cin.png"
+       },
+       "score": "43",
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 1
+        },
+        {
+         "value": 14.0,
+         "displayValue": "14",
+         "period": 2
+        },
+        {
+         "value": 9.0,
+         "displayValue": "9",
+         "period": 3
+        },
+        {
+         "value": 13.0,
+         "displayValue": "13",
+         "period": 4
+        },
+        {
+         "value": 7.0,
+         "displayValue": "7",
+         "period": 5
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "5-2"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "2-1"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "3-1"
+        }
+       ]
+      },
+      {
+       "id": "10",
+       "uid": "s:20~l:28~t:10",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "10",
+        "uid": "s:20~l:28~t:10",
+        "location": "Tennessee",
+        "name": "Titans",
+        "abbreviation": "TEN",
+        "displayName": "Tennessee Titans",
+        "shortDisplayName": "Titans",
+        "color": "4495d2",
+        "alternateColor": "001532",
+        "isActive": true,
+        "venue": {
+         "id": "3810"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/ten/tennessee-titans",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/ten/tennessee-titans",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:10&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/ten/tennessee-titans",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:10&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/ten",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:10&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/ten.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/ten.png"
+       },
+       "score": "36",
+       "linescores": [
+        {
+         "value": 13.0,
+         "displayValue": "13",
+         "period": 1
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 2
+        },
+        {
+         "value": 8.0,
+         "displayValue": "8",
+         "period": 3
+        },
+        {
+         "value": 15.0,
+         "displayValue": "15",
+         "period": 4
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 5
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "1-7"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-4"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "1-3"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0.0,
+      "displayClock": "0:00",
+      "period": 5,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final/OT",
+       "shortDetail": "Final/OT",
+       "altDetail": "OT"
+      },
+      "isTBDFlex": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "CBS"
+       ]
+      }
+     ],
+     "leaders": [
+      {
+       "name": "passingYards",
+       "displayName": "Passing Leader",
+       "shortDisplayName": "PASS",
+       "abbreviation": "PYDS",
+       "leaders": [
+        {
+         "displayValue": "38/48, 462 YDS, 5 TD, 3 INT",
+         "value": 462.0,
+         "athlete": {
+          "id": "3915511",
+          "fullName": "Joe Burrow",
+          "displayName": "Joe Burrow",
+          "shortName": "J. Burrow",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/3915511/joe-burrow"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/3915511.png",
+          "jersey": "9",
+          "position": {
+           "abbreviation": "QB"
+          },
+          "team": {
+           "id": "4"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "4"
+         }
+        }
+       ]
+      },
+      {
+       "name": "rushingYards",
+       "displayName": "Rushing Leader",
+       "shortDisplayName": "RUSH",
+       "abbreviation": "RYDS",
+       "leaders": [
+        {
+         "displayValue": "21 CAR, 117 YDS, 2 TD",
+         "value": 117.0,
+         "athlete": {
+          "id": "3916148",
+          "fullName": "Tony Pollard",
+          "displayName": "Tony Pollard",
+          "shortName": "T. Pollard",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/3916148/tony-pollard"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/3916148.png",
+          "jersey": "20",
+          "position": {
+           "abbreviation": "RB"
+          },
+          "team": {
+           "id": "10"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "10"
+         }
+        }
+       ]
+      },
+      {
+       "name": "receivingYards",
+       "displayName": "Receiving Leader",
+       "shortDisplayName": "REC",
+       "abbreviation": "RECYDS",
+       "leaders": [
+        {
+         "displayValue": "10 REC, 155 YDS, 2 TD",
+         "value": 155.0,
+         "athlete": {
+          "id": "4239993",
+          "fullName": "Tee Higgins",
+          "displayName": "Tee Higgins",
+          "shortName": "T. Higgins",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4239993/tee-higgins"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4239993.png",
+          "jersey": "5",
+          "position": {
+           "abbreviation": "WR"
+          },
+          "team": {
+           "id": "4"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "4"
+         }
+        }
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      },
+      "overtime": {
+       "periods": 1
+      }
+     },
+     "startDate": "2026-11-01T18:00Z",
+     "broadcast": "CBS",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "CBS"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 50351818,
+       "cerebroId": "6ae7bc103da0f53a9064c74f",
+       "source": "espn",
+       "headline": "Tennessee Titans vs. Cincinnati Bengals: Game Highlights",
+       "description": "Tennessee Titans vs. Cincinnati Bengals: Game Highlights",
+       "lastModified": "2026-11-01T22:29:06Z",
+       "originalPublishDate": "2026-11-01T22:24:16Z",
+       "duration": 86,
+       "timeRestrictions": {
+        "embargoDate": "2026-11-01T22:24:14Z",
+        "expirationDate": "2026-11-03T22:24:14Z"
+       },
+       "deviceRestrictions": {
+        "devices": [
+         "settop",
+         "tablet",
+         "handset",
+         "ipad",
+         "desktop"
+        ],
+        "type": "whitelist"
+       },
+       "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.jpg",
+       "links": {
+        "api": {
+         "artwork": {
+          "href": "https://artwork.api.espn.com/artwork/collections/media/440b764a-0bb5-4759-a1f1-fced4bb53955"
+         },
+         "self": {
+          "href": "https://content.core.api.espn.com/v1/video/clips/50351818"
+         }
+        },
+        "mobile": {
+         "href": "https://watch.auth.api.espn.com/video/auth/brightcove/440b764a-0bb5-4759-a1f1-fced4bb53955/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351818/game-highlights",
+         "alert": {
+          "href": "https://m.espn.com/general/video/videoAlert?vid=50351818"
+         },
+         "progressiveDownload": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/440b764a-0bb5-4759-a1f1-fced4bb53955/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351818/game-highlights"
+         },
+         "source": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+         },
+         "streaming": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/440b764a-0bb5-4759-a1f1-fced4bb53955/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351818/game-highlights"
+         }
+        },
+        "source": {
+         "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4",
+         "HD": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+         },
+         "HLS": {
+          "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8",
+          "9x16": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+          },
+          "HD": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+          },
+          "cmaf": {
+           "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8",
+           "9x16": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+           },
+           "cmb": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+           }
+          },
+          "cmb": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+          },
+          "shield": {
+           "href": "https://watch.auth.api.espn.com/video/auth/media/440b764a-0bb5-4759-a1f1-fced4bb53955/asset"
+          }
+         },
+         "flash": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+         },
+         "full": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+         },
+         "mezzanine": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+         }
+        },
+        "sportscenter": {
+         "href": "sportscenter://x-callback-url/showVideo?videoID=50351818&videoDSI=6d7802e274468"
+        },
+        "web": {
+         "href": "https://www.espn.com/video/clip/_/id/50351818/game-highlights",
+         "self": {
+          "href": "https://www.espn.com/video/clip/_/id/50351818/game-highlights",
+          "dsi": {
+           "href": "https://www.espn.com/video/clip?id=6d7802e274468"
+          }
+         }
+        }
+       },
+       "ad": {
+        "bundle": "sportscenter",
+        "sport": "nfl"
+       },
+       "tracking": {
+        "coverageType": "Final Game Highlight",
+        "leagueName": "NFL",
+        "program": "espnnfl",
+        "sportName": "football",
+        "trackingId": "dm_20261101_NFL_tennessee_titans_vs_cincinnati_bengals_game_highlights",
+        "trackingName": "COM_NFL Highlight (Tennessee Titans vs. Cincinnati Bengals: Game Highlights) 2026/11/01 ESHEET"
+       }
+      }
+     ],
+     "headlines": [
+      {
+       "type": "Recap",
+       "description": "â€” Bengals defensive tackle Dexter Lawrence had some simple advice for Joe Burrow as the franchise quarterback prepared to take the field with Cincinnati trailing the Tennessee Titans by a touchdown in the fourth quarter.",
+       "shortLinkText": "Joe Burrow throws 5 TD passes, then runs for score in OT as Bengals rally for 43-36 win over Titans",
+       "video": [
+        {
+         "id": 50351818,
+         "source": "espn",
+         "headline": "Tennessee Titans vs. Cincinnati Bengals: Game Highlights",
+         "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.jpg",
+         "duration": 86,
+         "tracking": {
+          "coverageType": "Final Game Highlight",
+          "leagueName": "NFL",
+          "program": "espnnfl",
+          "sportName": "football",
+          "trackingId": "dm_20261101_NFL_tennessee_titans_vs_cincinnati_bengals_game_highlights",
+          "trackingName": "COM_NFL Highlight (Tennessee Titans vs. Cincinnati Bengals: Game Highlights) 2026/11/01 ESHEET"
+         },
+         "deviceRestrictions": {
+          "devices": [
+           "settop",
+           "tablet",
+           "handset",
+           "ipad",
+           "desktop"
+          ],
+          "type": "whitelist"
+         },
+         "links": {
+          "api": {
+           "artwork": {
+            "href": "https://artwork.api.espn.com/artwork/collections/media/440b764a-0bb5-4759-a1f1-fced4bb53955"
+           },
+           "self": {
+            "href": "https://content.core.api.espn.com/v1/video/clips/50351818"
+           }
+          },
+          "mobile": {
+           "href": "https://watch.auth.api.espn.com/video/auth/brightcove/440b764a-0bb5-4759-a1f1-fced4bb53955/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351818/game-highlights",
+           "alert": {
+            "href": "https://m.espn.com/general/video/videoAlert?vid=50351818"
+           },
+           "progressiveDownload": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/440b764a-0bb5-4759-a1f1-fced4bb53955/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351818/game-highlights"
+           },
+           "source": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+           },
+           "streaming": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/440b764a-0bb5-4759-a1f1-fced4bb53955/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50351818/game-highlights"
+           }
+          },
+          "source": {
+           "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4",
+           "HD": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+           },
+           "HLS": {
+            "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8",
+            "9x16": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+            },
+            "HD": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+            },
+            "cmaf": {
+             "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8",
+             "9x16": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+             },
+             "cmb": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+             }
+            },
+            "cmb": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/playlist.m3u8"
+            },
+            "shield": {
+             "href": "https://watch.auth.api.espn.com/video/auth/media/440b764a-0bb5-4759-a1f1-fced4bb53955/asset"
+            }
+           },
+           "flash": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+           },
+           "full": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+           },
+           "mezzanine": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1101/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac/ff2d49e0-45c9-4e3c-95d7-58b34fd487ac.mp4"
+           }
+          },
+          "sportscenter": {
+           "href": "sportscenter://x-callback-url/showVideo?videoID=50351818&videoDSI=6d7802e274468"
+          },
+          "web": {
+           "href": "https://www.espn.com/video/clip/_/id/50351818/game-highlights",
+           "self": {
+            "href": "https://www.espn.com/video/clip/_/id/50351818/game-highlights",
+            "dsi": {
+             "href": "https://www.espn.com/video/clip?id=6d7802e274468"
+            }
+           }
+          }
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/game/_/gameId/401873031/titans-bengals",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "boxscore",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/boxscore/_/gameId/401873031",
+     "text": "Box Score",
+     "shortText": "Box Score",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "highlights",
+      "desktop"
+     ],
+     "href": "https://www.espn.com/nfl/video?gameId=401873031",
+     "text": "Highlights",
+     "shortText": "Highlights",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "pbp",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/playbyplay/_/gameId/401873031",
+     "text": "Play-by-Play",
+     "shortText": "Play-by-Play",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "recap",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/recap?gameId=401873031",
+     "text": "Recap",
+     "shortText": "Recap",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "status": {
+    "clock": 0.0,
+    "displayClock": "0:00",
+    "period": 5,
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final/OT",
+     "shortDetail": "Final/OT",
+     "altDetail": "OT"
+    }
+   }
+  },
+  {
+   "id": "401873036",
+   "uid": "s:20~l:28~e:401873036",
+   "date": "2026-11-03T01:15Z",
+   "name": "Chicago Bears at Seattle Seahawks",
+   "shortName": "CHI @ SEA",
+   "season": {
+    "year": 2026,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "week": {
+    "number": 8
+   },
+   "competitions": [
+    {
+     "id": "401873036",
+     "uid": "s:20~l:28~e:401873036~c:401873036",
+     "date": "2026-11-03T01:15Z",
+     "attendance": 68739,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "3673",
+      "fullName": "Lumen Field",
+      "address": {
+       "city": "Seattle",
+       "state": "WA",
+       "country": "USA"
+      },
+      "indoor": false
+     },
+     "competitors": [
+      {
+       "id": "26",
+       "uid": "s:20~l:28~t:26",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "winner": false,
+       "team": {
+        "id": "26",
+        "uid": "s:20~l:28~t:26",
+        "location": "Seattle",
+        "name": "Seahawks",
+        "abbreviation": "SEA",
+        "displayName": "Seattle Seahawks",
+        "shortDisplayName": "Seahawks",
+        "color": "002a5c",
+        "alternateColor": "69be28",
+        "isActive": true,
+        "venue": {
+         "id": "3673"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/sea/seattle-seahawks",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/sea/seattle-seahawks",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:26&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/sea/seattle-seahawks",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:26&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/sea",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:26&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sea.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/sea.png"
+       },
+       "score": "17",
+       "linescores": [
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 1
+        },
+        {
+         "value": 9.0,
+         "displayValue": "9",
+         "period": 2
+        },
+        {
+         "value": 0.0,
+         "displayValue": "0",
+         "period": 3
+        },
+        {
+         "value": 8.0,
+         "displayValue": "8",
+         "period": 4
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "4-4"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "3-2"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "1-2"
+        }
+       ]
+      },
+      {
+       "id": "3",
+       "uid": "s:20~l:28~t:3",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "winner": true,
+       "team": {
+        "id": "3",
+        "uid": "s:20~l:28~t:3",
+        "location": "Chicago",
+        "name": "Bears",
+        "abbreviation": "CHI",
+        "displayName": "Chicago Bears",
+        "shortDisplayName": "Bears",
+        "color": "0b1c3a",
+        "alternateColor": "e64100",
+        "isActive": true,
+        "venue": {
+         "id": "3933"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/_/name/chi/chicago-bears",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/roster/_/name/chi/chicago-bears",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:3&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/stats/_/name/chi/chicago-bears",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:3&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nfl/team/schedule/_/name/chi",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:20~l:28~t:3&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/chi.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nfl/500-dark/scoreboard/chi.png"
+       },
+       "score": "34",
+       "linescores": [
+        {
+         "value": 7.0,
+         "displayValue": "7",
+         "period": 1
+        },
+        {
+         "value": 6.0,
+         "displayValue": "6",
+         "period": 2
+        },
+        {
+         "value": 7.0,
+         "displayValue": "7",
+         "period": 3
+        },
+        {
+         "value": 14.0,
+         "displayValue": "14",
+         "period": 4
+        }
+       ],
+       "statistics": [],
+       "curatedRank": {
+        "current": 99
+       },
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "6-2"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "3-1"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "3-1"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0.0,
+      "displayClock": "0:00",
+      "period": 4,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      },
+      "isTBDFlex": false
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "ESPN"
+       ]
+      }
+     ],
+     "leaders": [
+      {
+       "name": "passingYards",
+       "displayName": "Passing Leader",
+       "shortDisplayName": "PASS",
+       "abbreviation": "PYDS",
+       "leaders": [
+        {
+         "displayValue": "24/34, 247 YDS, 1 TD",
+         "value": 247.0,
+         "athlete": {
+          "id": "4431611",
+          "fullName": "Caleb Williams",
+          "displayName": "Caleb Williams",
+          "shortName": "C. Williams",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4431611/caleb-williams"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4431611.png",
+          "jersey": "18",
+          "position": {
+           "abbreviation": "QB"
+          },
+          "team": {
+           "id": "3"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "3"
+         }
+        }
+       ]
+      },
+      {
+       "name": "rushingYards",
+       "displayName": "Rushing Leader",
+       "shortDisplayName": "RUSH",
+       "abbreviation": "RYDS",
+       "leaders": [
+        {
+         "displayValue": "27 CAR, 69 YDS, 3 TD",
+         "value": 69.0,
+         "athlete": {
+          "id": "4259545",
+          "fullName": "D'Andre Swift",
+          "displayName": "D'Andre Swift",
+          "shortName": "D. Swift",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4259545/dandre-swift"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4259545.png",
+          "jersey": "4",
+          "position": {
+           "abbreviation": "RB"
+          },
+          "team": {
+           "id": "3"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "3"
+         }
+        }
+       ]
+      },
+      {
+       "name": "receivingYards",
+       "displayName": "Receiving Leader",
+       "shortDisplayName": "REC",
+       "abbreviation": "RECYDS",
+       "leaders": [
+        {
+         "displayValue": "6 REC, 118 YDS, 1 TD",
+         "value": 118.0,
+         "athlete": {
+          "id": "4430878",
+          "fullName": "Jaxon Smith-Njigba",
+          "displayName": "Jaxon Smith-Njigba",
+          "shortName": "J. Smith-Njigba",
+          "links": [
+           {
+            "rel": [
+             "playercard",
+             "desktop",
+             "athlete"
+            ],
+            "href": "https://www.espn.com/nfl/player/_/id/4430878/jaxon-smith-njigba"
+           }
+          ],
+          "headshot": "https://a.espncdn.com/i/headshots/nfl/players/full/4430878.png",
+          "jersey": "11",
+          "position": {
+           "abbreviation": "WR"
+          },
+          "team": {
+           "id": "26"
+          },
+          "active": true
+         },
+         "team": {
+          "id": "26"
+         }
+        }
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      },
+      "overtime": {
+       "periods": 1
+      }
+     },
+     "startDate": "2026-11-03T01:15Z",
+     "broadcast": "ESPN",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ESPN",
+        "logo": "https://a.espncdn.com/guid/335fd2d2-97b9-336b-81ee-573eb6bdcffc/logos/default.png",
+        "darkLogo": ""
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 50365054,
+       "cerebroId": "6ae961190f7b3f07ac9804c7",
+       "source": "espn",
+       "headline": "Bears outduel Seahawks 34-17 on MNF",
+       "description": "Bears outduel Seahawks 34-17 on MNF",
+       "lastModified": "2026-11-03T13:53:10Z",
+       "originalPublishDate": "2026-11-03T04:20:41Z",
+       "duration": 82,
+       "timeRestrictions": {
+        "embargoDate": "2026-11-03T04:20:39Z",
+        "expirationDate": "2026-11-05T04:20:00Z"
+       },
+       "deviceRestrictions": {
+        "devices": [
+         "settop",
+         "tablet",
+         "handset",
+         "ipad",
+         "desktop"
+        ],
+        "type": "whitelist"
+       },
+       "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/2026/1102/4828be659815489f9e252ea180fe9d9f1406/4828be659815489f9e252ea180fe9d9f1406.jpg",
+       "links": {
+        "api": {
+         "artwork": {
+          "href": "https://artwork.api.espn.com/artwork/collections/media/2cb09c78-71af-4007-b23e-560957bf1244"
+         },
+         "self": {
+          "href": "https://content.core.api.espn.com/v1/video/clips/50365054"
+         }
+        },
+        "mobile": {
+         "href": "https://watch.auth.api.espn.com/video/auth/brightcove/2cb09c78-71af-4007-b23e-560957bf1244/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf",
+         "alert": {
+          "href": "https://m.espn.com/general/video/videoAlert?vid=50365054"
+         },
+         "progressiveDownload": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/2cb09c78-71af-4007-b23e-560957bf1244/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf"
+         },
+         "source": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+         },
+         "streaming": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/2cb09c78-71af-4007-b23e-560957bf1244/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf"
+         }
+        },
+        "source": {
+         "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4",
+         "HD": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+         },
+         "HLS": {
+          "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8",
+          "9x16": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+          },
+          "HD": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+          },
+          "cmaf": {
+           "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8",
+           "9x16": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+           },
+           "cmb": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+           }
+          },
+          "cmb": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+          },
+          "shield": {
+           "href": "https://watch.auth.api.espn.com/video/auth/media/2cb09c78-71af-4007-b23e-560957bf1244/asset"
+          }
+         },
+         "flash": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+         },
+         "full": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+         },
+         "mezzanine": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+         }
+        },
+        "sportscenter": {
+         "href": "sportscenter://x-callback-url/showVideo?videoID=50365054&videoDSI=1cd1ad9f98bba"
+        },
+        "web": {
+         "href": "https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf",
+         "self": {
+          "href": "https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf",
+          "dsi": {
+           "href": "https://www.espn.com/video/clip?id=1cd1ad9f98bba"
+          }
+         }
+        }
+       },
+       "ad": {
+        "bundle": "nfl_inprogress_highlights",
+        "sport": "nfl"
+       },
+       "tracking": {
+        "coverageType": "Final Game Highlight",
+        "leagueName": "NFL",
+        "program": "espnnfl",
+        "sportName": "football",
+        "trackingId": "dm_20261103_NFL_fgh",
+        "trackingName": "NFL_One-Play (Bears outduel Seahawks 34-17 on MNF) 2026/11/03 ESHEET"
+       }
+      }
+     ],
+     "headlines": [
+      {
+       "type": "Recap",
+       "description": "â€” Jeffery Simmons ran out of the tunnel for the first time since joining the Chicago Bears with a new uniform, orange sleeves and a wide smile as he welcomed the move that put right into contention...",
+       "shortLinkText": "Caleb Williams and Jeffery Simmons lead the Bears past the Seahawks 34-17",
+       "video": [
+        {
+         "id": 50365054,
+         "source": "espn",
+         "headline": "Bears outduel Seahawks 34-17 on MNF",
+         "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/2026/1102/4828be659815489f9e252ea180fe9d9f1406/4828be659815489f9e252ea180fe9d9f1406.jpg",
+         "duration": 82,
+         "tracking": {
+          "coverageType": "Final Game Highlight",
+          "leagueName": "NFL",
+          "program": "espnnfl",
+          "sportName": "football",
+          "trackingId": "dm_20261103_NFL_fgh",
+          "trackingName": "NFL_One-Play (Bears outduel Seahawks 34-17 on MNF) 2026/11/03 ESHEET"
+         },
+         "deviceRestrictions": {
+          "devices": [
+           "settop",
+           "tablet",
+           "handset",
+           "ipad",
+           "desktop"
+          ],
+          "type": "whitelist"
+         },
+         "links": {
+          "api": {
+           "artwork": {
+            "href": "https://artwork.api.espn.com/artwork/collections/media/2cb09c78-71af-4007-b23e-560957bf1244"
+           },
+           "self": {
+            "href": "https://content.core.api.espn.com/v1/video/clips/50365054"
+           }
+          },
+          "mobile": {
+           "href": "https://watch.auth.api.espn.com/video/auth/brightcove/2cb09c78-71af-4007-b23e-560957bf1244/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf",
+           "alert": {
+            "href": "https://m.espn.com/general/video/videoAlert?vid=50365054"
+           },
+           "progressiveDownload": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/2cb09c78-71af-4007-b23e-560957bf1244/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf"
+           },
+           "source": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+           },
+           "streaming": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/2cb09c78-71af-4007-b23e-560957bf1244/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf"
+           }
+          },
+          "source": {
+           "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4",
+           "HD": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+           },
+           "HLS": {
+            "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8",
+            "9x16": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+            },
+            "HD": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+            },
+            "cmaf": {
+             "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8",
+             "9x16": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+             },
+             "cmb": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+             }
+            },
+            "cmb": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f/playlist.m3u8"
+            },
+            "shield": {
+             "href": "https://watch.auth.api.espn.com/video/auth/media/2cb09c78-71af-4007-b23e-560957bf1244/asset"
+            }
+           },
+           "flash": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+           },
+           "full": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+           },
+           "mezzanine": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1103/4828be65-9815-489f-9e25-2ea180fe9d9f/4828be65-9815-489f-9e25-2ea180fe9d9f.mp4"
+           }
+          },
+          "sportscenter": {
+           "href": "sportscenter://x-callback-url/showVideo?videoID=50365054&videoDSI=1cd1ad9f98bba"
+          },
+          "web": {
+           "href": "https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf",
+           "self": {
+            "href": "https://www.espn.com/video/clip/_/id/50365054/bears-outduel-seahawks-34-17-mnf",
+            "dsi": {
+             "href": "https://www.espn.com/video/clip?id=1cd1ad9f98bba"
+            }
+           }
+          }
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/game/_/gameId/401873036/bears-seahawks",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "boxscore",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/boxscore/_/gameId/401873036",
+     "text": "Box Score",
+     "shortText": "Box Score",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "highlights",
+      "desktop"
+     ],
+     "href": "https://www.espn.com/nfl/video?gameId=401873036",
+     "text": "Highlights",
+     "shortText": "Highlights",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "pbp",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/playbyplay/_/gameId/401873036",
+     "text": "Play-by-Play",
+     "shortText": "Play-by-Play",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "recap",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nfl/recap?gameId=401873036",
+     "text": "Recap",
+     "shortText": "Recap",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "status": {
+    "clock": 0.0,
+    "displayClock": "0:00",
+    "period": 4,
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  }
+ ],
+ "provider": {
+  "id": "100",
+  "name": "Draft Kings",
+  "displayName": "Draft Kings",
+  "priority": 1
+ }
+}

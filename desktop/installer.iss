@@ -1,38 +1,31 @@
-; Windows installer (Inno Setup). Build the app with PyInstaller first, then:
-;   iscc /DAppVersion=1.0.0 desktop/installer.iss
-; Output: dist/FantasyAgent-Setup.exe. Installs per user: no admin needed.
-
+; Per-user installer, no admin rights: iscc /DAppVersion=0.1.0 desktop\installer.iss
 #ifndef AppVersion
-  #define AppVersion "0.0.0"
+  #define AppVersion "0.1.0"
 #endif
 
 [Setup]
-AppId={{4CA3BEDD-6D5B-45BB-8A8E-0F1038B4920E}
+AppId={{6F1D2B7C-3B7E-4C57-9A5E-2D9C8A41F0E3}
 AppName=Fantasy Agent
 AppVersion={#AppVersion}
-AppPublisher=Fantasy Agent
-DefaultDirName={autopf}\Fantasy Agent
-DisableProgramGroupPage=yes
+DefaultDirName={localappdata}\Programs\FantasyAgent
+DefaultGroupName=Fantasy Agent
 PrivilegesRequired=lowest
-ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-OutputDir=..\dist
-OutputBaseFilename=FantasyAgent-Setup
-SetupIconFile=icon.ico
-UninstallDisplayIcon={app}\FantasyAgent.exe
+OutputDir=..\dist\installer
+OutputBaseFilename=FantasyAgent-Setup-{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
-WizardStyle=modern
-
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+UninstallDisplayIcon={app}\FantasyAgent.exe
 
 [Files]
-Source: "..\dist\FantasyAgent\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\FantasyAgent\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
 [Icons]
 Name: "{autoprograms}\Fantasy Agent"; Filename: "{app}\FantasyAgent.exe"
 Name: "{autodesktop}\Fantasy Agent"; Filename: "{app}\FantasyAgent.exe"; Tasks: desktopicon
 
+[Tasks]
+Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
+
 [Run]
-Filename: "{app}\FantasyAgent.exe"; Description: "{cm:LaunchProgram,Fantasy Agent}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\FantasyAgent.exe"; Description: "Start Fantasy Agent"; Flags: nowait postinstall skipifsilent

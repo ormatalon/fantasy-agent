@@ -1,0 +1,87 @@
+{
+  "kind": "stash",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 9,
+  "summary": "Best injured stash: De'Von Achane (IR), healthy rest-of-season value 30.2 over replacement.",
+  "as_of": {
+    "projections": {
+      "as_of": "2026-11-03T10:45:00Z",
+      "source_label": "projections (Sleeper and nflverse blend)"
+    },
+    "rosters": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper rosters"
+    },
+    "injuries": {
+      "as_of": "2026-11-03T11:00:00Z",
+      "source_label": "official NFL injury report via nflverse"
+    },
+    "news": null,
+    "games": {
+      "as_of": "2026-11-03T12:20:00Z",
+      "source_label": "ESPN scoreboard"
+    }
+  },
+  "unprojected_scoring_items": [
+    {
+      "key": "def_st_td",
+      "value": 6.0
+    },
+    {
+      "key": "fgm_50_59",
+      "value": 5.0
+    },
+    {
+      "key": "idp_def_td",
+      "value": 6.0
+    },
+    {
+      "key": "pts_allow_0",
+      "value": 10.0
+    }
+  ],
+  "warnings": [],
+  "candidates": [
+    {
+      "rank": 1,
+      "player": {
+        "player_id": "9226",
+        "name": "De'Von Achane",
+        "position": "RB",
+        "nfl_team": "MIA",
+        "injury_status": "IR",
+        "fantasy_status": "free_agent",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "healthy_ros_vorp": 30.2,
+      "healthy_ros_mean": 120.5,
+      "injury": {
+        "status": "IR",
+        "body_part": "Knee",
+        "source": "official NFL injury report via nflverse",
+        "as_of": "2026-11-03T11:00:00Z"
+      },
+      "news": [
+        {
+          "title": "Achane could return in Week 13",
+          "text": "Achane (knee) is expected to be designated to return later this month.",
+          "url": null,
+          "published_at": "2026-11-02T16:00:00Z",
+          "source": "rotowire"
+        }
+      ],
+      "why": {
+        "summary": "Achane has the highest healthy value among injured free agents.",
+        "reasons": []
+      }
+    }
+  ]
+}

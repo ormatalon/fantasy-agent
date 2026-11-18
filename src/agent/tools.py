@@ -1,809 +1,632 @@
-"""Tool registry: exposes the deterministic modules to the LLM.
+"""The 17 read-only agent tools (docs/data-contract.md section 11).
 
-Every tool here returns data computed by a Stage 0-3 module. The agent
-never does arithmetic itself — if it would need to estimate a number, the
-right fix is a new tool, not a cleverer prompt.
-
-`evaluation/backtest.py` is deliberately NOT exposed: it's a dev-side
-regression guard, not something to invoke mid-conversation.
+Wired now to stored league state: league state, my roster, other fantasy teams' rosters, NFL team rosters
+and players (Sleeper catalog and stored news), my roster's news, transactions, switch league.
+Decision, projection, leader, results and trending tools call a provider from decisions.PROVIDERS; a tool
+whose provider is not there yet says the feature is not available.
 """
 
 import json
+import logging
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Callable
 
-from langchain_core.tools import BaseTool, tool
+import decisions
+from ingestion.leagues import LeagueNotFound, resolve_league, select_league
+from ingestion.nfl import service
+from ingestion.sleeper import SleeperError
+from storage.db import get_json
+from . import data, render, resolve
+from .render import block, player_line, roster_lines, when
 
-from src.decisions.leaders import season_to_date
-from src.decisions.lineup import SleeperLineup, optimize_lineup, sleeper_lineup
-from src.decisions.results import last_completed_week, summarize_week
-from src.decisions.trades import evaluate_trade
-from src.decisions.waivers import get_rostered_player_ids, suggest_waivers_by_position, unavailable_this_week
-from src.execution import sleeper_writes
-from src.ingestion import nfl_teams, schedule, storage
-from src.ingestion.news import fetch_player_news
-from src.ingestion.sleeper import SleeperClient, SleeperError
-from src.ingestion.sync import log_to_stderr, run_sync
-from src.projections.engine import (
-    AdjustedProjection,
-    build_projection_table,
-    build_season_projection_table,
-    weeks_remaining,
-)
-from src.projections.positions import GRANULAR_TO_GROUP, IDP_POSITIONS, ROSTER_SLOT_ELIGIBILITY, SKILL_POSITIONS
-
-# Designations that make a player a stash candidate rather than a start.
-STASH_DESIGNATIONS = {"IR", "PUP", "Out", "Doubtful", "Sus", "NA", "COV"}
-# Sleeper always lets an IR-designated player into an IR slot; whether Out /
-# Suspended / etc. also qualify is a per-league setting we don't sync.
-IR_SLOT_DEFINITE = {"IR"}
-IR_SLOT_MAYBE = {"Out", "PUP", "Sus", "NA", "COV", "DNR"}
+log = logging.getLogger(__name__)
 
 
 @dataclass
-class AgentContext:
-    """Everything the tools need that the model shouldn't have to supply."""
-
+class Ctx:
     conn: sqlite3.Connection
     league_id: str
-    user_id: str
-    season: str
-    current_week: int
-    # Projection builds hit the network; cache so a multi-tool conversation
-    # doesn't re-fetch on every call.
-    _cache: dict = field(default_factory=dict)
 
-    def _cached(self, key, build):
-        if key not in self._cache:
-            self._cache[key] = build()
-        return self._cache[key]
 
-    def projections(self, week: int) -> list[AdjustedProjection]:
-        return self._cached(("week", week), lambda: build_projection_table(self.conn, self.season, week, self.league_id))
+@dataclass
+class ToolResult:
+    text: str
+    sources: list[dict] = field(default_factory=list)
+    ok: bool = True
 
-    def season_projections(self, rest_of_season: bool = True, healthy: bool = False) -> list[AdjustedProjection]:
-        return self._cached(
-            ("season", rest_of_season, healthy),
-            lambda: build_season_projection_table(
-                self.conn, self.season, self.league_id,
-                from_week=self.current_week if rest_of_season else None,
-                apply_injury=not healthy,
-            ),
-        )
 
-    def clear_caches(self) -> None:
-        self._cache.clear()
+@dataclass
+class Tool:
+    name: str
+    label: str
+    description: str
+    parameters: dict
+    fn: Callable
 
-    def reload_state(self) -> None:
-        """Pick up what a sync changed: the active league, season and week."""
-        self.league_id = storage.get_state(self.conn, "active_league_id") or self.league_id
-        self.season = storage.get_state(self.conn, "active_season") or self.season
-        self.current_week = int(storage.get_state(self.conn, "current_week") or self.current_week)
-        self.clear_caches()
 
-    def _league_row(self) -> sqlite3.Row | None:
-        return self.conn.execute(
-            "SELECT name, scoring_settings, roster_positions FROM leagues WHERE league_id = ?", (self.league_id,)
-        ).fetchone()
+def error(text: str) -> ToolResult:
+    return ToolResult(f"ERROR: {text}", ok=False)
 
-    def roster_positions(self) -> list[str]:
-        row = self._league_row()
-        return json.loads(row["roster_positions"]) if row else []
 
-    def scoring_settings(self) -> dict[str, float]:
-        row = self._league_row()
-        return json.loads(row["scoring_settings"]) if row else {}
+PRACTICE_NOTE = "practice status is the latest one listed, not a per-day history"
+RELEVANT = ("injur", "practi", "out", "questionable", "doubtful", "reserve", " ir", "return", "role", "snap",
+            "start", "bench", "inactive", "ruled", "concussion", "surgery", "suspend", "released", "traded")
 
-    def league_name(self) -> str:
-        row = self._league_row()
-        return (row["name"] if row else None) or self.league_id
 
-    def fantasy_team_name(self) -> str:
-        return storage.fantasy_team_label(self.conn, self.league_id, self.user_id)
+def rosters_source(conn, league_id) -> dict:
+    return {"label": "Sleeper rosters", "as_of": data.league_row(conn, league_id)["fetched_at"]}
 
-    def other_league_names(self) -> list[str]:
-        known = json.loads(storage.get_state(self.conn, "user_leagues") or "[]")
-        return [lg["name"] or lg["league_id"] for lg in known if lg["league_id"] != self.league_id]
 
+def catalog_source(conn) -> dict:
+    return {"label": "Sleeper players catalog", "as_of": data.catalog_as_of(conn)}
 
-def _names(text: str) -> list[str]:
-    """Player names from a comma-separated list."""
-    return [n.strip() for n in text.split(",") if n.strip()]
 
+def _ambiguous(rows: list, lg: data.League, what: str) -> ToolResult:
+    lines = [f"AMBIGUOUS: several players fit '{what}'. Ask which one, or say which one you assumed and why:"]
+    lines += [f"  {player_line(lg.ref(r))}" for r in rows]
+    return ToolResult("\n".join(lines))
 
-def _status_tag(status: str | None) -> str:
-    return f" [{status}]" if status else ""
 
+def _one_player(ctx: Ctx, lg: data.League, name: str) -> sqlite3.Row | ToolResult:
+    rows = resolve.players(ctx.conn, ctx.league_id, name, lg.me)
+    if not rows:
+        return ToolResult(f"NOT FOUND: no player named '{name}' in the Sleeper catalog. Nothing is known about this name.")
+    if len(rows) > 1:
+        return _ambiguous(rows, lg, name)
+    return rows[0]
 
-def _fmt_player(proj: AdjustedProjection) -> str:
-    return f"{proj.name} ({proj.position or '?'}/{proj.team or 'FA'}){_status_tag(proj.injury_status)}: {proj.mean:.1f} pts"
 
+def _one_fantasy_team(ctx: Ctx, name: str) -> sqlite3.Row | ToolResult:
+    teams = data.fantasy_teams(ctx.conn, ctx.league_id)
+    hits = resolve.fantasy_team(teams, name)
+    if len(hits) == 1:
+        return hits[0]
+    names = ", ".join(t["name"] for t in teams)
+    if not hits:
+        return error(f"no fantasy team named '{name}' in this league. Fantasy teams: {names}")
+    return ToolResult(f"AMBIGUOUS: several fantasy teams fit '{name}': {', '.join(t['name'] for t in hits)}. Ask which one.")
 
-def _group(position: str | None) -> str:
-    return GRANULAR_TO_GROUP.get(position, position) or ""
 
+# 1-3: league state and fantasy team rosters
 
-def _matches_position(proj: AdjustedProjection, position: str) -> bool:
-    """A filter of 'DL' should match DE/DT too, not only a literal 'DL'."""
-    wanted = position.upper()
-    return (proj.position or "").upper() == wanted or _group(proj.position).upper() == wanted
-
-
-def _ir_hint(status: str | None) -> str:
-    if status in IR_SLOT_DEFINITE:
-        return " -> eligible for your IR slot (frees a bench spot) if not already there"
-    if status in IR_SLOT_MAYBE:
-        return f" -> may be IR-slot eligible, depending on your league's settings for '{status}'"
-    return ""
-
-
-# Tools whose output depends on who is on which roster. After my roster
-# changes, their earlier results are hidden from the model (see graph.py).
-ROSTER_TOOLS = frozenset({
-    "get_my_roster",
-    "get_fantasy_team_roster",
-    "get_nfl_team_roster",
-    "recommend_lineup",
-    "get_waiver_targets",
-    "get_injured_stash_candidates",
-    "get_trending_players",
-})
-
-
-def my_lineup(ctx: AgentContext) -> SleeperLineup | None:
-    row = storage.get_my_roster(ctx.conn, ctx.league_id, ctx.user_id)
-    if not row:
-        return None
-    return sleeper_lineup(
-        json.loads(row["players"]), json.loads(row["starters"]), json.loads(row["reserve"] or "[]"),
-        ctx.roster_positions(),
-    )
-
-
-def format_lineup(conn: sqlite3.Connection, lineup: SleeperLineup, projections: dict | None = None) -> list[str]:
-    """The lineup as set in Sleeper, grouped Starters / Bench / IR. One
-    formatter for both get_my_roster and the system prompt, so the two never
-    disagree. Without `projections` (the prompt), no numbers are shown."""
-
-    def line(pid: str, hint: bool = True) -> str:
-        status = storage.get_injury_status(conn, pid)
-        if projections is None:
-            text = storage.player_name(conn, pid) + _status_tag(status)
-        else:
-            proj = projections.get(pid)
-            text = _fmt_player(proj) if proj else f"{storage.player_name(conn, pid)}{_status_tag(status)}: no projection"
-        return text + (_ir_hint(status) if hint else "")
-
-    lines = ["Starters:"]
-    lines += [f"  {slot}: {line(pid) if pid else '(empty)'}" for slot, pid in lineup.starters]
-    lines.append("Bench:" if lineup.bench else "Bench: (none)")
-    lines += [f"  {line(pid)}" for pid in lineup.bench]
-    if lineup.ir:
-        lines.append("IR:")
-        lines += [f"  {line(pid, hint=False)}" for pid in lineup.ir]
-    return lines
-
-
-def build_tools(ctx: AgentContext) -> list[BaseTool]:
-    def resolve(name: str) -> tuple[str | None, str | None]:
-        """(player_id, None) or (None, message explaining the miss/ambiguity)."""
-        pid, candidates = storage.resolve_player(ctx.conn, name, ctx.league_id)
-        if pid:
-            return pid, None
-        if not candidates:
-            return None, f"No player matching '{name}'."
-        options = "; ".join(storage.player_name(ctx.conn, c) for c in candidates)
-        return None, (
-            f"'{name}' is ambiguous: {options}. Ask the user which one, then retry with the "
-            "name exactly as listed, e.g. 'First Last (POS/TEAM)'."
-        )
-
-    def my_roster_ids() -> list[str] | None:
-        row = storage.get_my_roster(ctx.conn, ctx.league_id, ctx.user_id)
-        return json.loads(row["players"]) if row else None
-
-    def fresh_news(pid: str, limit: int) -> list:
-        """A player's news, fetched live when possible, else from the cache."""
-        try:
-            items = fetch_player_news(pid, limit=limit)
-            if items:
-                storage.save_player_news(ctx.conn, items)
-        except Exception:
-            pass
-        return storage.get_player_news(ctx.conn, pid, limit=limit)
-
-    @tool
-    def get_league_state() -> str:
-        """Current season, week, league, my team name, my opponent this week, and
-        the league's starting roster slots. Call this first when a question
-        depends on 'this week', 'my matchup', or the league's format."""
-        roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
-        if roster_id is None:
-            return "Could not find your roster in this league."
-        opponent = storage.get_opponent_roster(ctx.conn, ctx.league_id, ctx.current_week, roster_id)
-        opp_label = "none scheduled"
-        if opponent:
-            opp_roster = storage.get_roster(ctx.conn, ctx.league_id, opponent["roster_id"])
-            if opp_roster:
-                opp_label = storage.fantasy_team_label(ctx.conn, ctx.league_id, opp_roster["owner_id"])
-        return (
-            f"Season {ctx.season}, week {ctx.current_week}. League: {ctx.league_name()}. "
-            f"Your fantasy team: {ctx.fantasy_team_name()}. Week {ctx.current_week} opponent: {opp_label}. "
-            f"Roster slots: {', '.join(ctx.roster_positions())}"
-        )
-
-    @tool
-    def get_my_roster() -> str:
-        """My roster exactly as set in Sleeper: starters by slot, bench, and IR
-        slots, each with position, team, injury designation in [brackets] and
-        this week's projected points. Flags players who can move to an IR slot. Use for 'who are my starters', 'what's my lineup', 'who's on my
-        team', 'is anyone hurt', and before any roster-management advice. For
-        what the lineup SHOULD be, use recommend_lineup instead."""
-        lineup = my_lineup(ctx)
-        if lineup is None:
-            return "Could not find your roster in this league."
-        by_id = {p.player_id: p for p in ctx.projections(ctx.current_week)}
-        return "\n".join(["My lineup as set in Sleeper:", *format_lineup(ctx.conn, lineup, by_id)])
-
-    @tool
-    def get_fantasy_team_roster(fantasy_team: str) -> str:
-        """List a fantasy team's roster: another manager's team in my league
-        (with injury designations and this week's projections). `fantasy_team`
-        is matched loosely against the league's fantasy team names and manager
-        display names. Not for NFL teams (Seattle, Chiefs, ...): use
-        get_nfl_team_roster for those."""
-        row = storage.find_roster_by_fantasy_team(ctx.conn, ctx.league_id, fantasy_team)
-        if not row:
-            if nfl_teams.resolve_nfl_team(fantasy_team):
-                return (
-                    f"No fantasy team in my league matches '{fantasy_team}'. It names an NFL team: "
-                    "call get_nfl_team_roster for that roster."
-                )
-            return f"No fantasy team matching '{fantasy_team}'."
-        label = storage.fantasy_team_label(ctx.conn, ctx.league_id, row["owner_id"])
-        by_id = {p.player_id: p for p in ctx.projections(ctx.current_week)}
-        lines = [f"{label}:"]
-        for pid in json.loads(row["players"]):
-            proj = by_id.get(pid)
-            status = storage.get_injury_status(ctx.conn, pid)
-            lines.append("  " + (_fmt_player(proj) if proj else storage.player_name(ctx.conn, pid) + _status_tag(status)))
-        return "\n".join(lines)
-
-    @tool
-    def get_nfl_team_roster(team: str) -> str:
-        """Who plays for an NFL team right now, from the synced Sleeper player
-        catalog: fantasy-relevant positions in depth-chart order, with injury
-        designations, this week's projection, and whether each player is on my
-        roster, another manager's roster, or a free agent. `team` can be an
-        abbreviation, city or nickname ('SEA', 'Seattle', 'Seahawks'). Use for
-        'who is on <NFL team>', 'who is <team>'s WR1', or which team a player
-        is on. Never answer these from memory: players change teams."""
-        matches = nfl_teams.resolve_nfl_team(team)
-        if not matches:
-            return f"No NFL team matching '{team}'."
-        if len(matches) > 1:
-            options = "; ".join(nfl_teams.nfl_team_label(a) for a in matches)
-            return f"'{team}' is ambiguous: {options}. Ask the user which one, then retry."
-        abbr = matches[0]
-        slots = set(ctx.roster_positions())
-        eligible = set().union(*(ROSTER_SLOT_ELIGIBILITY.get(s, set()) for s in slots))
-        positions = [p for p in [*SKILL_POSITIONS, "DEF", *IDP_POSITIONS] if p in eligible]
-        players = storage.players_on_nfl_team(ctx.conn, abbr, positions)
-        if not players:
-            return f"No players listed for {nfl_teams.nfl_team_label(abbr)}. Try sync_league."
-
-        # player_id -> owner label; my players also carry their slot, so the
-        # model never has to guess whether one of mine starts.
-        owners: dict[str, str] = {}
-        for r in ctx.conn.execute("SELECT roster_id, owner_id, players FROM rosters WHERE league_id = ?", (ctx.league_id,)):
-            if r["owner_id"] != ctx.user_id:
-                label = (
-                    storage.fantasy_team_label(ctx.conn, ctx.league_id, r["owner_id"]) if r["owner_id"]
-                    else f"unclaimed fantasy team (roster {r['roster_id']})"
-                )
-                owners.update({pid: label for pid in json.loads(r["players"] or "[]")})
-        my_slots: dict[str, str] = {}
-        lineup = my_lineup(ctx)
-        if lineup:
-            my_slots.update({pid: "starter" for _, pid in lineup.starters if pid})
-            my_slots.update({pid: "bench" for pid in lineup.bench})
-            my_slots.update({pid: "IR" for pid in lineup.ir})
-        owners.update({pid: "MY ROSTER" for pid in my_slots})
-        by_id = {p.player_id: p for p in ctx.projections(ctx.current_week)}
-
-        # One ownership line per fantasy team, mine first: per-player labels
-        # alone get dropped when the model summarizes a long list.
-        rostered: dict[str, list[str]] = {}
-        for p in players:
-            pid = p["player_id"]
-            if pid in owners:
-                slot = f" ({my_slots[pid]})" if pid in my_slots else ""
-                rostered.setdefault(owners[pid], []).append(f"{p['first_name']} {p['last_name']}{slot}")
-        summary = "; ".join(
-            f"{owner}: {', '.join(names)}" for owner, names in sorted(rostered.items(), key=lambda kv: kv[0] != "MY ROSTER")
-        )
-        lines = [
-            f"{nfl_teams.nfl_team_label(abbr)}, from the Sleeper player catalog "
-            f"(synced {storage.players_last_synced(ctx.conn)}). Depth-chart order within each position.",
-            f"Rostered in my league: {summary or 'none'}. Everyone else is a free agent.",
-        ]
-        for pos in positions:
-            group = [p for p in players if p["position"] == pos]
-            if not group:
-                continue
-            lines.append(f"{pos}:")
-            for p in group:
-                proj = by_id.get(p["player_id"])
-                text = _fmt_player(proj) if proj else storage.player_name(ctx.conn, p["player_id"]) + _status_tag(p["injury_status"])
-                if p["status"] and p["status"] != "Active" and not p["injury_status"]:
-                    text += f" (status: {p['status']})"
-                pid = p["player_id"]
-                owner = owners.get(pid, "free agent") + (f" ({my_slots[pid]})" if pid in my_slots else "")
-                lines.append(f"  {text} - {owner}")
-        return "\n".join(lines)
-
-    @tool
-    def get_recent_transactions(limit: int = 10) -> str:
-        """Recent adds, drops, waiver claims and trades across the league, newest first."""
-        txns = storage.get_recent_transactions(ctx.conn, ctx.league_id, limit=limit)
-        if not txns:
-            return "No transactions recorded."
-        lines = []
-        for t in txns:
-            adds = ", ".join(storage.player_name(ctx.conn, pid) for pid in (json.loads(t["adds"]) or {}))
-            drops = ", ".join(storage.player_name(ctx.conn, pid) for pid in (json.loads(t["drops"]) or {}))
-            lines.append(f"week {t['week']} {t['type']} ({t['status']}): +[{adds or 'none'}] -[{drops or 'none'}]")
-        return "\n".join(lines)
-
-    @tool
-    def get_projections(players: str = "", position: str = "", limit: int = 0, week: int = 0) -> str:
-        """Projections for ONE week, rostered or not. Pass `players`, a
-        comma-separated list of names, to get exactly those players in one call
-        (e.g. to compare options). Or pass `position` (QB/RB/WR/TE/K/DEF, or IDP
-        groups DL/LB/DB) for every player there projected to score, best first;
-        `limit` keeps only the top N. Each line has the mean projection, injury designation, its
-        uncertainty (std dev), and how many sources agreed. Projections already
-        include injury discounts (an Out/IR player projects ~0). Defaults to the
-        current week."""
-        target_week = week or ctx.current_week
-        table = ctx.projections(target_week)
-
-        def line(p: AdjustedProjection) -> str:
-            return f"{_fmt_player(p)}, std {p.variance ** 0.5:.1f}, {p.num_sources} source(s)"
-
-        if players:
-            by_id = {p.player_id: p for p in table}
-            lines = []
-            for name in _names(players):
-                pid, problem = resolve(name)
-                if not pid:
-                    lines.append(problem)
-                elif pid in by_id:
-                    lines.append(line(by_id[pid]))
-                else:
-                    lines.append(f"{storage.player_name(ctx.conn, pid)}: no projection for week {target_week}.")
-            return "\n".join(lines)
-        if position:
-            # Only players projected to score: about 90% of a position's
-            # players (practice squad, inactive, Out) project 0.0, and listing
-            # them made one call ~18k tokens. Stashes: get_injured_stash_candidates.
-            table = [p for p in table if _matches_position(p, position) and p.mean > 0]
-        # With neither, the whole league's table would be thousands of lines.
-        return "\n".join(line(p) for p in table[: limit or (None if position else 20)]) or "No projections found."
-
-    @tool
-    def get_season_projections(position: str = "", limit: int = 20, full_season: bool = False) -> str:
-        """Season-long projected point totals, optionally filtered to one
-        position. By default these are REST-OF-SEASON (from the current week on),
-        which is what trade, stash and 'who's better going forward' questions
-        need; set full_season=True for whole-season totals (e.g. comparing to
-        preseason rankings). IR/PUP/suspended players are discounted to 0 here -
-        for injured stash targets use get_injured_stash_candidates instead. For
-        'who do I start this week', use get_projections or recommend_lineup."""
-        table = ctx.season_projections(rest_of_season=not full_season)
-        if position:
-            table = [p for p in table if _matches_position(p, position)]
-        label = "full season" if full_season else f"rest of season (weeks {ctx.current_week}+)"
-        lines = [f"{_fmt_player(p)} over the {label}, std {p.variance ** 0.5:.1f}" for p in table[:limit]]
-        return "\n".join(lines) or "No season projections found."
-
-    @tool
-    def get_season_to_date_leaders(position: str = "", limit: int = 20) -> str:
-        """Points players have ACTUALLY scored so far this season (all completed
-        weeks), league-wide - rostered or not - under this league's scoring,
-        with games played and per-game average. Use for 'top RBs so far', 'who
-        has been the best TE this year', 'is X having a good season'. For future
-        value use get_season_projections; for my own team's weekly scores use
-        get_week_results."""
-        through = last_completed_week(ctx.current_week)
-        try:
-            leaders = ctx._cached(
-                ("leaders", through),
-                lambda: season_to_date(ctx.conn, ctx.season, through, ctx.scoring_settings(), limit=500),
-            )
-        except Exception as e:
-            return f"Season-to-date stats are unavailable right now ({e})."
-        if position:
-            leaders = [lead for lead in leaders if position.upper() in (
-                (lead.position or "").upper(), _group(lead.position).upper())]
-        if not leaders:
-            return f"No {ctx.season} stats found through week {through}."
-        lines = [f"{ctx.season} actual points, weeks 1-{through}:"]
-        for lead in leaders[: max(1, min(limit, 50))]:
-            lines.append(
-                f"{lead.name} ({lead.position or '?'}/{lead.team or 'FA'}){_status_tag(lead.injury_status)}: "
-                f"{lead.total:.1f} pts in {lead.games} game(s), {lead.total / max(lead.games, 1):.1f}/game"
-            )
-        return "\n".join(lines)
-
-    @tool
-    def recommend_lineup(week: int = 0) -> str:
-        """The optimal start/sit for my roster, solved against my league's roster
-        slots from projections (which already discount injured players). Returns
-        each starting slot with its player's NFL team, projection and std dev;
-        for a slot that should change, the player it replaces with the same
-        facts; the latest news on the players in changed slots; and injured
-        bench players who could move to IR. These are the facts to explain a
-        start/sit with. This is what the lineup SHOULD be; for the lineup
-        currently set in Sleeper use get_my_roster. Players in IR slots are not
-        considered. Defaults to the current week."""
-        target_week = week or ctx.current_week
-        lineup = my_lineup(ctx)
-        if lineup is None:
-            return "Could not find your roster in this league."
-        # Sleeper won't start a player sitting in an IR slot.
-        player_ids = [pid for pid in my_roster_ids() if pid not in lineup.ir]
-
-        projections = {p.player_id: p for p in ctx.projections(target_week)}
-        current = [pid or sleeper_writes.EMPTY_SLOT for _slot, pid in lineup.starters]
-        slots = optimize_lineup(ctx.roster_positions(), player_ids, projections,
-                                storage.player_meta(ctx.conn, player_ids), current_starters=current)
-        started = {s.player_id: s.slot for s in slots if s.player_id}
-
-        def facts(pid: str) -> str:
-            p = projections.get(pid)
-            if not p:
-                status = storage.get_injury_status(ctx.conn, pid)
-                return f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}: no projection"
-            text = f"{_fmt_player(p)}, std {p.variance ** 0.5:.1f}"
-            if p.injury_multiplier != 1.0:
-                text += f", injury adjustment x{p.injury_multiplier:.2f}"
-            if p.matchup_multiplier != 1.0:
-                text += f", matchup adjustment x{p.matchup_multiplier:.2f}"
-            return text
-
-        lines, changed = [], []
-        for s, (_slot, was) in zip(slots, lineup.starters):
-            text = facts(s.player_id) if s.player_id else "(empty)"
-            if s.player_id != was:
-                text += f" - CHANGE, in for {facts(was) if was else 'an empty slot'}"
-                if was in started:
-                    text += f" (who moves to {started[was]})"
-                changed += [pid for pid in (s.player_id, was) if pid]
-            lines.append(f"{s.slot}: {text}")
-        lines.append(f"Total projected: {sum(s.mean for s in slots):.1f}")
-        news = []
-        for pid in dict.fromkeys(changed):
-            for row in storage.get_player_news(ctx.conn, pid, limit=1):
-                when = f" ({datetime.fromtimestamp(row['published'] / 1000, tz=timezone.utc):%Y-%m-%d})" if row["published"] else ""
-                # Capped: some analyses run to a page, and small models lose the thread.
-                analysis = f" {row['analysis'][:300]}{'...' if len(row['analysis']) > 300 else ''}" if row["analysis"] else ""
-                news.append(f"  {storage.player_name(ctx.conn, pid)}{when}: {row['title']}.{analysis}")
-        if news:
-            lines += ["Latest news on the players in changed slots:", *news]
-        lines.append("To enact: `lineup --live` shows the changes vs Sleeper, `lineup --apply` sets them "
-                     "(the user confirms; players whose game started stay locked).")
-        for pid in player_ids:
-            status = storage.get_injury_status(ctx.conn, pid)
-            if pid not in started and _ir_hint(status):
-                lines.append(f"Bench: {storage.player_name(ctx.conn, pid)} [{status}]{_ir_hint(status)}")
-        for pid in lineup.ir:
-            status = storage.get_injury_status(ctx.conn, pid)
-            if status not in IR_SLOT_DEFINITE | IR_SLOT_MAYBE:
-                lines.append(f"IR slot: {storage.player_name(ctx.conn, pid)}{_status_tag(status)} no longer has "
-                             "an IR-eligible designation - move him out of IR to be able to start him.")
-        return "\n".join(lines)
-
-    @tool
-    def get_waiver_targets(position: str = "", limit_per_position: int = 5, horizon: str = "week") -> str:
-        """Best available (not on ANY roster in my league) players, grouped by
-        position, ranked by value over replacement (VOR), with a suggested FAAB
-        bid percentage. `horizon`:
-        - 'week' (default): this week's pickups. Players whose game has ALREADY
-          KICKED OFF this week, or whose team is on bye, are excluded - they
-          can't score for me this week.
-        - 'season': rest-of-season value - use for stashes and long-term adds.
-          Not filtered by this week's games.
-        Ask for both when the user wants 'pickups' without saying which. For
-        injured stash targets, use get_injured_stash_candidates. Optionally
-        filter to one position."""
-        use_season = horizon.lower().startswith("season")
-        table = ctx.season_projections() if use_season else ctx.projections(ctx.current_week)
-
-        excluded: dict[str, str] = {}
-        note = ""
-        if not use_season:
-            statuses = schedule.load_game_statuses(ctx.season, ctx.current_week)
-            if statuses:
-                excluded = unavailable_this_week(table, statuses)
-            else:
-                note = "(NFL schedule unavailable - could not exclude players whose game already started.)\n"
-
-        grouped = suggest_waivers_by_position(
-            ctx.conn, ctx.league_id, ctx.roster_positions(), table, limit_per_position, set(excluded),
-            weeks=weeks_remaining(ctx.current_week) if use_season else 1,
-        )
-        if position:
-            grouped = {k: v for k, v in grouped.items() if k.upper() == position.upper()}
-        if not grouped:
-            return note + "No waiver targets found."
-
-        label = f"rest of season (weeks {ctx.current_week}+)" if use_season else f"week {ctx.current_week}"
-        lines = [f"{note}Horizon: {label}."]
-        if excluded:
-            played = sum(1 for s in excluded.values() if s == schedule.PLAYED)
-            lines.append(f"Excluded {played} player(s) whose game already started and "
-                         f"{len(excluded) - played} on bye this week.")
-        for group, suggestions in grouped.items():
-            baseline = suggestions[0].proj.mean - suggestions[0].vor
-            lines.append(f"{group} (replacement level {baseline:.1f} pts):")
-            for s in suggestions:
-                lines.append(f"  {_fmt_player(s.proj)}, VOR {s.vor:+.1f}, suggested bid {s.bid_pct}% of FAAB")
-        lines.append('To enact: `claim "Name" --drop "Name" --bid N` (waivers) or `add "Name" --drop "Name"` '
-                     "(free agent, immediate); the user confirms either.")
-        return "\n".join(lines)
-
-    @tool
-    def get_injured_stash_candidates(position: str = "", limit: int = 6) -> str:
-        """Injured players NOT on any roster in my league (IR, PUP, Out, Doubtful,
-        suspended...) ranked by what they're projected to score over the rest of
-        the season IF HEALTHY, each with their latest news. Use for 'who can I
-        stash', 'injured player worth picking up'. The healthy number is an upper
-        bound: weigh it against the return timeline in the news, and say so."""
-        rostered = get_rostered_player_ids(ctx.conn, ctx.league_id)
-        candidates = [
-            p for p in ctx.season_projections(healthy=True)
-            if p.injury_status in STASH_DESIGNATIONS and p.player_id not in rostered and p.mean > 0
-            and (not position or _matches_position(p, position))
-        ][: max(1, min(limit, 10))]
-        if not candidates:
-            return "No injured, unrostered players with a meaningful healthy projection."
-
-        chunks = []
-        for p in candidates:
-            news = fresh_news(p.player_id, limit=1)
-            lines = [f"{p.name} ({p.position}/{p.team or 'FA'}) [{p.injury_status}]: "
-                     f"{p.mean:.1f} pts rest-of-season if healthy"]
-            if news:
-                lines.append(f"  Latest: {news[0]['title']}")
-                if news[0]["analysis"]:
-                    lines.append(f"  Analysis: {news[0]['analysis']}")
-            else:
-                lines.append("  No recent news found - return timeline unknown.")
-            chunks.append("\n".join(lines))
-        return "\n".join(chunks)
-
-    @tool
-    def evaluate_proposed_trade(give: str, receive: str, horizon: str = "season") -> str:
-        """Score a trade by projected value change. `give` and `receive` are
-        comma-separated player names, e.g. give='Saquon Barkley', receive='Josh Allen'.
-        Use full names; if a name matches several players the tool lists them -
-        ask the user and retry with the exact 'Name (POS/TEAM)' shown.
-        `horizon` is 'season' (rest-of-season value, the default and usually what
-        a trade should be judged on) or 'week' (this week's projection only)."""
-        def resolve_all(names: str) -> tuple[list[str], list[str]]:
-            ids, problems = [], []
-            for name in _names(names):
-                pid, problem = resolve(name)
-                if pid:
-                    ids.append(pid)
-                else:
-                    problems.append(problem)
-            return ids, problems
-
-        give_ids, give_problems = resolve_all(give)
-        recv_ids, recv_problems = resolve_all(receive)
-        if give_problems or recv_problems:
-            return "\n".join(give_problems + recv_problems)
-
-        use_season = horizon.lower() != "week"
-        table = ctx.season_projections() if use_season else ctx.projections(ctx.current_week)
-        label = f"rest of season (weeks {ctx.current_week}+)" if use_season else f"week {ctx.current_week}"
-        result = evaluate_trade(give_ids, recv_ids, {p.player_id: p for p in table})
-        return (
-            f"Horizon: {label}\n"
-            f"Give: {', '.join(p.name for p in result.give)} ({result.give_total:.1f} pts)\n"
-            f"Receive: {', '.join(p.name for p in result.receive)} ({result.receive_total:.1f} pts)\n"
-            f"Verdict: {result.verdict} ({result.delta:+.1f} pts over the {label})"
-        )
-
-    def _format_news(rows, header: str) -> str:
-        lines = [header]
-        for r in rows:
-            lines.append(f"- {r['title']}")
-            if r["description"]:
-                lines.append(f"  {r['description']}")
-            if r["analysis"]:
-                lines.append(f"  Analysis: {r['analysis']}")
-        return "\n".join(lines)
-
-    @tool
-    def get_player_news(players: str, limit: int = 3) -> str:
-        """Latest news for ANY NFL players - on my roster, another team's, or
-        free agents - fetched live: a factual description plus a fantasy
-        analysis. `players` is one name or a comma-separated list, so several
-        players take one call. Use when a question is about a player's situation,
-        role, or injury; it carries context projections cannot (timelines,
-        depth-chart chatter). Use full names; ambiguous names return a candidate
-        list. `limit` is items per player (max 5)."""
-        sections = []
-        for name in _names(players):
-            pid, problem = resolve(name)
-            if not pid:
-                sections.append(problem)
-                continue
-            rows = fresh_news(pid, limit=min(limit, 5))
-            status = storage.get_injury_status(ctx.conn, pid)
-            label = f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}"
-            sections.append(_format_news(rows, f"News for {label}:") if rows else f"No news found for {label}.")
-        return "\n\n".join(sections)
-
-    @tool
-    def get_roster_news(items_per_player: int = 2) -> str:
-        """Recent news across every player on MY roster, from the cache refreshed
-        at each sync (data older than a couple of hours is re-synced before you
-        are called). Use for open-ended 'anything I should know this week'
-        questions. For any other player, use get_player_news."""
-        player_ids = my_roster_ids()
-        if player_ids is None:
-            return "Could not find your roster in this league."
-        capped = max(1, min(items_per_player, 3))
-        chunks = []
-        for pid in player_ids:
-            rows = storage.get_player_news(ctx.conn, pid, limit=capped)
-            if rows:
-                status = storage.get_injury_status(ctx.conn, pid)
-                chunks.append(_format_news(rows, f"{storage.player_name(ctx.conn, pid)}{_status_tag(status)}:"))
-        if not chunks:
-            return "No cached roster news. A `sync_league` call refreshes it."
-        return "\n\n".join(chunks)
-
-    @tool
-    def get_trending_players(kind: str = "add", limit: int = 15, lookback_hours: int = 24) -> str:
-        """Players being added or dropped most across ALL Sleeper leagues right now.
-        `kind` is 'add' or 'drop'. This is market sentiment - it reflects news and
-        hype the projection system cannot see - so use it as context alongside
-        projections, never as a replacement for them. Each line says whether the
-        player is already rostered in this league."""
-        with SleeperClient() as client:
-            trending = client.get_trending(kind if kind in ("add", "drop") else "add", lookback_hours, limit)
-        if not trending:
-            return "No trending data available."
-        rostered = get_rostered_player_ids(ctx.conn, ctx.league_id)
-        lines = []
-        for entry in trending:
-            pid = entry["player_id"]
-            status = "already rostered in this league" if pid in rostered else "available"
-            injury = _status_tag(storage.get_injury_status(ctx.conn, pid))
-            lines.append(f"{storage.player_name(ctx.conn, pid)}{injury}: {entry['count']:,} leagues ({status})")
-        return "\n".join(lines)
-
-    @tool
-    def get_week_results(week: int = 0) -> str:
-        """Recap of a week that has been played: my per-player points and total,
-        my opponent's name, total and top scorers, the result (win/loss/tie), the
-        best lineup possible in hindsight and points left on my bench. Defaults to
-        the LAST COMPLETED week (current week - 1) - use for 'how did I do',
-        'did I win', 'recap last week'. Pass the current week explicitly for an
-        in-progress live score."""
-        target_week = week or last_completed_week(ctx.current_week)
-        roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
-        if roster_id is None:
-            return "Could not find your roster in this league."
-        result = summarize_week(ctx.conn, ctx.league_id, roster_id, target_week, ctx.roster_positions())
-        if not result:
-            return f"No scored results stored for week {target_week} yet."
-
-        started = "\n".join(f"  {name}: {pts:.1f}" for name, pts in result.started)
-        bench = "\n".join(f"  {name}: {pts:.1f}" for name, pts in result.bench)
-        if result.opponent_name:
-            top = ", ".join(f"{name} {pts:.1f}" for name, pts in result.opponent_top)
-            matchup = (
-                f"Result: {result.outcome.upper()} {result.actual_total:.1f} - {result.opponent_total:.1f} "
-                f"vs. {result.opponent_name} (margin {result.actual_total - result.opponent_total:+.1f})\n"
-                f"Opponent's top scorers: {top or 'n/a'}\n"
-            )
-        else:
-            matchup = "No opponent that week (bye).\n"
-        in_progress = " (in progress - scores may still change)" if target_week >= ctx.current_week else ""
-        return (
-            f"Week {result.week} results{in_progress}.\n{matchup}Started:\n{started}\n"
-            f"Actual total: {result.actual_total:.1f}\n"
-            f"Best possible with hindsight: {result.optimal_total:.1f}\n"
-            f"Points left on bench: {result.points_left_on_bench:.1f}\n"
-            f"Bench:\n{bench}"
-        )
-
-    @tool
-    def sync_league() -> str:
-        """Full refresh of this league from Sleeper: rosters, every week's
-        matchups and scores, transactions, injury designations (when the local
-        copy is more than a few hours old) and my roster's news. Data is already
-        auto-refreshed when it's over ~2 hours old, so call this only when the
-        user says something just happened or asks to refresh."""
-        try:
-            run_sync(ctx.conn, league_query=ctx.league_id, log=log_to_stderr)
-        except SleeperError as e:
-            return f"Sync failed: {e}"
-        ctx.reload_state()
-        return f"Refreshed {ctx.league_name()} from Sleeper. Season {ctx.season}, week {ctx.current_week}."
-
-    @tool
-    def switch_league(league_name: str) -> str:
-        """Point every tool at a different one of the user's Sleeper leagues
-        (matched by name, loosely), syncing it first. Use when the user asks
-        about a league other than the current one. If the name doesn't identify
-        exactly one league, the reply lists them - ask the user which."""
-        try:
-            run_sync(ctx.conn, league_query=league_name, log=log_to_stderr)
-        except SleeperError as e:
-            return f"Could not switch: {e}"
-        ctx.reload_state()
-        return f"Now using {ctx.league_name()} (your fantasy team: {ctx.fantasy_team_name()}), week {ctx.current_week}."
-
-    @tool
-    def get_pending_claims() -> str:
-        """My waiver claims that are still pending (not yet processed at the
-        waiver run): who I claimed, who I'd drop, and the bid. Use for 'what
-        claims do I have in', 'did my claim go in'. Pending claims are not on
-        my roster yet, so get_my_roster won't show them. Needs the user's
-        SLEEPER_TOKEN."""
-        roster_id = storage.get_roster_id_for_user(ctx.conn, ctx.league_id, ctx.user_id)
-        try:
-            claims = sleeper_writes.pending_claims(ctx.league_id, roster_id)
-        except SleeperError as e:
-            return f"Pending claims are unavailable: {e}"
-        if not claims:
-            return "No pending waiver claims."
-        return "\n".join(sleeper_writes.describe_claim(ctx.conn, t) for t in claims)
-
-    @tool
-    def remember_preference(note: str) -> str:
-        """Save a LASTING preference or fact about how the user plays, so every
-        future conversation applies it (e.g. 'Risk-averse at FLEX: prefers a
-        high floor', 'Never recommend Dallas players'). One short sentence.
-        Not for one-off requests."""
-        prefs = storage.add_preference(ctx.conn, note.strip())
-        return f"Saved. Remembered preferences: {len(prefs)}."
-
-    @tool
-    def forget_preference(number: int) -> str:
-        """Delete remembered preference `number` (1-based, as numbered in the
-        USER PREFERENCES section of your instructions)."""
-        removed = storage.remove_preference(ctx.conn, number)
-        return f"Forgot: {removed}" if removed else f"No preference #{number}."
-
-    return [
-        remember_preference,
-        forget_preference,
-        get_league_state,
-        get_my_roster,
-        get_fantasy_team_roster,
-        get_nfl_team_roster,
-        get_recent_transactions,
-        get_projections,
-        get_season_projections,
-        get_season_to_date_leaders,
-        recommend_lineup,
-        get_waiver_targets,
-        get_injured_stash_candidates,
-        get_pending_claims,
-        evaluate_proposed_trade,
-        get_player_news,
-        get_roster_news,
-        get_trending_players,
-        get_week_results,
-        sync_league,
-        switch_league,
+def get_league_state(ctx: Ctx) -> ToolResult:
+    conn, lg = ctx.conn, data.League(ctx.conn, ctx.league_id)
+    league = data.league_row(conn, ctx.league_id)
+    fmt = json.loads(league["format"])
+    week, last = data.weeks(conn)
+    teams = data.fantasy_teams(conn, ctx.league_id)
+    me = next(t for t in teams if t["roster_id"] == lg.me)
+    opp = data.opponent(conn, ctx.league_id, week, lg.me) if week else None
+    opp_text = f"{opp['name']} (fantasy team, record {data.record(opp)})" if opp else "none stored"
+    lines = [
+        f"LEAGUE: {league['name']}. SEASON: {fmt['season']}. THIS WEEK: {week}. LAST COMPLETED WEEK: {last}",
+        f"MY OPPONENT THIS WEEK: {opp_text}",
+        "STANDINGS (fantasy teams, by wins then points for):",
     ]
+    lead = teams[0]
+    for i, t in enumerate(teams, 1):
+        mine = " (my fantasy team)" if t["roster_id"] == lg.me else ""
+        behind = ((lead["wins"] - t["wins"]) + (t["losses"] - lead["losses"])) / 2
+        back = "first place" if t is lead else f"{behind:g} games behind first"
+        lines.append(
+            f"  {i}. {t['name']}{mine}, record {data.record(t)}, {back}, points for {render.pts(t['points_for'])}"
+        )
+    lines += render.format_lines(fmt, lg.me, week)
+    summary = (
+        f"Week {week} of the {fmt['season']} season in {league['name']}; my fantasy team {me['name']} is "
+        f"{render.ordinal(teams.index(me) + 1)} of {len(teams)} fantasy teams at {data.record(me)}; opponent this week: {opp_text}."
+    )
+    sources = [rosters_source(conn, ctx.league_id),
+               {"label": "Sleeper matchups", "as_of": data.refresh_ok_at(conn, "sleeper", "matchups")}]
+    return ToolResult(block(summary, sources, lines, []), sources)
+
+
+def _roster_result(ctx: Ctx, roster_id: int, summary: str) -> ToolResult:
+    lg = data.League(ctx.conn, ctx.league_id)
+    items = lg.roster(roster_id)
+    notes, gaps, facts = {}, [], []
+    for item in items:
+        p = item["player"]
+        if p is None or not lg.week:
+            continue
+        inactive, inactive_gaps = service.inactive_fact(ctx.conn, p["player_id"], lg.week)
+        gaps += [g for g in inactive_gaps if g not in gaps]
+        if inactive:
+            facts.append(inactive)
+            word = "INACTIVE" if inactive["value"]["inactive"] else "not on the inactive list"
+            notes[p["player_id"]] = f"{word} this week ({render.fact_source(inactive)})"
+    lines = roster_lines(lg, roster_id, notes)
+    fmt = data.league_format(ctx.conn, ctx.league_id)
+    on_ir = [i["player"] for i in items if i["slot"] == "IR"]
+    allowed = fmt["ir_allowed_designations"]
+    if fmt["ir_slots"]:
+        lines.append(f"IR SLOTS: {fmt['ir_slots']} in this league, {len(on_ir)} in use; they allow only these "
+                     "designations: " + ", ".join(allowed))
+    else:
+        lines.append("IR SLOTS: none in this league, so no player can be moved to IR")
+    for p in on_ir:
+        status = lg.injury_status(p["player_id"])
+        if status not in allowed:
+            lines.append(f"IR FLAG: {p['full_name']} is in an IR slot with designation "
+                         f"{status or 'none'}, which this league's IR slots do not allow")
+    if any(i["player"] and lg.ref(i["player"])["game"] is None for i in items):
+        gaps.append("game time not available for players whose NFL team has no stored game this week")
+    facts += [f for f in lg.injury_facts.values() if f and f["source"] != "sleeper"]  # the catalog is listed already
+    sources = [rosters_source(ctx.conn, ctx.league_id), catalog_source(ctx.conn), *render.fact_sources(facts)]
+    games = ctx.conn.execute("select max(as_of) from nfl_game").fetchone()[0]
+    if games:
+        sources.append({"label": "NFL schedule and game states", "as_of": games})
+    return ToolResult(block(summary, sources, lines, [*gaps, PRACTICE_NOTE]), sources)
+
+
+def get_my_roster(ctx: Ctx) -> ToolResult:
+    lg = data.League(ctx.conn, ctx.league_id)
+    items = lg.roster(lg.me)
+    starting = items[: len(lg.slots)]
+    empty = sum(i["player"] is None for i in starting)
+    counts = {s: sum(i["slot"] == s for i in items) for s in ("BN", "IR", "TAXI")}
+    byes = sum(bool(i["player"] and (g := lg.ref(i["player"])["game"]) and g["status"] == "bye") for i in starting)
+    week, _ = data.weeks(ctx.conn)
+    summary = (
+        f"My lineup as set in Sleeper for week {week}: {len(starting) - empty} of {len(starting)} starting slots "
+        f"filled ({empty} empty), {byes} starters on a bye, {counts['BN']} on the bench, {counts['IR']} on IR"
+        + (f", {counts['TAXI']} on taxi" if counts["TAXI"] else "") + ". This is not a recommendation."
+    )
+    return _roster_result(ctx, lg.me, summary)
+
+
+def get_fantasy_team_roster(ctx: Ctx, fantasy_team: str) -> ToolResult:
+    team = _one_fantasy_team(ctx, fantasy_team)
+    if isinstance(team, ToolResult):
+        return team
+    teams = data.fantasy_teams(ctx.conn, ctx.league_id)
+    mine = team["roster_id"] == data.my_roster_id(ctx.conn, ctx.league_id)
+    summary = (
+        f"{team['name']} (fantasy team{', mine' if mine else ''}), record {data.record(team)}, "
+        f"{render.ordinal(teams.index(team) + 1)} of {len(teams)} fantasy teams: lineup as set in Sleeper."
+    )
+    return _roster_result(ctx, team["roster_id"], summary)
+
+
+# 4-6: NFL facts (Sleeper catalog and stored news until stage 2.2)
+
+def get_nfl_team_roster(ctx: Ctx, nfl_team: str, position: str | None = None) -> ToolResult:
+    abbrs = resolve.nfl_team(nfl_team)
+    if not abbrs:
+        return error(f"no NFL team matches '{nfl_team}'")
+    if len(abbrs) > 1:
+        return ToolResult(f"AMBIGUOUS: several NFL teams fit '{nfl_team}': {', '.join(abbrs)}. Ask which one.")
+    abbr = abbrs[0]
+    roster = service.team_roster(ctx.conn, abbr, position)
+    lg = data.League(ctx.conn, ctx.league_id)
+    lines, current, bases = [], None, set()
+    for x in roster["players"]:
+        if x["position"] != current:
+            current = x["position"]
+            lines.append(f"{current}:")
+        ref = lg.ref(data.player(ctx.conn, x["player_id"])) | {"nfl_team": abbr}
+        parts = [player_line(ref)]
+        if x["depth"]:
+            parts.append(f"depth {x['depth']['value']['slot_label']}")
+            bases.add(x["depth"]["source_label"])
+        else:
+            parts.append("depth: not listed")
+        if x["injury"]:
+            parts.append(render.injury_text(x["injury"]))
+        parts += [f"usage {render.usage_text(u)}" for u in x["usage"]]
+        lines.append("  " + ", ".join(parts))
+    city, nick = resolve.NFL_TEAMS[abbr]
+    what = f"{position.upper()} players" if position else "players at fantasy positions"
+    summary = f"{abbr} ({city} {nick}) NFL team: {len(roster['players'])} {what}, in depth order."
+    warnings = [*roster["set"]["gaps"], PRACTICE_NOTE]
+    if bases:
+        warnings.append("depth order comes from " + " and ".join(sorted(bases)))
+    sources = render.fact_sources(roster["set"]["facts"])
+    return ToolResult(block(summary, sources, lines, warnings), sources)
+
+
+def _news_line(f: dict) -> str:
+    v = f["value"]
+    text = " ".join(x for x in (v["title"], v["description"], v["analysis"]) if x)
+    return f"NEWS ({render.fact_source(f)}, quoted as published): {text}"
+
+
+def get_player(ctx: Ctx, name: str) -> ToolResult:
+    lg = data.League(ctx.conn, ctx.league_id)
+    p = _one_player(ctx, lg, name)
+    if isinstance(p, ToolResult):
+        return p
+    f = service.player_facts(ctx.conn, p["player_id"])
+    roster = f["roster"]
+    nfl_team = roster["nfl_team"] if roster else None
+    ref = lg.ref(p) | {"nfl_team": nfl_team, "game": f["game"]}
+    if roster:
+        city, nick = resolve.NFL_TEAMS[nfl_team]
+        team_line = f"NFL TEAM: {nfl_team}, the {city} {nick} ({render.fact_source(roster)})"
+        team_line += "".join(f"; {a['source']} still lists {a['value']} ({when(a['as_of'])})" for a in roster["also"])
+    else:
+        team_line = "NFL TEAM: none (no source lists him on an NFL team)"
+    lines = [player_line(ref), team_line]
+    if f["game"] is None and nfl_team:
+        lines.append(f"game this week: none stored for {nfl_team}")
+    lines.append(f"depth: {f['depth']['value']['slot_label']} ({render.fact_source(f['depth'])})" if f["depth"]
+                 else "depth: not listed")
+    lines.append(render.injury_text(f["injury"]))
+    injury = f["injury"]["value"] if f["injury"] else {}
+    if injury.get("return_date"):
+        source = service.LABEL[(injury["return_date_source"], "injury")]
+        lines.append(f"RETURN: expected around {injury['return_date']} (source {source}, as of "
+                     f"{when(injury['return_date_as_of'])}; a news estimate, not an official report)")
+    elif injury.get("designation") == "IR":
+        lines.append("RETURN: unknown (no source has a return date)")
+    if f["inactive"]:
+        word = "INACTIVE" if f["inactive"]["value"]["inactive"] else "not on the inactive list"
+        lines.append(f"game day: {word} ({render.fact_source(f['inactive'])})")
+    lines += [f"usage {render.usage_text(u)}" for u in f["usage"]] or ["usage: none stored"]
+    lines += [_news_line(n) for n in f["news"]] or ["NEWS: none stored for him"]
+    summary = f"{ref['name']}: {ref['position']}, NFL team {nfl_team or 'none'}, {render.status_label(ref)}."
+    sources = [catalog_source(ctx.conn), *render.fact_sources(f["set"]["facts"])]
+    return ToolResult(block(summary, sources, lines, f["set"]["gaps"]), sources)
+
+
+def get_my_roster_news(ctx: Ctx, days: int = 7) -> ToolResult:
+    lg = data.League(ctx.conn, ctx.league_id)
+    since = (datetime.now(UTC) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    groups, warnings = [], []
+    for item in lg.roster(lg.me):
+        p = item["player"]
+        if p is None:
+            continue
+        facts, gaps = service.news_facts(ctx.conn, p["player_id"])
+        warnings += [g for g in gaps if g not in warnings]
+        news = [f for f in facts if f["as_of"] >= since]
+        if news:
+            relevant = any(s in " ".join(filter(None, (n["value"]["title"], n["value"]["description"]))).lower()
+                           for n in news for s in RELEVANT)
+            groups.append((relevant, p, news))
+    groups.sort(key=lambda g: not g[0])
+    lines, all_news = [], []
+    for relevant, p, news in groups:
+        mark = "DECISION-RELEVANT (injury, practice or role) " if relevant else ""
+        lines.append(f"{mark}{player_line(lg.ref(p))}:")
+        lines += [f"  {_news_line(n)}" for n in news]
+        all_news += news
+    n_rel = sum(g[0] for g in groups)
+    summary = (
+        f"News from the last {days} days for {len(groups)} players on my roster, {n_rel} with injury, practice or "
+        "role news." if groups else f"No news for players on my roster in the last {days} days."
+    )
+    sources = [rosters_source(ctx.conn, ctx.league_id), *render.fact_sources(all_news)]
+    return ToolResult(block(summary, sources, lines, warnings), sources)
+
+
+# 7: transactions
+
+TX_TYPES = {"free_agent": "free-agent move", "waiver": "waiver claim", "trade": "trade", "commissioner": "commissioner move"}
+
+
+def get_transactions(ctx: Ctx, fantasy_team: str | None = None, days: int = 7, type: str | None = None) -> ToolResult:
+    lg = data.League(ctx.conn, ctx.league_id)
+    roster_filter = None
+    if fantasy_team:
+        team = _one_fantasy_team(ctx, fantasy_team)
+        if isinstance(team, ToolResult):
+            return team
+        roster_filter = team["roster_id"]
+    since_ms = int((datetime.now(UTC) - timedelta(days=days)).timestamp() * 1000)
+    rows = ctx.conn.execute(
+        "select * from transaction_log where league_id = ? and status = 'complete' and created_ms >= ? "
+        "order by created_ms desc",
+        (ctx.league_id, since_ms),
+    ).fetchall()
+
+    def names(ids):
+        return ", ".join((data.player(ctx.conn, i) or {"full_name": i})["full_name"] for i in ids)
+
+    lines = []
+    for t in rows:
+        adds, drops = json.loads(t["adds"]) or {}, json.loads(t["drops"]) or {}
+        rosters = json.loads(t["roster_ids"]) or []
+        if roster_filter is not None and roster_filter not in rosters:
+            continue
+        if type in ("trade", "waiver") and t["type"] != type:
+            continue
+        if (type == "add" and not adds) or (type == "drop" and not drops):
+            continue
+        parts = []
+        for rid in rosters:
+            got = [p for p, r in adds.items() if r == rid]
+            lost = [p for p, r in drops.items() if r == rid]
+            side = f"{lg.names[rid]} (fantasy team)"
+            if got:
+                side += f" added {names(got)}"
+            if lost:
+                side += f"{',' if got else ''} dropped {names(lost)}"
+            parts.append(side)
+        when_ = datetime.fromtimestamp(t["created_ms"] / 1000, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        lines.append(f"{when(when_)}, {TX_TYPES.get(t['type'], t['type'])}: " + "; ".join(parts))
+    summary = f"{len(lines)} completed transactions in the last {days} days" + (
+        f" involving {fantasy_team}" if fantasy_team else "") + "."
+    warnings = ["pending waiver claims and open trade offers: not available in this version (they need a Sleeper login)",
+                "not available: FAAB bid amounts (not stored)"]
+    sources = [{"label": "Sleeper transactions", "as_of": data.refresh_ok_at(ctx.conn, "sleeper", "transactions")}]
+    return ToolResult(block(summary, sources, lines, warnings), sources)
+
+
+# 17: switch league
+
+def switch_league(ctx: Ctx, league_name: str) -> ToolResult:
+    leagues = get_json(ctx.conn, "leagues", [])
+    try:
+        league = resolve_league(leagues, league_name=league_name)
+    except LeagueNotFound as e:
+        return error(f"no league named '{league_name}'. My leagues: {', '.join(e.available)}")
+    if not league["selectable"]:
+        return error(f"{league['name']} cannot be used: {league['not_selectable_reason'].replace('_', ' ')}")
+    try:
+        select_league(ctx.conn, league["league_id"])
+    except SleeperError:
+        return error(f"could not load {league['name']} from Sleeper; still in the previous league")
+    ctx.league_id = league["league_id"]
+    return ToolResult(f"SWITCHED: now in {league['name']}. The CONTEXT on the next turn is for this league.")
+
+
+# 8-16: decisions, projections, leaders, results, trending (src/decisions, docs/data-contract.md section 9)
+
+PROVIDERS: dict[str, Callable] = decisions.PROVIDERS  # tool name -> (conn, league_id, **inputs) -> result dict
+WHAT = {
+    "get_projections": "projections are", "get_season_leaders": "season leaders are",
+    "recommend_lineup": "lineup recommendations are", "get_waiver_targets": "waiver targets are",
+    "get_injured_stash": "injured stash rankings are", "evaluate_trade": "trade evaluation is",
+    "find_trade_ideas": "trade ideas are", "get_trending_players": "Sleeper trends are",
+    "get_week_results": "week results are",
+}
+RENDER = {
+    "get_projections": render.projections, "get_season_leaders": render.leaders, "recommend_lineup": render.lineup,
+    "get_waiver_targets": render.waivers, "get_injured_stash": render.stash, "evaluate_trade": render.trade_evaluation,
+    "find_trade_ideas": render.trade_ideas, "get_trending_players": render.trending,
+    "get_week_results": render.week_results,
+}
+
+
+def _provided(name: str, ctx: Ctx, **inputs) -> ToolResult:
+    provider = PROVIDERS.get(name)
+    if provider is None:
+        return error(f"{WHAT[name]} not available in this version yet; nothing was computed")
+    try:
+        result = provider(ctx.conn, ctx.league_id, **inputs)
+    except decisions.NoData as e:  # the stored data cannot answer: say why, plainly
+        return error(str(e))
+    return ToolResult(RENDER[name](result), render.sources_of(result))
+
+
+def _player_ids(ctx: Ctx, names: list[str]) -> list[str] | ToolResult:
+    lg = data.League(ctx.conn, ctx.league_id)
+    ids = []
+    for n in names:
+        p = _one_player(ctx, lg, n)
+        if isinstance(p, ToolResult):
+            return p
+        ids.append(p["player_id"])
+    return ids
+
+
+def get_projections(ctx: Ctx, players: list[str] | None = None, position: str | None = None,
+                    horizon: str = "week", week: int | None = None, limit: int = 10) -> ToolResult:
+    if not players and not position:
+        return ToolResult("NEED: which players, or which position?")
+    ids = _player_ids(ctx, players) if players else None
+    if isinstance(ids, ToolResult):
+        return ids
+    return _provided("get_projections", ctx, player_ids=ids, position=position, horizon=horizon, week=week,
+                     limit=limit)
+
+
+def get_season_leaders(ctx: Ctx, position: str | None = None, through_week: int | None = None,
+                       limit: int = 10) -> ToolResult:
+    return _provided("get_season_leaders", ctx, position=position, through_week=through_week, limit=limit)
+
+
+def recommend_lineup(ctx: Ctx, week: int | None = None) -> ToolResult:
+    return _provided("recommend_lineup", ctx, week=week)
+
+
+def get_waiver_targets(ctx: Ctx, horizon: str = "both", position: str | None = None, limit: int = 10) -> ToolResult:
+    return _provided("get_waiver_targets", ctx, horizon=horizon, position=position, limit=limit)
+
+
+def get_injured_stash(ctx: Ctx, position: str | None = None, limit: int = 10) -> ToolResult:
+    return _provided("get_injured_stash", ctx, position=position, limit=limit)
+
+
+def evaluate_trade(ctx: Ctx, give: list[str], get: list[str], fantasy_team: str | None = None,
+                   horizon: str = "ros") -> ToolResult:
+    give_ids, get_ids = _player_ids(ctx, give), _player_ids(ctx, get)
+    for ids in (give_ids, get_ids):
+        if isinstance(ids, ToolResult):
+            return ids
+    lg = data.League(ctx.conn, ctx.league_id)
+    not_mine = [n for n, i in zip(give, give_ids, strict=True) if lg.held.get(i) is None or lg.held[i]["roster_id"] != lg.me]
+    if not_mine:
+        return error(f"not on my roster: {', '.join(not_mine)}")
+    owners = {lg.held[i]["roster_id"] for i in get_ids if i in lg.held}
+    if fantasy_team:
+        team = _one_fantasy_team(ctx, fantasy_team)
+        if isinstance(team, ToolResult):
+            return team
+        other = team["roster_id"]
+    elif len(owners) == 1 and len([i for i in get_ids if i in lg.held]) == len(get_ids):
+        other = owners.pop()
+    else:
+        return ToolResult("NEED: which fantasy team is the trade with? The players asked for are not all on one.")
+    off = [n for n, i in zip(get, get_ids, strict=True) if lg.held.get(i) is None or lg.held[i]["roster_id"] != other]
+    if off or other == lg.me:
+        return error(f"not on {lg.names[other]}'s roster: {', '.join(off) or 'those players'}")
+    return _provided("evaluate_trade", ctx, give=give_ids, get=get_ids, with_fantasy_team_id=other, horizon=horizon)
+
+
+def find_trade_ideas(ctx: Ctx, target_player: str | None = None, need_position: str | None = None,
+                     fantasy_team: str | None = None, my_tradeable: list[str] | None = None,
+                     horizon: str = "ros", limit: int = 5) -> ToolResult:
+    if not target_player and not need_position:
+        return ToolResult("NEED: a target player or a position of need.")
+    if not fantasy_team and not my_tradeable:
+        return ToolResult("NEED: which of your players are you willing to trade? No search was run.")
+    lg = data.League(ctx.conn, ctx.league_id)
+    target_id = None
+    if target_player:
+        p = _one_player(ctx, lg, target_player)
+        if isinstance(p, ToolResult):
+            return p
+        if (held := lg.held.get(p["player_id"])) and held["roster_id"] == lg.me:
+            return error(f"{p['full_name']} is on my roster, so he cannot be the target. To offer him, pass him in "
+                         "my_tradeable; no search was run")
+        target_id = p["player_id"]
+    team_id = None
+    if fantasy_team:
+        team = _one_fantasy_team(ctx, fantasy_team)
+        if isinstance(team, ToolResult):
+            return team
+        team_id = team["roster_id"]
+    tradeable = _player_ids(ctx, my_tradeable) if my_tradeable else None
+    if isinstance(tradeable, ToolResult):
+        return tradeable
+    return _provided("find_trade_ideas", ctx, target_player_id=target_id, need_position=need_position,
+                     with_fantasy_team_id=team_id, my_tradeable=tradeable, horizon=horizon, limit=limit)
+
+
+def get_trending_players(ctx: Ctx, type: str = "add", hours: int = 24, limit: int = 10) -> ToolResult:
+    return _provided("get_trending_players", ctx, type=type, hours=hours, limit=limit)
+
+
+def get_week_results(ctx: Ctx, week: int | None = None) -> ToolResult:
+    return _provided("get_week_results", ctx, week=week)
+
+
+# catalog
+
+def _p(type_: str, description: str, **extra) -> dict:
+    return {"type": type_, "description": description, **extra}
+
+
+NAMES = {"type": "array", "items": {"type": "string"}}
+HORIZON = _p("string", "rest of season (default) or this week", enum=["ros", "week"])
+LIMIT = _p("integer", "how many to return")
+POSITION = _p("string", "fantasy position, e.g. RB, WR, LB")
+
+TOOLS = [
+    Tool("get_league_state", "Reading league standings",
+         "Season, this week, last completed week, my opponent this week, standings of every fantasy team, league "
+         "format and waiver budget. Not for rosters (get_my_roster, get_fantasy_team_roster) or scores of a past "
+         "week (get_week_results).", {}, get_league_state),
+    Tool("get_my_roster", "Reading your roster",
+         "My fantasy team's roster and lineup exactly as set in Sleeper: starters by slot, bench, IR, with each "
+         "player's NFL team and injury designation. Use it for 'who are my starters'. Not a recommendation: use "
+         "recommend_lineup. Not for news: use get_my_roster_news.", {}, get_my_roster),
+    Tool("get_fantasy_team_roster", "Reading a fantasy team's roster",
+         "Another manager's fantasy team in this league: lineup as set in Sleeper, bench, IR, record. Not for NFL "
+         "teams: use get_nfl_team_roster. Not for my own: use get_my_roster.",
+         {"fantasy_team": _p("string", "fantasy team name or manager name, as the user said it")},
+         get_fantasy_team_roster),
+    Tool("get_nfl_team_roster", "Reading an NFL team's roster",
+         "Current players of a real NFL team by position in depth order, with injury designations and each "
+         "player's fantasy status in my league. Not for fantasy teams: use get_fantasy_team_roster. For one player "
+         "in detail use get_player.",
+         {"nfl_team": _p("string", "NFL team as the user said it: SEA, Seattle or Seahawks"), "position": POSITION},
+         get_nfl_team_roster),
+    Tool("get_player", "Looking up a player",
+         "One NFL player: current NFL team, position, depth, injury designation and practice status, fantasy status "
+         "in my league (my roster, another fantasy team, or free agent), latest news. Use it for any question "
+         "about a player's NFL team or news. Pass the name as the user gave it, even a surname alone: when several "
+         "players fit, it returns the candidates. Not for lists (get_nfl_team_roster, get_projections, "
+         "get_season_leaders) or value (get_projections).",
+         {"name": _p("string", "player name as the user said it")}, get_player),
+    Tool("get_my_roster_news", "Reading news for your roster",
+         "Recent news for every player on my roster, injury, practice and role news first. Not for a player off "
+         "my roster: use get_player.", {"days": _p("integer", "how many days back, default 7")}, get_my_roster_news),
+    Tool("get_transactions", "Reading league transactions",
+         "Completed adds, drops, waiver claims and trades in this league. Pending claims and open trade offers are "
+         "not available in this version.",
+         {"fantasy_team": _p("string", "only this fantasy team"), "days": _p("integer", "how many days back, default 7"),
+          "type": _p("string", "only this kind", enum=["add", "drop", "trade", "waiver"])}, get_transactions),
+    Tool("get_projections", "Reading projections",
+         "Projected points in my league's scoring for players or a position: this week, rest of season or full "
+         "season, with the likely range and sources, plus scoring rules no projection covers. Not for actual "
+         "points so far (get_season_leaders) or pickups (get_waiver_targets).",
+         {"players": {**NAMES, "description": "player names"}, "position": POSITION,
+          "horizon": _p("string", "week (default), ros or full_season", enum=["week", "ros", "full_season"]),
+          "week": _p("integer", "NFL week, default this week"), "limit": LIMIT}, get_projections),
+    Tool("get_season_leaders", "Ranking season leaders",
+         "Actual points scored so far this season in my league's scoring, games and points per game. Not "
+         "projections: use get_projections.",
+         {"position": POSITION, "through_week": _p("integer", "default the last completed week"), "limit": LIMIT},
+         get_season_leaders),
+    Tool("recommend_lineup", "Optimizing your lineup",
+         "Recommended lineup for my fantasy team: my lineup as set in Sleeper, the expected-points lineup and a "
+         "high-risk lineup, each with projected totals, spread and win probability against my opponent, and the "
+         "changes with reasons. Not the lineup set in Sleeper: use get_my_roster.",
+         {"week": _p("integer", "NFL week, default this week")}, recommend_lineup),
+    Tool("get_waiver_targets", "Ranking waiver targets",
+         "Free agents to pick up, ranked by value over replacement for this week and for the rest of the season, "
+         "with a FAAB guide. Not for injured players to hold for later: use get_injured_stash.",
+         {"horizon": _p("string", "both (default), week or ros", enum=["both", "week", "ros"]), "position": POSITION,
+          "limit": LIMIT}, get_waiver_targets),
+    Tool("get_injured_stash", "Ranking injured stash options",
+         "Injured free agents (listed IR, Out or PUP) worth holding, ranked by their healthy rest-of-season value, "
+         "with return news. Not for healthy pickups: use get_waiver_targets.", {"position": POSITION, "limit": LIMIT}, get_injured_stash),
+    Tool("evaluate_trade", "Evaluating the trade",
+         "Evaluate a trade the manager describes: both fantasy teams' starting lineup value before and after, roster "
+         "spots, verdict, trade deadline. Not for finding trades: use find_trade_ideas.",
+         {"give": {**NAMES, "description": "my players I would give"},
+          "get": {**NAMES, "description": "players I would get"},
+          "fantasy_team": _p("string", "the other fantasy team, if known"), "horizon": HORIZON}, evaluate_trade),
+    Tool("find_trade_ideas", "Searching for trade ideas",
+         "Find one-for-one trades for a target player or a position of need that help both fantasy teams. If no "
+         "fantasy team is named, it needs the players the manager is willing to trade (ask first). Not for "
+         "evaluating a given offer: use evaluate_trade.",
+         {"target_player": _p("string", "a player on another fantasy team that the manager wants"),
+          "need_position": POSITION,
+          "fantasy_team": _p("string", "search only this fantasy team"),
+          "my_tradeable": {**NAMES, "description": "my players I am willing to trade, e.g. X in 'what could I get "
+                                                   "for X'"}, "horizon": HORIZON,
+          "limit": LIMIT}, find_trade_ideas),
+    Tool("get_trending_players", "Reading Sleeper trends",
+         "Players most added or dropped across all Sleeper leagues recently, as context only. Not a projection or "
+         "a value: use get_projections or get_waiver_targets for value.",
+         {"type": _p("string", "add (default) or drop", enum=["add", "drop"]),
+          "hours": _p("integer", "look-back, default 24"), "limit": LIMIT}, get_trending_players),
+    Tool("get_week_results", "Reading week results",
+         "Result of a completed week: both scores, win or loss, opponent's top scorers, my best possible lineup "
+         "and points left on my bench. Not for the upcoming matchup: use recommend_lineup or get_league_state.",
+         {"week": _p("integer", "NFL week, default the last completed week")}, get_week_results),
+    Tool("switch_league", "Switching league",
+         "Switch to another of my Sleeper leagues by name.",
+         {"league_name": _p("string", "league name as the user said it")}, switch_league),
+]
+TOOLS_BY_NAME = {t.name: t for t in TOOLS}
+REQUIRED = {"get_fantasy_team_roster": ["fantasy_team"], "get_nfl_team_roster": ["nfl_team"], "get_player": ["name"],
+            "evaluate_trade": ["give", "get"], "switch_league": ["league_name"]}
+
+
+def specs() -> list[dict]:
+    """The tool list in OpenAI function-calling format."""
+    return [
+        {"type": "function", "function": {
+            "name": t.name, "description": t.description,
+            "parameters": {"type": "object", "properties": t.parameters, "required": REQUIRED.get(t.name, [])}}}
+        for t in TOOLS
+    ]
+
+
+def run_tool(ctx: Ctx, name: str, arguments: dict) -> ToolResult:
+    """Run one tool call. A failure comes back as ERROR text, never as an empty success."""
+    tool = TOOLS_BY_NAME.get(name)
+    if tool is None:
+        return error(f"there is no tool named {name}")
+    try:
+        return tool.fn(ctx, **arguments)
+    except Exception as e:  # report every tool failure to the model as a failure (PRD 4.5)
+        log.exception("tool %s failed", name)
+        return error(f"{tool.label.lower()} failed ({type(e).__name__}); nothing was returned")

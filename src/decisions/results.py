@@ -1,130 +1,98 @@
-"""What actually happened: per-player scored points for a completed week,
-and how much of it was left sitting on the bench.
-
-The "best possible lineup" is computed by handing the Stage 3 lineup
-optimizer actual scored points instead of projections — same constrained
-assignment problem, hindsight inputs. The gap between that and what was
-actually started is the cost of the start/sit decisions.
-"""
+"""Week results and season leaders: actual points, not projections (docs/data-contract.md sections 9.6, 9.7)."""
 
 import json
 import sqlite3
-from dataclasses import dataclass, field
 
-from src.decisions.lineup import LineupSlot, optimize_lineup
-from src.ingestion import storage
-from src.projections.engine import AdjustedProjection
+from decisions.assign import fill_slots
+from decisions.league import NoData, View, group, r1
+from projections.scoring import score
 
-
-@dataclass
-class WeekResult:
-    week: int
-    actual_total: float
-    optimal_total: float
-    points_left_on_bench: float
-    started: list[tuple[str, float]]
-    bench: list[tuple[str, float]]
-    optimal_lineup: list[LineupSlot]
-    opponent_name: str | None = None
-    opponent_total: float | None = None
-    opponent_top: list[tuple[str, float]] = field(default_factory=list)
-
-    @property
-    def outcome(self) -> str | None:
-        """'win' / 'loss' / 'tie' against this week's opponent, None on a bye."""
-        if self.opponent_total is None:
-            return None
-        if self.actual_total > self.opponent_total:
-            return "win"
-        return "loss" if self.actual_total < self.opponent_total else "tie"
+TOP_SCORERS = 3
 
 
-def last_completed_week(current_week: int) -> int:
-    """Sleeper's `week` flips to the next week once the previous one's games
-    are done, so the week before the current one is the last finished one."""
-    return max(1, current_week - 1)
+def _lineup(v: View, week: int, roster_id: int) -> tuple[list[str | None], dict[str, float]]:
+    """The starters of a past matchup by slot, and every player's points that week."""
+    rows = v.conn.execute("select player_id, points, is_starter, slot_index from matchup_player where league_id = ? and week = ? and roster_id = ?",
+                          (v.league_id, week, roster_id)).fetchall()  # fmt: skip
+    starters = [None] * len(v.slots)
+    for r in rows:
+        if r["is_starter"]:
+            starters[r["slot_index"]] = r["player_id"]
+    return starters, {r["player_id"]: r["points"] or 0.0 for r in rows}
 
 
-def _name(conn: sqlite3.Connection, player_id: str) -> str:
-    p = conn.execute("SELECT first_name, last_name FROM players WHERE player_id = ?", (player_id,)).fetchone()
-    return (" ".join(x for x in [p["first_name"], p["last_name"]] if x) if p else "") or player_id
+def get_week_results(conn: sqlite3.Connection, league_id: str, week: int | None = None) -> dict:
+    v = View(conn, league_id)
+    if v.me is None:
+        raise NoData("my fantasy team is not stored for this league")
+    week = week or v.this_week - 1
+    if week < 1 or week >= v.this_week:
+        raise NoData(f"week {week} has not been played; the last completed week is {v.this_week - 1}")
+    mine = conn.execute("select points from matchup where league_id = ? and week = ? and roster_id = ?", (league_id, week, v.me)).fetchone()
+    opp_id = v.opponent_id(week)
+    if mine is None or opp_id is None:
+        raise NoData(f"no matchup stored for week {week}")
+    opp = conn.execute("select points from matchup where league_id = ? and week = ? and roster_id = ?", (league_id, week, opp_id)).fetchone()
+    my_start, my_points = _lineup(v, week, v.me)
+    opp_start, opp_points = _lineup(v, week, opp_id)
+    scorers = sorted(((p, i) for i, p in enumerate(opp_start) if p), key=lambda x: -opp_points[x[0]])[:TOP_SCORERS]
 
-
-def _opponent(conn: sqlite3.Connection, league_id: str, roster_id: int, week: int):
-    opp = storage.get_opponent_roster(conn, league_id, week, roster_id)
-    if not opp:
-        return None, None, []
-    roster = storage.get_roster(conn, league_id, opp["roster_id"])
-    name = storage.fantasy_team_label(conn, league_id, roster["owner_id"]) if roster else f"roster {opp['roster_id']}"
-    points = json.loads(opp["players_points"] or "{}")
-    starters = json.loads(opp["starters"] or "[]")
-    top = sorted(((_name(conn, pid), points.get(pid, 0.0)) for pid in starters), key=lambda t: t[1], reverse=True)
-    total = opp["points"] if opp["points"] is not None else sum(points.get(pid, 0.0) for pid in starters)
-    return name, float(total), top[:3]
-
-
-def _as_projection(player_id: str, name: str, position: str | None, points: float) -> AdjustedProjection:
-    """Wrap an actual score in the projection shape so the optimizer can take it."""
-    return AdjustedProjection(
-        player_id=player_id, name=name, position=position, team=None,
-        mean=points, variance=0.0, matchup_multiplier=1.0, injury_multiplier=1.0, num_sources=1,
-    )
-
-
-def summarize_week(
-    conn: sqlite3.Connection, league_id: str, roster_id: int, week: int, roster_positions: list[str]
-) -> WeekResult | None:
-    row = conn.execute(
-        "SELECT points, starters, players, players_points FROM matchups "
-        "WHERE league_id = ? AND week = ? AND roster_id = ?",
-        (league_id, week, roster_id),
-    ).fetchone()
-    if not row:
-        return None
-
-    players_points: dict[str, float] = json.loads(row["players_points"] or "{}")
-    if not players_points:
-        return None
-
-    starters = json.loads(row["starters"] or "[]")
-    all_players = json.loads(row["players"] or "[]")
-
-    meta: dict[str, dict] = {}
-    for pid in all_players:
-        p = conn.execute(
-            "SELECT first_name, last_name, position FROM players WHERE player_id = ?", (pid,)
-        ).fetchone()
-        name = " ".join(x for x in [p["first_name"], p["last_name"]] if x) if p else pid
-        meta[pid] = {"name": name or pid, "position": p["position"] if p else None}
-
-    scored = {
-        pid: _as_projection(pid, meta[pid]["name"], meta[pid]["position"], players_points.get(pid, 0.0))
-        for pid in all_players
-        if pid in meta
+    # the best lineup from the same players, no locks; a change must gain more than a rounding error
+    positions = {p: g for p in my_points if (g := v.position(p))}
+    best = fill_slots(v.slots, my_start, positions, {p: my_points[p] for p in positions})
+    actual_sum = sum(my_points[p] for p in my_start if p)
+    optimal = sum(my_points[p] for p in best if p)
+    moves = [{"start": v.ref(new, week), "bench": v.ref(old, week) if old else None, "slot": slot, "gain": r1(my_points[new] - (my_points[old] if old else 0.0))}
+             for slot, old, new in zip(v.slots, my_start, best) if new and new != old]  # fmt: skip
+    result = "win" if mine["points"] > opp["points"] else "loss" if mine["points"] < opp["points"] else "tie"
+    left = optimal - actual_sum
+    me, them = v.names[v.me], v.names[opp_id]
+    summary = (f"Week {week}: you {'won' if result == 'win' else 'lost' if result == 'loss' else 'tied'} {mine['points']:.1f} to "
+               f"{opp['points']:.1f} against {them}; {left:.1f} points left on your bench.")
+    env = v.envelope("week_results", summary, [], week)
+    env["as_of"] = {"projections": None, "rosters": env["as_of"]["rosters"] and {**env["as_of"]["rosters"], "source_label": "Sleeper matchups"},
+                    "injuries": None, "news": None, "games": None}  # fmt: skip
+    env["unprojected_scoring_items"] = []  # actual points: Sleeper scored every league scoring item
+    return {
+        **env,
+        "mine": {"fantasy_team": me, "fantasy_team_id": v.me, "score": mine["points"]},
+        "opponent": {"fantasy_team": them, "fantasy_team_id": opp_id, "score": opp["points"]},
+        "result": result,
+        "opponent_top_scorers": [{"player": v.ref(p, week), "slot": v.slots[i], "points": opp_points[p]} for p, i in scorers],
+        "my_bench": {"actual_points": mine["points"], "optimal_points": round(mine["points"] + left, 2),
+                     "points_left_on_bench": r1(left), "moves": moves},  # fmt: skip
     }
 
-    optimal = optimize_lineup(roster_positions, all_players, scored, meta)
-    optimal_total = sum(s.mean for s in optimal)
 
-    actual_total = row["points"] if row["points"] is not None else sum(
-        players_points.get(pid, 0.0) for pid in starters
-    )
-
-    opponent_name, opponent_total, opponent_top = _opponent(conn, league_id, roster_id, week)
-
-    return WeekResult(
-        opponent_name=opponent_name,
-        opponent_total=opponent_total,
-        opponent_top=opponent_top,
-        week=week,
-        actual_total=float(actual_total),
-        optimal_total=optimal_total,
-        points_left_on_bench=max(0.0, optimal_total - float(actual_total)),
-        started=[(meta[p]["name"], players_points.get(p, 0.0)) for p in starters if p in meta],
-        bench=sorted(
-            [(meta[p]["name"], players_points.get(p, 0.0)) for p in all_players if p not in starters and p in meta],
-            key=lambda t: t[1],
-            reverse=True,
-        ),
-        optimal_lineup=optimal,
-    )
+def get_season_leaders(conn: sqlite3.Connection, league_id: str, position: str | None = None, through_week: int | None = None,
+                       limit: int = 10) -> dict:  # fmt: skip
+    v = View(conn, league_id)
+    through = through_week or v.this_week - 1
+    if through < 1:
+        raise NoData("no week has been played yet")
+    pos = group(position.upper()) if position else None
+    totals: dict[str, list] = {}
+    weeks = set()
+    for r in conn.execute("select week, player_id, stats from player_week_stat where season = ? and week <= ?", (v.season, through)):
+        weeks.add(r["week"])
+        stats = json.loads(r["stats"])
+        if pos and v.position(r["player_id"]) != pos:
+            continue
+        t = totals.setdefault(r["player_id"], [0.0, 0])
+        t[0] += score(stats, v.scoring)
+        t[1] += int(stats.get("gp", 1) > 0)
+    warnings = []
+    missing = sorted(set(range(1, through + 1)) - weeks)
+    if missing:
+        warnings.append(f"stats not stored for week{'s' if len(missing) > 1 else ''} {', '.join(map(str, missing))}; those weeks are not counted")
+    ranked = sorted(((p, t) for p, t in totals.items() if t[1] and v.player(p)), key=lambda x: -x[1][0])[:limit]
+    rows = [{"rank": i, "player": v.ref(p), "points": r1(t[0]), "games": t[1], "points_per_game": r1(t[0] / t[1])} for i, (p, t) in enumerate(ranked, 1)]
+    label = f"{pos}s" if pos else "players"
+    summary = (f"Top {label} in actual points through week {through}: {rows[0]['player']['name']} leads with {rows[0]['points']:.1f}."
+               if rows else f"No stored stats for {label} through week {through}.")
+    env = v.envelope("leaders", summary, warnings, through)
+    stats_at = conn.execute("select max(fetched_at) from player_week_stat where season = ?", (v.season,)).fetchone()[0]
+    env["as_of"] = {"projections": None, "rosters": None, "injuries": None, "news": None,
+                    "games": {"as_of": stats_at, "source_label": "Sleeper stats"} if stats_at else None}  # fmt: skip
+    env["unprojected_scoring_items"] = []
+    return {**env, "through_week": through, "source": "sleeper_stats", "rows": rows}

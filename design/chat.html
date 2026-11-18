@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat - mockup</title>
+<style>
+/* Design tokens: see README.md. Colors from AGENT.md. */
+:root {
+  --yellow: #ecad0a;      /* accent lines, highlights */
+  --blue: #209dd7;        /* links, key sections */
+  --purple: #753991;      /* submit and important actions */
+  --purple-dark: #5f2d76; /* purple hover/pressed */
+  --navy: #032147;        /* headings */
+  --gray: #888888;        /* supporting text, labels (large or non-essential text) */
+  --gray-strong: #5c6670; /* supporting text at 12-14px (passes AA) */
+  --text: #1c2733;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --line: #dde3ea;
+  --blue-dark: #0e6f9e;   /* link text on white (passes AA) */
+  --yellow-tint: #fdf4d6;
+  --blue-tint: #e6f4fb;
+  --purple-tint: #f1e8f5;
+  --danger: #b42318;
+  --danger-tint: #fdeceb;
+  --ok: #1a7f4b;
+  --ok-tint: #e5f5ec;
+
+  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --fs-xs: 12px; --fs-sm: 13px; --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px; --fs-2xl: 26px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  --radius: 8px; --radius-sm: 4px;
+  --panel-w: 360px;
+  --topbar-h: 52px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; height: 100vh; margin: 0; font: var(--fs-md)/1.45 var(--font); color: var(--text); background: var(--bg); }
+h1, h2, h3 { color: var(--navy); margin: 0; font-weight: 600; line-height: 1.25; }
+h1 { font-size: var(--fs-2xl); } h2 { font-size: var(--fs-xl); } h3 { font-size: var(--fs-lg); }
+p { margin: 0; }
+a, .link { color: var(--blue-dark); text-decoration: underline; cursor: pointer; background: none; border: 0; font: inherit; padding: 0; }
+.muted { color: var(--gray-strong); }
+.label { font-size: var(--fs-xs); letter-spacing: .04em; text-transform: uppercase; color: var(--gray-strong); font-weight: 600; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* Mockup-only state switcher (not part of the app) */
+.statebar { position: sticky; top: 0; z-index: 50; background: #1c2733; color: #fff; padding: 6px 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: var(--fs-xs); }
+.statebar b { margin-right: 6px; font-weight: 600; }
+.statebar button { font: inherit; color: #fff; background: #3a4756; border: 0; border-radius: 12px; padding: 3px 10px; cursor: pointer; }
+.statebar button[aria-pressed="true"] { background: var(--yellow); color: var(--navy); font-weight: 600; }
+.statebar .size { margin-left: auto; color: #b9c2cc; }
+
+/* Window: the pywebview window. Default 1280x800, minimum 960x640. */
+.window { min-width: 960px; min-height: 640px; flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+
+.topbar { height: var(--topbar-h); flex: none; background: var(--surface); border-bottom: 3px solid var(--yellow); display: flex; align-items: center; gap: var(--s4); padding: 0 var(--s5); }
+.brand { font-weight: 700; color: var(--navy); font-size: var(--fs-lg); }
+.topbar .spacer { flex: 1; }
+
+/* Buttons */
+.btn { font: inherit; font-weight: 600; border-radius: var(--radius-sm); padding: 8px 16px; min-height: 36px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: var(--s2); }
+.btn-primary { background: var(--purple); color: #fff; }
+.btn-primary:hover { background: var(--purple-dark); }
+.btn-secondary { background: var(--surface); color: var(--navy); border-color: var(--navy); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-quiet { background: none; color: var(--blue-dark); border-color: transparent; }
+.btn[disabled] { background: #e3e7ec; color: #8b95a1; border-color: transparent; cursor: not-allowed; }
+.spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; display: inline-block; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } .skel { animation: none !important; } }
+
+/* Inputs */
+.field { display: grid; gap: var(--s1); }
+.field > label { font-weight: 600; color: var(--navy); }
+.input { font: inherit; padding: 8px 12px; min-height: 38px; border: 1px solid #b7c0ca; border-radius: var(--radius-sm); background: #fff; width: 100%; color: var(--text); }
+.input.invalid { border-color: var(--danger); }
+.hint { font-size: var(--fs-sm); color: var(--gray-strong); }
+.err-text { font-size: var(--fs-sm); color: var(--danger); }
+.row { display: flex; gap: var(--s3); align-items: flex-end; }
+.row > .field { flex: 1; }
+
+/* Banners */
+.banner { border-radius: var(--radius-sm); padding: var(--s3) var(--s4); border-left: 4px solid; display: flex; gap: var(--s3); align-items: flex-start; font-size: var(--fs-md); }
+.banner .grow { flex: 1; display: grid; gap: var(--s1); }
+.banner strong { color: var(--navy); }
+.banner-warn { background: var(--yellow-tint); border-color: var(--yellow); }
+.banner-error { background: var(--danger-tint); border-color: var(--danger); }
+.banner-info { background: var(--blue-tint); border-color: var(--blue); }
+.banner-ok { background: var(--ok-tint); border-color: var(--ok); }
+
+/* Chips (text always present, never color alone) */
+.chip { display: inline-block; font-size: var(--fs-xs); font-weight: 700; border-radius: 10px; padding: 1px 8px; line-height: 1.5; border: 1px solid; white-space: nowrap; }
+.chip-q { background: var(--yellow-tint); border-color: var(--yellow); color: #6b4d00; }
+.chip-d { background: #fde6cf; border-color: #d9822b; color: #7a3d00; }
+.chip-o, .chip-ir { background: var(--danger-tint); border-color: var(--danger); color: var(--danger); }
+.chip-bye { background: #eef0f3; border-color: #b7c0ca; color: var(--gray-strong); }
+.chip-rec { background: var(--purple-tint); border-color: var(--purple); color: var(--purple); }
+.chip-free { background: var(--ok-tint); border-color: var(--ok); color: var(--ok); }
+.chip-no { background: #eef0f3; border-color: #b7c0ca; color: var(--gray-strong); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.skel { background: linear-gradient(90deg, #e8ecf1 25%, #f3f5f8 50%, #e8ecf1 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-sm); height: 14px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* My fantasy team panel */
+.panel { width: var(--panel-w); flex: none; background: var(--surface); border-left: 1px solid var(--line); overflow-y: auto; display: flex; flex-direction: column; }
+.panel-head { position: sticky; top: 0; background: var(--surface); z-index: 5; padding: var(--s4) var(--s4) var(--s3); display: grid; gap: 2px; border-bottom: 1px solid var(--line); }
+.panel-head .top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); }
+.panel-head h2 { font-size: var(--fs-lg); }
+.panel-body { padding: var(--s4); display: grid; gap: var(--s4); align-content: start; }
+.matchup { border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: var(--radius); padding: var(--s3) var(--s4); display: grid; gap: var(--s2); }
+.matchup .sides { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s2); text-align: center; }
+.matchup .name { font-size: var(--fs-sm); color: var(--gray-strong); overflow-wrap: anywhere; }
+.matchup .score { font-size: 28px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+.matchup .score.lead::after { content: ""; display: block; height: 3px; background: var(--yellow); margin-top: 2px; }
+.matchup .vs { color: var(--gray-strong); font-size: var(--fs-xs); }
+.matchup .status { text-align: center; font-size: var(--fs-sm); color: var(--gray-strong); }
+.roster h3 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--gray-strong); margin: var(--s2) 0 var(--s1); display: flex; justify-content: space-between; }
+.player { display: grid; grid-template-columns: 38px 1fr auto; gap: var(--s2); align-items: center; padding: 6px 0; border-bottom: 1px solid #eef1f5; }
+.player .slot { font-size: var(--fs-xs); font-weight: 700; color: var(--gray-strong); }
+.player .pname { font-weight: 600; color: var(--text); display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.player .meta { font-size: var(--fs-xs); color: var(--gray-strong); }
+.player .right { text-align: right; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; color: var(--gray-strong); min-width: 64px; }
+.player .right.pts { font-weight: 700; color: var(--navy); font-size: var(--fs-md); }
+.player.out .pname { color: var(--gray-strong); }
+.panel-note { font-size: var(--fs-xs); color: var(--gray-strong); }
+.panel-center { text-align: center; padding: var(--s6) var(--s4); display: grid; gap: var(--s3); justify-items: center; }
+
+.main { flex: 1; display: flex; min-height: 0; }
+.chat { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.thread { flex: 1; overflow-y: auto; padding: var(--s5); display: flex; flex-direction: column; gap: var(--s4); }
+.thread-inner { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--s4); }
+.msg { max-width: 88%; padding: var(--s3) var(--s4); border-radius: var(--radius); }
+.msg.user { align-self: flex-end; background: var(--navy); color: #fff; }
+.msg.agent { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--yellow); display: grid; gap: var(--s2); }
+.msg.agent p + p { margin-top: 0; }
+.msg .when { font-size: var(--fs-xs); color: var(--gray-strong); }
+.msg.user .when { color: #b9c7d8; }
+.msg.unsent { background: #fff; color: var(--text); border: 1px dashed var(--danger); }
+.msg.unsent .when { color: var(--danger); }
+.progress { align-self: flex-start; width: 88%; padding: var(--s3) var(--s4); background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: var(--radius); display: grid; gap: var(--s2); }
+.progress .head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: var(--navy); }
+.progress .elapsed { font-variant-numeric: tabular-nums; color: var(--gray-strong); font-weight: 400; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--fs-sm); }
+.steps li { display: flex; gap: var(--s2); align-items: center; color: var(--gray-strong); }
+.steps li.now { color: var(--navy); font-weight: 600; }
+.steps .tick { color: var(--ok); font-weight: 700; width: 14px; text-align: center; }
+.composer { border-top: 1px solid var(--line); background: var(--surface); padding: var(--s3) var(--s5) var(--s4); }
+.composer-inner { max-width: 760px; margin: 0 auto; display: grid; gap: var(--s2); }
+.composer .box { display: flex; gap: var(--s3); align-items: flex-end; }
+.composer textarea { flex: 1; resize: none; height: 56px; font: inherit; padding: 10px 12px; border: 1px solid #b7c0ca; border-radius: var(--radius-sm); }
+.composer textarea:disabled { background: #eef0f3; }
+.examples { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.example { font: inherit; font-size: var(--fs-sm); padding: 6px 12px; border: 1px solid var(--blue); background: #fff; color: var(--blue-dark); border-radius: 16px; cursor: pointer; }
+.example:hover { background: var(--blue-tint); }
+.empty { margin: auto; text-align: center; display: grid; gap: var(--s3); justify-items: center; max-width: 520px; padding: var(--s6) 0; }
+.empty .rule { width: 48px; height: 3px; background: var(--yellow); }
+.league-btn { font: inherit; font-weight: 600; color: var(--navy); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 6px 12px; cursor: pointer; display: flex; gap: var(--s2); align-items: center; }
+.menu { position: absolute; top: calc(var(--topbar-h) - 6px); left: 120px; z-index: 20; width: 300px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 6px 20px rgba(3,33,71,.15); padding: var(--s2); display: grid; gap: 2px; }
+.menu .item { padding: 8px 12px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; gap: var(--s2); cursor: pointer; }
+.menu .item:hover { background: var(--bg); }
+.menu .item.current { background: var(--purple-tint); font-weight: 600; }
+.menu .sep { border-top: 1px solid var(--line); margin: 4px 0; }
+.scrim { position: absolute; inset: 0; background: rgba(3,33,71,.35); z-index: 30; display: grid; place-items: center; }
+.dialog { background: #fff; border-radius: var(--radius); padding: var(--s5); width: 420px; display: grid; gap: var(--s3); border-top: 3px solid var(--yellow); }
+.dialog .actions { display: flex; justify-content: flex-end; gap: var(--s3); margin-top: var(--s2); }
+.banners { padding: var(--s3) var(--s5) 0; max-width: 808px; margin: 0 auto; width: 100%; display: grid; gap: var(--s2); }
+</style>
+</head>
+<body>
+<div class="statebar" role="toolbar" aria-label="Mockup state">
+  <b>Chat state</b>
+  <button data-s="loading">Loading history</button>
+  <button data-s="empty">Empty (new league)</button>
+  <button data-s="answered">Answered</button>
+  <button data-s="working">Working (progress)</button>
+  <button data-s="refreshfail">Refresh failed</button>
+  <button data-s="quota">Daily quota</button>
+  <button data-s="error">Error</button>
+  <button data-s="nokey">Missing key</button>
+  <button data-s="keyinvalid">Key refused</button>
+  <button data-s="toomany">Too many steps</button>
+  <button data-s="noleague">No league</button>
+  <button data-s="switch">Switch league</button>
+  <button data-s="fresh">Start fresh</button>
+  <span class="size">Window 1280x800, minimum 960x640</span>
+</div>
+
+<div class="window">
+  <header class="topbar">
+    <span class="brand">Fantasy Agent</span>
+    <button class="league-btn" aria-haspopup="menu" aria-label="Switch league">Or Test League <span aria-hidden="true">&#9662;</span></button>
+    <span class="muted" style="font-size:13px">2026 &middot; Week 9 &middot; IDP &middot; PPR</span>
+    <span class="spacer"></span>
+    <button class="btn btn-secondary" style="min-height:32px;padding:4px 12px" data-states="answered working refreshfail quota error toomany keyinvalid switch fresh">Start fresh</button>
+    <button class="btn btn-quiet" style="min-height:32px">Settings</button>
+  </header>
+
+  <div class="main">
+    <section class="chat" aria-label="Chat">
+      <div class="menu" role="menu" data-states="switch">
+        <div class="label" style="padding:4px 12px">Switch league</div>
+        <div class="item current" role="menuitem"><span>Or Test League</span><span class="muted">current</span></div>
+        <div class="item" role="menuitem"><span>Sunday Sickos</span><span class="muted">Team DEF</span></div>
+        <div class="sep"></div>
+        <div class="item" role="menuitem"><span class="link">Setup and other leagues</span></div>
+        <p class="hint" style="padding:4px 12px">Each league keeps its own chat.</p>
+      </div>
+
+      <div class="scrim" data-states="fresh">
+        <div class="dialog" role="dialog" aria-labelledby="dlg-t">
+          <h3 id="dlg-t">Start fresh in Or Test League?</h3>
+          <p>This clears the chat history for this league. Your other leagues keep theirs.</p>
+          <div class="actions"><button class="btn btn-secondary">Cancel</button><button class="btn btn-primary">Start fresh</button></div>
+        </div>
+      </div>
+
+      <div class="banners">
+        <div class="banner banner-warn" data-states="nokey" role="alert"><div class="grow"><strong>Add your OpenRouter key to ask questions.</strong>
+          <span>The key is not set on this computer. Your league and fantasy team still load.</span></div>
+          <button class="btn btn-primary" style="min-height:32px">Open settings</button></div>
+      </div>
+
+      <div class="banners"><div class="banner banner-warn" data-states="noleague" role="alert"><div class="grow"><strong>Choose a league to ask questions.</strong>
+          <span>No league is chosen yet.</span></div><button class="btn btn-primary" style="min-height:32px">Open settings</button></div></div>
+
+      <div class="thread" aria-live="polite">
+        <div class="thread-inner">
+
+          <div data-states="loading" aria-busy="true" style="display:grid;gap:12px">
+            <div class="skel" style="height:44px;width:40%;margin-left:auto"></div>
+            <div class="skel" style="height:96px;width:75%"></div>
+            <div class="skel" style="height:44px;width:30%;margin-left:auto"></div>
+          </div>
+
+          <div class="empty" data-states="empty">
+            <div class="rule"></div>
+            <h2>Ask about your league</h2>
+            <p class="muted">Lineups, waiver pickups, injured stashes, trades, and how any NFL team or player is doing. Answers come from the league and NFL data the app has fetched, and each says where it came from.</p>
+            <div class="examples">
+              <button class="example">Is my lineup set for this week?</button>
+              <button class="example">Who are the best waiver pickups at RB?</button>
+              <button class="example">Which injured players should I stash?</button>
+              <button class="example">What does the Seattle depth chart look like at WR?</button>
+            </div>
+          </div>
+
+          <!-- earlier exchange, shown in every state with history -->
+          <div style="display:contents" data-states="answered working refreshfail quota error toomany keyinvalid switch fresh">
+            <div class="msg user"><div>Who is my opponent this week?</div><div class="when">Mon 3:58 PM</div></div>
+            <div class="msg agent"><p>You play Taco Tuesday FC in week 9. They are 4-4 and you are 5-3.</p>
+              <div class="when">Sleeper league data, just now &middot; Mon 3:58 PM</div></div>
+          </div>
+
+          <div style="display:contents" data-states="answered switch fresh">
+            <div class="msg user"><div>Is my lineup set for this week?</div><div class="when">Mon 4:05 PM</div></div>
+            <div class="msg agent">
+              <p>One problem. <strong>Fred Warner</strong> (LB, SF) is listed Out on the NFL injury report and he is in your LB slot.</p>
+              <p>He is your only LB, so the slot would score zero. Your other starters are healthy, except Saquon Barkley (RB, PHI), who is Questionable, and Amon-Ra St. Brown (WR, DET), who is Doubtful. I have no practice status for either yet.</p>
+              <p>Ask me for waiver options at LB if you want a replacement.</p>
+              <div class="when">Sources: your roster as set in Sleeper, just now; NFL injury report, Mon 4:02 PM &middot; Mon 4:05 PM</div></div>
+          </div>
+
+          <div style="display:contents" data-states="refreshfail">
+            <div class="msg user"><div>Is my lineup set for this week?</div><div class="when">Mon 4:21 PM</div></div>
+            <div class="banner banner-warn" role="status"><div class="grow"><strong>Could not refresh from Sleeper.</strong>
+              <span>This answer uses data stored on Mon 4:02 PM. A move you made after that is not included.</span></div></div>
+            <div class="msg agent">
+              <p><strong>Fred Warner</strong> (LB, SF) was listed Out on the NFL injury report and is in your LB slot, as of the stored roster.</p>
+              <div class="when">Sources: roster stored Mon 4:02 PM (refresh failed); NFL injury report, Mon 4:02 PM &middot; Mon 4:21 PM</div></div>
+          </div>
+
+          <div style="display:contents" data-states="working">
+            <div class="msg user"><div>Which injured players should I stash?</div><div class="when">Mon 4:12 PM</div></div>
+            <div class="progress" role="status" aria-label="Working on your question">
+              <div class="head"><span>Working on your question</span>
+                <span class="elapsed" id="elapsed">0:23</span></div>
+              <ul class="steps">
+                <li><span class="tick">&#10003;</span>Read your roster from Sleeper</li>
+                <li><span class="tick">&#10003;</span>Found unrostered injured players</li>
+                <li class="now"><span class="tick"><span class="spinner" style="width:10px;height:10px"></span></span>Projecting rest-of-season value</li>
+              </ul>
+              <p class="hint">A question can take a minute. You can keep reading your fantasy team on the right.</p>
+            </div>
+          </div>
+
+          <div style="display:contents" data-states="quota">
+            <div class="msg user unsent"><div>Which injured players should I stash?</div><div class="when">Not answered. Your question is kept below.</div></div>
+            <div class="banner banner-warn" role="alert"><div class="grow"><strong>Daily limit reached for this model.</strong>
+              <span>Free models allow about 50 requests a day, roughly 25 questions, and this one is used up. Wait, choose another model, or add credits to your OpenRouter account.</span>
+              <span style="display:flex;gap:12px;margin-top:8px"><button class="btn btn-primary" style="min-height:32px">Choose another model</button><button class="btn btn-secondary" style="min-height:32px">Ask again</button></span></div></div>
+          </div>
+
+          <div style="display:contents" data-states="nokey noleague">
+            <div class="msg user unsent"><div>Which injured players should I stash?</div><div class="when">Not answered. Your question is kept below.</div></div>
+          </div>
+
+          <div style="display:contents" data-states="keyinvalid">
+            <div class="msg user unsent"><div>Which injured players should I stash?</div><div class="when">Not answered. Your question is kept below.</div></div>
+            <div class="banner banner-error" role="alert"><div class="grow"><strong>OpenRouter refused the saved key.</strong>
+              <span>The key may have been deleted or mistyped. Replace it in settings, then ask again.</span>
+              <span style="display:flex;gap:12px;margin-top:8px"><button class="btn btn-primary" style="min-height:32px">Open settings</button></span></div></div>
+          </div>
+
+          <div style="display:contents" data-states="toomany">
+            <div class="msg user unsent"><div>Compare every free agent at every position</div><div class="when">Not answered. Your question is kept below.</div></div>
+            <div class="banner banner-warn" role="alert"><div class="grow"><strong>This question needed too many steps.</strong>
+              <span>Try asking about one position or one player at a time.</span>
+              <span style="display:flex;gap:12px;margin-top:8px"><button class="btn btn-secondary" style="min-height:32px">Ask again</button></span></div></div>
+          </div>
+
+          <div style="display:contents" data-states="error">
+            <div class="msg user unsent"><div>Which injured players should I stash?</div><div class="when">Not answered. Your question is kept below.</div></div>
+            <div class="banner banner-error" role="alert"><div class="grow"><strong>Something went wrong, so there is no answer.</strong>
+              <span>The model service did not respond after several tries. Nothing was changed in Sleeper.</span>
+              <span style="display:flex;gap:12px;margin-top:8px"><button class="btn btn-secondary" style="min-height:32px">Ask again</button></span></div></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="composer-inner">
+          <div class="box">
+            <textarea aria-label="Your question" placeholder="Ask about your league" data-states="loading empty answered working refreshfail switch fresh"></textarea>
+            <textarea aria-label="Your question" disabled data-states="nokey noleague keyinvalid">Which injured players should I stash?</textarea>
+            <textarea aria-label="Your question" data-states="quota error">Which injured players should I stash?</textarea>
+            <textarea aria-label="Your question" data-states="toomany">Compare every free agent at every position</textarea>
+            <button class="btn btn-primary" data-states="loading empty answered refreshfail switch fresh quota error toomany">Send</button>
+            <button class="btn btn-primary" data-states="working" disabled><span class="spinner"></span> Working</button>
+            <button class="btn btn-primary" data-states="nokey noleague keyinvalid" disabled>Send</button>
+          </div>
+          <span class="hint">Enter to send, Shift+Enter for a new line. Read-only: the app never changes your Sleeper lineup.</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="My fantasy team">
+  <div class="panel-head">
+    <div class="top"><h2>Gridiron Ghosts</h2>
+      <span data-pstates="pregame live final stale nomatchup"><button class="link" style="font-size:12px">Refresh</button></span></div>
+    <div class="muted" style="font-size:13px" data-pstates="pregame live final stale nomatchup">Record 5-3 &middot; Rank 2 of 4 &middot; Week 9</div>
+    <div class="hint" data-pstates="pregame live final nomatchup">Updated 2 minutes ago</div>
+    <div class="hint" data-pstates="stale" style="color:#7a3d00">Updated Mon 4:02 PM</div>
+  </div>
+
+  <div data-pstates="loading" class="panel-body" aria-busy="true" aria-label="Loading your fantasy team">
+    <div class="skel" style="height:96px"></div>
+    <div class="skel" style="width:40%"></div>
+    <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+  </div>
+
+  <div data-pstates="error" class="panel-center">
+    <div class="banner banner-error" style="text-align:left"><div class="grow"><strong>Could not load your fantasy team.</strong>
+      <span>Sleeper did not answer and nothing is stored yet.</span></div></div>
+    <button class="btn btn-secondary">Try again</button>
+  </div>
+
+  <div data-pstates="empty" class="panel-center">
+    <h3>No fantasy team yet</h3>
+    <p class="muted">Choose a league in setup and your roster appears here.</p>
+    <button class="btn btn-primary">Open setup</button>
+  </div>
+
+  <div data-pstates="pregame live final stale nomatchup" class="panel-body">
+    <div data-pstates="stale" class="banner banner-warn"><div class="grow"><strong>Could not refresh from Sleeper.</strong>
+      <span>Showing what was stored on Mon 4:02 PM. Moves made since then are not shown.</span></div></div>
+
+    <div class="matchup" data-pstates="nomatchup" aria-label="This week's matchup">
+      <div class="label">Week 9 matchup</div>
+      <div class="status"><strong style="color:var(--navy)">No matchup this week</strong><br>Your fantasy team has a bye or is out of the playoffs. Your roster is below.</div>
+    </div>
+    <div class="matchup" data-pstates="pregame live final stale" aria-label="This week's matchup">
+      <div class="label">Week 9 matchup</div>
+      <div class="sides">
+        <div><div class="score lead" data-pstates="final">112.4</div><div class="score" data-pstates="live">87.4</div><div class="score" data-pstates="pregame stale">&ndash;</div><div class="name">Gridiron Ghosts</div></div>
+        <span class="vs">vs</span>
+        <div><div class="score" data-pstates="final">98.0</div><div class="score" data-pstates="live">92.1</div><div class="score" data-pstates="pregame stale">&ndash;</div><div class="name">Taco Tuesday FC</div></div>
+      </div>
+      <div class="status" data-pstates="pregame stale">Starts Sun, Nov 8, 1:00 PM ET</div>
+      <div class="status" data-pstates="live">In progress</div>
+      <div class="status" data-pstates="final">Final</div>
+    </div>
+
+    <div data-pstates="pregame live stale nomatchup" class="banner banner-warn" style="font-size:13px"><div class="grow">
+      <span><strong>Fred Warner</strong> (LB) is out and is in your lineup.</span>
+      <span>One starting slot (DL) is empty in Sleeper.</span></div></div>
+
+    <div class="roster"><h3>Starters<span>12</span></h3><div class="player"><span class="slot">QB</span>
+  <div><div class="pname">Josh Allen </div><div class="meta">QB &middot; BUF</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">24.6</span></div><div class="player"><span class="slot">RB</span>
+  <div><div class="pname">Saquon Barkley <span class="chip chip-q" title="Questionable">Q</span></div><div class="meta">RB &middot; PHI</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">14.2</span></div><div class="player"><span class="slot">RB</span>
+  <div><div class="pname">Bijan Robinson </div><div class="meta">RB &middot; ATL</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">11.8</span></div><div class="player"><span class="slot">WR</span>
+  <div><div class="pname">Ja&#x27;Marr Chase </div><div class="meta">WR &middot; CIN</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 4:25 PM</span>
+  <span class="right" data-pstates="live final">Sun 4:25 PM</span></div><div class="player"><span class="slot">WR</span>
+  <div><div class="pname">Amon-Ra St. Brown <span class="chip chip-d" title="Doubtful">D</span></div><div class="meta">WR &middot; DET</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">8.4</span></div><div class="player"><span class="slot">TE</span>
+  <div><div class="pname">Trey McBride </div><div class="meta">TE &middot; ARI</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 4:05 PM</span>
+  <span class="right" data-pstates="live final">Sun 4:05 PM</span></div><div class="player"><span class="slot">FLEX</span>
+  <div><div class="pname">Jahmyr Gibbs </div><div class="meta">RB &middot; DET</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">15.0</span></div><div class="player"><span class="slot">K</span>
+  <div><div class="pname">Brandon Aubrey </div><div class="meta">K &middot; DAL</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 8:20 PM</span>
+  <span class="right" data-pstates="live final">Sun 8:20 PM</span></div><div class="player"><span class="slot">DL</span>
+  <div><div class="pname">Micah Parsons </div><div class="meta">DL &middot; GB</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">6.0</span></div><div class="player out"><span class="slot">LB</span>
+  <div><div class="pname">Fred Warner <span class="chip chip-o" title="Out">OUT</span></div><div class="meta">LB &middot; SF</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Out</span>
+  <span class="right pts" data-pstates="live final">0.0</span></div><div class="player out"><span class="slot">DL</span><div><div class="pname">Empty slot</div><div class="meta">No player set in Sleeper</div></div><span class="right"></span></div><div class="player"><span class="slot">DB</span>
+  <div><div class="pname">Kyle Hamilton </div><div class="meta">DB &middot; BAL</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">7.4</span></div></div>
+    <div class="roster"><h3>Bench<span>5</span></h3><div class="player"><span class="slot">BN</span>
+  <div><div class="pname">Brock Purdy </div><div class="meta">QB &middot; SF</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 4:05 PM</span>
+  <span class="right" data-pstates="live final">Sun 4:05 PM</span></div><div class="player"><span class="slot">BN</span>
+  <div><div class="pname">Rhamondre Stevenson </div><div class="meta">RB &middot; NE</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 1:00 PM</span>
+  <span class="right pts" data-pstates="live final">9.1</span></div><div class="player out"><span class="slot">BN</span>
+  <div><div class="pname">Zay Flowers <span class="chip chip-bye" title="Bye week">BYE</span></div><div class="meta">WR &middot; BAL</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Bye</span>
+  <span class="right" data-pstates="live final">Bye</span></div><div class="player"><span class="slot">BN</span>
+  <div><div class="pname">Jake Ferguson <span class="chip chip-q" title="Questionable">Q</span></div><div class="meta">TE &middot; DAL</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Sun 8:20 PM</span>
+  <span class="right" data-pstates="live final">Sun 8:20 PM</span></div><div class="player out"><span class="slot">BN</span>
+  <div><div class="pname">Jaylen Waddle <span class="chip chip-o" title="Physically unable to perform">PUP</span></div><div class="meta">WR &middot; MIA</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Out</span>
+  <span class="right" data-pstates="live final">Out</span></div></div>
+    <div class="roster"><h3>Injured reserve<span>1</span></h3><div class="player out"><span class="slot">IR</span>
+  <div><div class="pname">Puka Nacua <span class="chip chip-ir" title="Injured reserve">IR</span></div><div class="meta">WR &middot; LAR</div></div>
+  <span class="right" data-pstates="pregame stale loading nomatchup">Out</span>
+  <span class="right" data-pstates="live final">Out</span></div></div>
+    <p class="panel-note">Lineup shown as set in Sleeper. Flags: Q questionable, D doubtful, OUT out, IR injured reserve, PUP physically unable to perform, SUS suspended, DNR did not report, NA not active, BYE bye week.</p>
+  </div>
+</aside>
+  </div>
+</div>
+<script>
+
+const PANEL_DEFAULT = "pregame";
+function setPanel(s){
+  document.querySelectorAll('[data-pstates]').forEach(e=>{ e.hidden = !e.dataset.pstates.split(' ').includes(s); });
+}
+function setState(s){
+  document.body.dataset.state = s;
+  document.querySelectorAll('[data-states]').forEach(e=>{ e.hidden = !e.dataset.states.split(' ').includes(s); });
+  document.querySelectorAll('.statebar button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.s===s));
+  if (window.onState) window.onState(s);
+}
+document.querySelectorAll('.statebar button').forEach(b=>b.addEventListener('click',()=>setState(b.dataset.s)));
+
+let timer = null, secs = 23;
+window.onState = s => {
+  setPanel(s === 'refreshfail' ? 'stale' : s === 'noleague' ? 'empty' : 'pregame');
+  clearInterval(timer);
+  if (s === 'working') { secs = 23; timer = setInterval(() => { secs++; document.getElementById('elapsed').textContent = Math.floor(secs/60) + ':' + String(secs%60).padStart(2,'0'); }, 1000); }
+};
+document.querySelectorAll('.example').forEach(b => b.addEventListener('click', () => { const t = document.querySelector('textarea:not([disabled]):not([hidden])'); t.value = b.textContent; t.focus(); }));
+setState(location.hash.slice(1) || 'answered');
+</script>
+</body>
+</html>

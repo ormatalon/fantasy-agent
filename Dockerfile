@@ -1,22 +1,19 @@
-# The web page is static, so build it once on the build machine's platform.
-FROM --platform=$BUILDPLATFORM node:24-slim AS web
-WORKDIR /web
-COPY web/package.json web/package-lock.json ./
-RUN npm ci
-COPY web/ ./
-RUN npm run build
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-FROM python:3.11-slim
-COPY --from=ghcr.io/astral-sh/uv:0.12.10 /uv /uvx /bin/
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONUNBUFFERED=1 PYTHONPATH=/app/src \
+    PATH="/app/.venv/bin:$PATH" \
+    FANTASY_DATA_DIR=/data FANTASY_UI_HOST=0.0.0.0 FANTASY_UI_PORT=8080 NICEGUI_STORAGE_PATH=/data/.nicegui
+
 WORKDIR /app
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
-COPY pyproject.toml uv.lock .python-version ./
+COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
-COPY config.py ./
-COPY src/ src/
-COPY --from=web /web/out web/out
-ENV PATH="/app/.venv/bin:$PATH"
-# Settings, league data and chat history live here: mount a volume on it.
-VOLUME /app/data
-EXPOSE 8000
-CMD ["uvicorn", "src.web.app:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY src ./src
+
+RUN useradd --create-home app && mkdir /data && chown app /data
+USER app
+VOLUME /data
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health')"
+ENTRYPOINT []
+CMD ["python", "-m", "ui"]

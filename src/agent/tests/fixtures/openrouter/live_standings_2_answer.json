@@ -1,0 +1,54 @@
+{
+  "id": "gen-1794902091-KePTfsK1IhIFvJSq3FtA",
+  "object": "chat.completion",
+  "created": 1794902091,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "League standings in Or Test League (week 11, 2026):\n\n1. **OrMatalon** (your fantasy team) \u2014 6\u20110, 1,074.6 points for  \n2. **Fantasy team 3** \u2014 3\u20113, 1,036.8 points for  \n3. **OrHuji** (this week's opponent) \u2014 2\u20114, 864.5 points for  \n4. **Fantasy team 4** \u2014 1\u20115, 634.1 points for  \n\nYour fantasy team leads the league by three games.",
+        "refusal": null,
+        "reasoning": "The user asked for league standings. The get_league_state tool returned the standings. I need to present them clearly. The standings show 4 fantasy teams with records and points for. I'll list them in order. No need for a table since only 4 rows and 3 columns (rank, team, record, points for). Actually 4 columns. Could use a simple list. I'll include the key info: OrMatalon is 1st at 6-0, 1074.6 points. Others follow. Also note the format and waiver info is not needed unless asked. Just the standings.",
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The user asked for league standings. The get_league_state tool returned the standings. I need to present them clearly. The standings show 4 fantasy teams with records and points for. I'll list them in order. No need for a table since only 4 rows and 3 columns (rank, team, record, points for). Actually 4 columns. Could use a simple list. I'll include the key info: OrMatalon is 1st at 6-0, 1074.6 points. Others follow. Also note the format and waiver info is not needed unless asked. Just the standings.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5739,
+    "completion_tokens": 272,
+    "total_tokens": 6011,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 4384,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 130,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

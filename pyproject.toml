@@ -1,26 +1,41 @@
 [project]
 name = "fantasy-agent"
 version = "0.1.0"
-requires-python = ">=3.11"
+description = "Sleeper fantasy football assistant"
+requires-python = ">=3.12"
 dependencies = [
-    "httpx>=0.27",
-    "python-dotenv>=1.0",
-    "nfl_data_py>=0.3",
-    "pulp>=2.8",
-    "langgraph>=1.2.11",
-    "langchain-openai>=1.6.2",
-    "langgraph-checkpoint-sqlite>=3.1.1",
-    "langsmith>=0.12.5",
-    "fastapi>=0.149.0",
-    "uvicorn[standard]>=0.54.0",
+    "fastapi>=0.162.0",
+    "httpx>=0.28.1",
+    "langsmith>=0.14.17",
+    "nicegui>=4.0.0",
+    "openai>=3.52.0",
+    "pywebview>=6.2.1",
+    "tzdata>=2026.6",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
-desktop = [
-    "pillow>=13.0.0",
-    "pyinstaller>=6.22.3",
-    "pywebview>=6.2.1",
+dev = ["pytest>=9.2.0"]
+desktop = ["pyinstaller>=6.20.0"]
+notebooks = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "nbconvert>=7.17.2",
+    "nbformat>=5.11.1",
+    "pandas>=3.1.1",
+    "seaborn>=0.13.2",
 ]
-dev = [
-    "pytest>=8.0",
-]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Packages live under src/ and import by their folder name (web, ingestion, storage, agent, ...).
+# dev-mode-dirs puts src/ on the path for `uv run`; add new packages to `packages` for the wheel.
+[tool.hatch.build.targets.wheel]
+packages = ["src/web", "src/ingestion", "src/storage", "src/projections", "src/decisions", "src/evaluation", "src/agent", "src/ui"]
+dev-mode-dirs = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["src", "desktop", "tests"]
+pythonpath = ["src", "desktop"]

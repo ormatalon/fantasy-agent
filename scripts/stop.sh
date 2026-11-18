@@ -1,5 +1,3 @@
 #!/bin/sh
-# Stops Fantasy Agent. Your settings, league data and chats are kept.
-set -e
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 docker compose down

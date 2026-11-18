@@ -40,6 +40,9 @@ logs/
 data/*
 !data/.gitkeep
 
+# Live check results (answers and resume state)
+tests/results/
+
 # uv
 .venv/
 

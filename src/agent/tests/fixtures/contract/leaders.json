@@ -1,0 +1,67 @@
+{
+  "kind": "leaders",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 8,
+  "summary": "Top RBs in actual points through week 8: Jahmyr Gibbs leads with 98.3.",
+  "as_of": {
+    "projections": null,
+    "rosters": null,
+    "injuries": null,
+    "news": null,
+    "games": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper stats"
+    }
+  },
+  "unprojected_scoring_items": [],
+  "warnings": [],
+  "through_week": 8,
+  "source": "sleeper_stats",
+  "rows": [
+    {
+      "rank": 1,
+      "player": {
+        "player_id": "9221",
+        "name": "Jahmyr Gibbs",
+        "position": "RB",
+        "nfl_team": "DET",
+        "injury_status": null,
+        "fantasy_status": "fantasy_team:Fantasy team 3",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "points": 98.3,
+      "games": 8,
+      "points_per_game": 12.3
+    },
+    {
+      "rank": 2,
+      "player": {
+        "player_id": "4866",
+        "name": "Saquon Barkley",
+        "position": "RB",
+        "nfl_team": "PHI",
+        "injury_status": null,
+        "fantasy_status": "mine_bench",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      "points": 77.7,
+      "games": 7,
+      "points_per_game": 11.1
+    }
+  ]
+}

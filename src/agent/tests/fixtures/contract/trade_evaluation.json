@@ -1,0 +1,221 @@
+{
+  "kind": "trade_evaluation",
+  "league_id": "1412371724632166400",
+  "season": 2026,
+  "week": 9,
+  "summary": "Trading Nabers and Barkley for Jefferson: you gain 6.3, OrHuji gains 2.1 (rest of season).",
+  "as_of": {
+    "projections": {
+      "as_of": "2026-11-03T10:45:00Z",
+      "source_label": "projections (Sleeper and nflverse blend)"
+    },
+    "rosters": {
+      "as_of": "2026-11-03T12:29:00Z",
+      "source_label": "Sleeper rosters"
+    },
+    "injuries": {
+      "as_of": "2026-11-03T11:00:00Z",
+      "source_label": "official NFL injury report via nflverse"
+    },
+    "news": null,
+    "games": {
+      "as_of": "2026-11-03T12:20:00Z",
+      "source_label": "ESPN scoreboard"
+    }
+  },
+  "unprojected_scoring_items": [
+    {
+      "key": "def_st_td",
+      "value": 6.0
+    },
+    {
+      "key": "fgm_50_59",
+      "value": 5.0
+    },
+    {
+      "key": "idp_def_td",
+      "value": 6.0
+    },
+    {
+      "key": "pts_allow_0",
+      "value": 10.0
+    }
+  ],
+  "warnings": [],
+  "horizon": "ros",
+  "mine": {
+    "fantasy_team": "OrMatalon",
+    "fantasy_team_id": 1,
+    "receives": [
+      {
+        "player_id": "6794",
+        "name": "Justin Jefferson",
+        "position": "WR",
+        "nfl_team": "MIN",
+        "injury_status": null,
+        "fantasy_status": "fantasy_team:OrHuji",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      }
+    ],
+    "gives": [
+      {
+        "player_id": "11632",
+        "name": "Malik Nabers",
+        "position": "WR",
+        "nfl_team": "NYG",
+        "injury_status": null,
+        "fantasy_status": "mine_bench",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      {
+        "player_id": "4866",
+        "name": "Saquon Barkley",
+        "position": "RB",
+        "nfl_team": "PHI",
+        "injury_status": null,
+        "fantasy_status": "mine_bench",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      }
+    ],
+    "adjustments": [
+      {
+        "action": "add_free_agent",
+        "player": {
+          "player_id": "12526",
+          "name": "Tetairoa McMillan",
+          "position": "WR",
+          "nfl_team": "CAR",
+          "injury_status": null,
+          "fantasy_status": "free_agent",
+          "lineup_slot": null,
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "reason": "roster_spot"
+      }
+    ],
+    "lineup_value_before": 1010.5,
+    "lineup_value_after": 1016.8,
+    "value_change": 6.3,
+    "why": {
+      "summary": "OrMatalon's starting lineup value changes by 6.3.",
+      "reasons": []
+    }
+  },
+  "theirs": {
+    "fantasy_team": "OrHuji",
+    "fantasy_team_id": 2,
+    "receives": [
+      {
+        "player_id": "11632",
+        "name": "Malik Nabers",
+        "position": "WR",
+        "nfl_team": "NYG",
+        "injury_status": null,
+        "fantasy_status": "mine_bench",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      },
+      {
+        "player_id": "4866",
+        "name": "Saquon Barkley",
+        "position": "RB",
+        "nfl_team": "PHI",
+        "injury_status": null,
+        "fantasy_status": "mine_bench",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      }
+    ],
+    "gives": [
+      {
+        "player_id": "6794",
+        "name": "Justin Jefferson",
+        "position": "WR",
+        "nfl_team": "MIN",
+        "injury_status": null,
+        "fantasy_status": "fantasy_team:OrHuji",
+        "lineup_slot": null,
+        "game": {
+          "status": "not_started",
+          "opponent_nfl_team": "MIA",
+          "home": true,
+          "kickoff": "2026-11-08T18:00:00Z",
+          "status_as_of": "2026-11-03T12:20:00Z"
+        }
+      }
+    ],
+    "adjustments": [
+      {
+        "action": "drop",
+        "player": {
+          "player_id": "7588",
+          "name": "Javonte Williams",
+          "position": "RB",
+          "nfl_team": "DAL",
+          "injury_status": null,
+          "fantasy_status": "fantasy_team:OrHuji",
+          "lineup_slot": null,
+          "game": {
+            "status": "not_started",
+            "opponent_nfl_team": "MIA",
+            "home": true,
+            "kickoff": "2026-11-08T18:00:00Z",
+            "status_as_of": "2026-11-03T12:20:00Z"
+          }
+        },
+        "reason": "roster_spot"
+      }
+    ],
+    "lineup_value_before": 980.0,
+    "lineup_value_after": 982.1,
+    "value_change": 2.1,
+    "why": {
+      "summary": "OrHuji's starting lineup value changes by 2.1.",
+      "reasons": []
+    }
+  },
+  "deadline": {
+    "week": 11,
+    "passed": false
+  },
+  "verdict": "I gain more"
+}
