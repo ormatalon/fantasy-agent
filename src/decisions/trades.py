@@ -12,6 +12,7 @@ from decisions.league import NoData, View, r1, reason, why
 from decisions.value import slot_demand
 
 MIN_IDEA_GAIN = 0.1  # a trade idea must raise both starting lineups by at least this
+TARGETS_PER_POSITION = 3  # when no player or position is named, each fantasy team's best at every position
 FREE_AGENTS_PER_POSITION = 3  # the best of these fills a roster spot
 
 
@@ -143,15 +144,16 @@ def find_trade_ideas(conn: sqlite3.Connection, league_id: str, target_player_id:
                      limit: int = 5) -> dict:  # fmt: skip
     """One-for-one offers that raise my starting lineup value and the other fantasy team's.
 
-    target_player_id (a player I want) or need_position (the best players at that position); with_fantasy_team_id
+    target_player_id (a player I want) or need_position (the best players at that position); with neither, only
+    my_tradeable (what could I get for him?) and every position is searched, the best players of each. with_fantasy_team_id
     searches only that fantasy team, otherwise every other one (then my_tradeable is required). my_tradeable
     defaults to my whole active roster when a fantasy team is named."""
     warnings = artifact_view.ensure(conn, league_id)
     v = View(conn, league_id)
     if v.me is None:
         raise NoData("my fantasy team is not stored for this league")
-    if not target_player_id and not need_position:
-        raise NoData("a target player or a position of need is required")
+    if not target_player_id and not need_position and not my_tradeable:
+        raise NoData("a target player, a position of need, or the players I would trade is required")
     if with_fantasy_team_id is None and not my_tradeable:
         raise NoData("say which of my players I am willing to trade, or which fantasy team to search")
     teams = [with_fantasy_team_id] if with_fantasy_team_id is not None else [t for t in v.names if t != v.me]
@@ -172,8 +174,13 @@ def find_trade_ideas(conn: sqlite3.Connection, league_id: str, target_player_id:
     found = []
     for team in teams:
         theirs_before = m.value(frozenset(v.active(team)))
-        targets = ([target_player_id] if target_player_id else sorted(
-            (p for p in v.active(team) if v.position(p) == need_position), key=lambda p: -m.mean(p))[:5])
+        by_mean = sorted(v.active(team), key=lambda p: -m.mean(p))
+        if target_player_id:
+            targets = [target_player_id]
+        elif need_position:
+            targets = [p for p in by_mean if v.position(p) == need_position][:5]
+        else:  # every position: their best players at each
+            targets = [p for pos in slot_demand(v.slots) for p in [q for q in by_mean if v.position(q) == pos][:TARGETS_PER_POSITION]]
         for t in targets:
             for g in mine_ids:
                 mine_after = m.value(frozenset({*(p for p in v.active(v.me) if p != g), t}))

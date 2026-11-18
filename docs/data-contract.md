@@ -838,7 +838,9 @@ The deadline passing does not block an evaluation; it adds a warning.
 
 #### 9.5 Trade ideas
 
-Input: either `target_player_id` or `need_position`; optional
+Input: `target_player_id`, `need_position` or neither; with neither, `my_tradeable` is
+required and every position is searched (each fantasy team's best three at each
+position), which answers "what could I get for X?". Optional
 `with_fantasy_team_id` (then only that fantasy team is searched); `my_tradeable`
 (player ids; required when `with_fantasy_team_id` is absent, and the tool
 refuses without it so the agent must ask the manager); `horizon` (`ros`

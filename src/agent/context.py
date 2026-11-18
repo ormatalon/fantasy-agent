@@ -8,7 +8,7 @@ from ingestion import sync
 from ingestion.nfl import service
 from storage.db import get_json
 from . import data
-from .render import format_lines, ordinal, roster_lines, when
+from .render import format_lines, ordinal, roster_lines, unprojected, when
 
 # Standing gaps, stated as facts so the model says them without a prompt rule.
 # Remove an item when its source lands (inactives: once ESPN didNotPlay is verified before a kickoff).
@@ -51,8 +51,16 @@ def build_context(conn: sqlite3.Connection, league_id: str, since: str | None, n
     lines.append(f"LEAGUE: {league['name']}" + (f". MY OTHER LEAGUES: {'; '.join(others)}" if others else ""))
     lines += format_lines(fmt, lg.me, week)
     lines.append(
-        f"MY FANTASY TEAM: {me['name']}, record {data.record(me)}, {ordinal(teams.index(me) + 1)} of {len(teams)}"
+        f"MY FANTASY TEAM: {me['name']}, record {data.record(me)}, {ordinal(teams.index(me) + 1)} of {len(teams)} "
+        "fantasy teams"
     )
+    meta = conn.execute("select unprojected_scoring_items from projection_meta where league_id = ?",
+                        (league_id,)).fetchone()
+    if meta is None:
+        lines.append("PROJECTIONS: not built yet for this league, so which scoring rules they cover is not known")
+    else:
+        lines.append("PROJECTIONS: " + (unprojected(json.loads(meta[0]))
+                                        or "every league scoring rule is included in the projections"))
     opp = data.opponent(conn, league_id, week, lg.me) if week else None
     lines.append(
         f"THIS WEEK'S OPPONENT: {opp['name']} (fantasy team), record {data.record(opp)}" if opp

@@ -81,7 +81,9 @@ def test_waivers_two_labeled_horizons_and_exclusions():
     assert "THIS WEEK:" in text and "REST OF SEASON:" in text
     assert "left out: Amon-Ra St. Brown (his game already started)" in text
     assert "FAAB guide" not in text  # rolling waivers: no dollars
-    assert "BUDGET: no FAAB, waiver order is rolling" in text
+    # live 2026-11-18 (check 28): with only "rolling", the model explained the order from memory, wrongly
+    assert ("BUDGET: rolling waiver order (no FAAB): a fantasy team whose claim succeeds moves to the end of the "
+            "order; my place in the waiver order is not available") in text
 
 
 def test_stash_quotes_news_prose_and_injury_source():

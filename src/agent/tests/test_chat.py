@@ -304,3 +304,12 @@ def test_switch_league_mid_question_changes_the_next_context(league, openrouter)
 
 def test_tracing_is_off_by_default():
     assert not tracing_is_enabled()
+
+
+def test_my_own_player_as_trade_target_is_refused_before_a_search(league, openrouter):
+    """Live 2026-11-18 (check 36): the model passed my own player as target_player and got "no trade" back."""
+    openrouter.reply("live_trade_for_my_player_1_tool_call.json", "live_trade_for_my_player_2_answer.json")
+    qid, _ = ask(league, "What could I get from OrHuji for Saquon Barkley?")
+    tool = next(r for r in chat.trace(league, TEST_LEAGUE, qid)["rows"] if r["role"] == "tool")
+    assert tool["content"].startswith("ERROR: Saquon Barkley is on my roster, so he cannot be the target")
+    assert tool["meta"]["ok"] is False

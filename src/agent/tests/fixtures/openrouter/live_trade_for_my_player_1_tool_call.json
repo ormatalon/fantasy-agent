@@ -1,0 +1,65 @@
+{
+  "id": "gen-1794985785-YyLLHu6YnRbjYC83ELBm",
+  "object": "chat.completion",
+  "created": 1794985785,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "Nvidia",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "tool_calls",
+      "native_finish_reason": "tool_calls",
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "refusal": null,
+        "reasoning": "The user is asking about potential trades with OrHuji for Saquon Barkley. They want to know what they could get from OrHuji in exchange for Saquon Barkley. This is a trade evaluation question. I should use the find_trade_ideas tool to find one-for-one trades for Saquon Barkley that help both fantasy teams, targeting OrHuji specifically. The user wants to know what they could get from OrHuji for Saquon Barkley. So I need to call find_trade_ideas with target_player as Saquon Barkley, fantasy_team as OrHuji, and maybe my_tradeable as Saquon Barkley? Actually, the tool finds one-for-one trades for a target player or a position of need that help both fantasy teams. If no fantasy team is named, it needs the players the manager is willing to trade (ask first). The user is asking specifically about OrHuji, so I should specify fantasy_team as OrHuji. The target_player is Saquon Barkley. The user wants to know what they could get from OrHuji for Saquon Barkley. So I should set target_player as Saquon Barkley, fantasy_team as OrHuji. The tool will return trades that help both teams. I'll also need to specify horizon (default ros). Let's call the tool.",
+        "tool_calls": [
+          {
+            "type": "function",
+            "index": 0,
+            "id": "call-db6a9f48-442a-48f3-be07-25493bc74860",
+            "function": {
+              "name": "find_trade_ideas",
+              "arguments": "{\"target_player\":\"Saquon Barkley\",\"fantasy_team\":\"OrHuji\",\"horizon\":\"ros\",\"limit\":5}"
+            }
+          }
+        ],
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "text": "The user is asking about potential trades with OrHuji for Saquon Barkley. They want to know what they could get from OrHuji in exchange for Saquon Barkley. This is a trade evaluation question. I should use the find_trade_ideas tool to find one-for-one trades for Saquon Barkley that help both fantasy teams, targeting OrHuji specifically. The user wants to know what they could get from OrHuji for Saquon Barkley. So I need to call find_trade_ideas with target_player as Saquon Barkley, fantasy_team as OrHuji, and maybe my_tradeable as Saquon Barkley? Actually, the tool finds one-for-one trades for a target player or a position of need that help both fantasy teams. If no fantasy team is named, it needs the players the manager is willing to trade (ask first). The user is asking specifically about OrHuji, so I should specify fantasy_team as OrHuji. The target_player is Saquon Barkley. The user wants to know what they could get from OrHuji for Saquon Barkley. So I should set target_player as Saquon Barkley, fantasy_team as OrHuji. The tool will return trades that help both teams. I'll also need to specify horizon (default ros). Let's call the tool.",
+            "format": "unknown",
+            "index": 0
+          }
+        ]
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 4987,
+    "completion_tokens": 355,
+    "total_tokens": 5342,
+    "cost": 0,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 4384,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0,
+      "upstream_inference_prompt_cost": 0,
+      "upstream_inference_completions_cost": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 285,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

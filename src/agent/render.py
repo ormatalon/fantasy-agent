@@ -135,6 +135,14 @@ def ordinal(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
+WAIVER_ORDER = {  # what each Sleeper waiver type means, so the model never supplies the rule itself
+    "rolling": "rolling waiver order (no FAAB): a fantasy team whose claim succeeds moves to the end of the order",
+    "reverse_standings": "reverse-standings waiver order (no FAAB): the fantasy team lowest in the standings claims "
+                         "first",
+}
+WAIVER_GAP = "my place in the waiver order is not available"
+
+
 def format_lines(fmt: dict, my_roster_id: int | None, this_week: int | None) -> list[str]:
     """FORMAT and WAIVERS lines from LeagueFormat (section 8)."""
     defense = {"idp": "IDP (individual defensive players)", "team_def": "team DEF (team defense)",
@@ -154,7 +162,7 @@ def format_lines(fmt: dict, my_roster_id: int | None, this_week: int | None) -> 
         left = fmt["faab_remaining"].get(str(my_roster_id), fmt["faab_remaining"].get(my_roster_id))
         waivers = f"FAAB, ${left} of ${fmt['faab_budget']} left"
     else:
-        waivers = fmt["waiver_type"].replace("_", " ") + " waiver order (no FAAB)"
+        waivers = f"{WAIVER_ORDER[fmt['waiver_type']]}; {WAIVER_GAP}"
     deadline = fmt["trade_deadline_week"]
     if deadline is None:
         trade = "none"
@@ -313,7 +321,7 @@ def waivers(r: dict) -> str:
     if b["type"] == "faab":
         lines.append(f"BUDGET: FAAB ${b['remaining']} of ${b['total']} left, minimum bid ${b['min_bid']}")
     else:
-        lines.append(f"BUDGET: no FAAB, waiver order is {b['type'].replace('_', ' ')}")
+        lines.append(f"BUDGET: {WAIVER_ORDER[b['type']]}; {WAIVER_GAP}")
     return envelope(r, lines)
 
 

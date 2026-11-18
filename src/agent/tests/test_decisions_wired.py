@@ -8,7 +8,7 @@ import pytest
 import decisions
 from agent import chat, tools
 from decisions import artifact_view
-from decisions.tests.support import seed_projections
+from decisions.tests.support import put_on_bye, seed_projections
 from ingestion.tests.support import load_games
 from .conftest import TEST_LEAGUE, WIRED
 
@@ -113,3 +113,10 @@ def test_trending_question_routes_to_the_trending_tool(decided, openrouter):
     assert tool["meta"]["name"] == "get_trending_players" and tool["meta"]["ok"]
     assert tool["content"].startswith("SUMMARY: ") and "AS OF: Sleeper trending" in tool["content"]
     assert events[-1][0] == "answer" and "Sleeper trending" in {s["label"] for s in events[-1][1]["sources"]}
+
+
+def test_my_roster_counts_starters_on_a_bye(decided):
+    """Live 2026-11-18 (check 5): the model counted byes itself, and wrongly ("two starters" for three)."""
+    put_on_bye(decided.conn, "BUF", 11)  # Josh Allen (QB) and Greg Rousseau (IDP_FLEX) start
+    text = tools.run_tool(decided, "get_my_roster", {}).text
+    assert "12 of 12 starting slots filled (0 empty), 2 starters on a bye," in text.splitlines()[0]

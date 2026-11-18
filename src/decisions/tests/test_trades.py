@@ -148,3 +148,21 @@ def test_ir_and_taxi_players_do_not_count_against_the_roster_limit(league):
     assert len(r["mine"]["adjustments"]) == 1 and r["mine"]["adjustments"][0]["action"] == "add_free_agent"
     # OrHuji: 16 active - 1 + 2 = 17 is within the limit of 17: nobody is dropped (counting IR it would be 18)
     assert r["theirs"]["adjustments"] == []
+
+
+def test_what_could_i_get_for_barkley_searches_every_position_with_only_my_tradeable(league):
+    # Barkley (RB, 14) is the spare running back; Chase (WR, 20) beats my wide receivers; OrHuji's running backs are 2s
+    seed_projections(league, default=10.0, means=SPARE_RB_SEASON)
+    r = trades.find_trade_ideas(league, LEAGUE, my_tradeable=[BARKLEY])
+    assert len(r["searched_fantasy_teams"]) == 3
+    top = r["ideas"][0]["evaluation"]
+    assert [p["name"] for p in top["mine"]["gives"]] == ["Saquon Barkley"] and [p["name"] for p in top["mine"]["receives"]] == ["Ja'Marr Chase"]
+    assert top["theirs"]["fantasy_team"] == "OrHuji" and top["mine"]["value_change"] > 0 and top["theirs"]["value_change"] > 0
+    assert len(r["ideas"]) <= 5 and r["deadline"] == {"week": 11, "passed": False}
+    assert trades.find_trade_ideas(league, LEAGUE, my_tradeable=[BARKLEY], with_fantasy_team_id=3)["searched_fantasy_teams"] == ["Fantasy team 3"]
+
+
+def test_with_nothing_to_go_on_the_search_is_refused(league):
+    seed_projections(league)
+    with pytest.raises(NoData, match="players I would trade"):
+        trades.find_trade_ideas(league, LEAGUE, with_fantasy_team_id=2)

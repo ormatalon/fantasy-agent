@@ -116,7 +116,7 @@ def get_league_state(ctx: Ctx) -> ToolResult:
     lines += render.format_lines(fmt, lg.me, week)
     summary = (
         f"Week {week} of the {fmt['season']} season in {league['name']}; my fantasy team {me['name']} is "
-        f"{render.ordinal(teams.index(me) + 1)} of {len(teams)} at {data.record(me)}; opponent this week: {opp_text}."
+        f"{render.ordinal(teams.index(me) + 1)} of {len(teams)} fantasy teams at {data.record(me)}; opponent this week: {opp_text}."
     )
     sources = [rosters_source(conn, ctx.league_id),
                {"label": "Sleeper matchups", "as_of": data.refresh_ok_at(conn, "sleeper", "matchups")}]
@@ -140,14 +140,17 @@ def _roster_result(ctx: Ctx, roster_id: int, summary: str) -> ToolResult:
     lines = roster_lines(lg, roster_id, notes)
     fmt = data.league_format(ctx.conn, ctx.league_id)
     on_ir = [i["player"] for i in items if i["slot"] == "IR"]
-    if on_ir:
-        allowed = fmt["ir_allowed_designations"]
-        lines.append("IR slots in this league allow these designations: " + ", ".join(allowed))
-        for p in on_ir:
-            status = lg.injury_status(p["player_id"])
-            if status not in allowed:
-                lines.append(f"IR FLAG: {p['full_name']} is in an IR slot with designation "
-                             f"{status or 'none'}, which this league's IR slots do not allow")
+    allowed = fmt["ir_allowed_designations"]
+    if fmt["ir_slots"]:
+        lines.append(f"IR SLOTS: {fmt['ir_slots']} in this league, {len(on_ir)} in use; they allow only these "
+                     "designations: " + ", ".join(allowed))
+    else:
+        lines.append("IR SLOTS: none in this league, so no player can be moved to IR")
+    for p in on_ir:
+        status = lg.injury_status(p["player_id"])
+        if status not in allowed:
+            lines.append(f"IR FLAG: {p['full_name']} is in an IR slot with designation "
+                         f"{status or 'none'}, which this league's IR slots do not allow")
     if any(i["player"] and lg.ref(i["player"])["game"] is None for i in items):
         gaps.append("game time not available for players whose NFL team has no stored game this week")
     facts += [f for f in lg.injury_facts.values() if f and f["source"] != "sleeper"]  # the catalog is listed already
@@ -164,10 +167,11 @@ def get_my_roster(ctx: Ctx) -> ToolResult:
     starting = items[: len(lg.slots)]
     empty = sum(i["player"] is None for i in starting)
     counts = {s: sum(i["slot"] == s for i in items) for s in ("BN", "IR", "TAXI")}
+    byes = sum(bool(i["player"] and (g := lg.ref(i["player"])["game"]) and g["status"] == "bye") for i in starting)
     week, _ = data.weeks(ctx.conn)
     summary = (
         f"My lineup as set in Sleeper for week {week}: {len(starting) - empty} of {len(starting)} starting slots "
-        f"filled ({empty} empty), {counts['BN']} on the bench, {counts['IR']} on IR"
+        f"filled ({empty} empty), {byes} starters on a bye, {counts['BN']} on the bench, {counts['IR']} on IR"
         + (f", {counts['TAXI']} on taxi" if counts["TAXI"] else "") + ". This is not a recommendation."
     )
     return _roster_result(ctx, lg.me, summary)
@@ -181,7 +185,7 @@ def get_fantasy_team_roster(ctx: Ctx, fantasy_team: str) -> ToolResult:
     mine = team["roster_id"] == data.my_roster_id(ctx.conn, ctx.league_id)
     summary = (
         f"{team['name']} (fantasy team{', mine' if mine else ''}), record {data.record(team)}, "
-        f"{render.ordinal(teams.index(team) + 1)} of {len(teams)}: lineup as set in Sleeper."
+        f"{render.ordinal(teams.index(team) + 1)} of {len(teams)} fantasy teams: lineup as set in Sleeper."
     )
     return _roster_result(ctx, team["roster_id"], summary)
 
@@ -239,7 +243,8 @@ def get_player(ctx: Ctx, name: str) -> ToolResult:
     nfl_team = roster["nfl_team"] if roster else None
     ref = lg.ref(p) | {"nfl_team": nfl_team, "game": f["game"]}
     if roster:
-        team_line = f"NFL TEAM: {nfl_team} ({render.fact_source(roster)})"
+        city, nick = resolve.NFL_TEAMS[nfl_team]
+        team_line = f"NFL TEAM: {nfl_team}, the {city} {nick} ({render.fact_source(roster)})"
         team_line += "".join(f"; {a['source']} still lists {a['value']} ({when(a['as_of'])})" for a in roster["also"])
     else:
         team_line = "NFL TEAM: none (no source lists him on an NFL team)"
@@ -475,6 +480,9 @@ def find_trade_ideas(ctx: Ctx, target_player: str | None = None, need_position: 
         p = _one_player(ctx, lg, target_player)
         if isinstance(p, ToolResult):
             return p
+        if (held := lg.held.get(p["player_id"])) and held["roster_id"] == lg.me:
+            return error(f"{p['full_name']} is on my roster, so he cannot be the target. To offer him, pass him in "
+                         "my_tradeable; no search was run")
         target_id = p["player_id"]
     team_id = None
     if fantasy_team:
@@ -578,9 +586,11 @@ TOOLS = [
          "Find one-for-one trades for a target player or a position of need that help both fantasy teams. If no "
          "fantasy team is named, it needs the players the manager is willing to trade (ask first). Not for "
          "evaluating a given offer: use evaluate_trade.",
-         {"target_player": _p("string", "player the manager wants"), "need_position": POSITION,
+         {"target_player": _p("string", "a player on another fantasy team that the manager wants"),
+          "need_position": POSITION,
           "fantasy_team": _p("string", "search only this fantasy team"),
-          "my_tradeable": {**NAMES, "description": "my players I am willing to trade"}, "horizon": HORIZON,
+          "my_tradeable": {**NAMES, "description": "my players I am willing to trade, e.g. X in 'what could I get "
+                                                   "for X'"}, "horizon": HORIZON,
           "limit": LIMIT}, find_trade_ideas),
     Tool("get_trending_players", "Reading Sleeper trends",
          "Players most added or dropped across all Sleeper leagues recently, as context only. Not a projection or "

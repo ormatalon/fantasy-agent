@@ -51,7 +51,7 @@ def test_ir_slot_rule_and_flag_come_from_league_format(ctx):
                          "where league_id = ? and player_id = '4866'", (TEST_LEAGUE,))  # Saquon Barkley, healthy
     text = run(ctx, "get_my_roster").text
     assert "IR: Saquon Barkley, RB, NFL TEAM: PHI, MY ROSTER (IR)" in text
-    assert "IR slots in this league allow these designations: IR, Out" in text
+    assert "IR SLOTS: 1 in this league, 1 in use; they allow only these designations: IR, Out" in text
     assert ("IR FLAG: Saquon Barkley is in an IR slot with designation none, which this league's IR slots "
             "do not allow") in text
 
@@ -66,7 +66,7 @@ def test_ir_slot_designations_are_read_from_the_league_format(ctx):
                          "where league_id = ? and player_id = '4866'", (TEST_LEAGUE,))  # Saquon Barkley
         ctx.conn.execute("update player set injury_status = 'PUP' where player_id = '4866'")
     text = run(ctx, "get_my_roster").text
-    assert "IR slots in this league allow these designations: IR, Out, PUP" in text and "IR FLAG" not in text
+    assert "they allow only these designations: IR, Out, PUP" in text and "IR FLAG" not in text
     assert "IR slots allow these designations: IR, Out, PUP" in run(ctx, "get_league_state").text
 
 
@@ -82,6 +82,11 @@ def test_injury_designation_follows_the_nfl_facts_not_the_catalog_alone(ctx):
     r = run(ctx, "get_my_roster")
     assert watson + "Out" in r.text and "ESPN injury list" in {s["label"] for s in r.sources}
     assert "  " + watson + "Out" in build_context(ctx.conn, TEST_LEAGUE, None).splitlines()
+
+
+def test_no_ir_slots_is_stated_on_the_roster(ctx):
+    """Live 2026-11-18 (check 10): with 0 IR slots and no stated rule, the model gave IR eligibility from memory."""
+    assert "IR SLOTS: none in this league, so no player can be moved to IR" in run(ctx, "get_my_roster").text.splitlines()
 
 
 def test_other_fantasy_team_roster_and_unknown_name(ctx):
@@ -114,7 +119,7 @@ def test_seattle_roster_from_nfl_facts_has_depth_injury_usage_and_no_metcalf(nfl
 
 def test_player_nfl_team_comes_from_the_freshest_source(nfl_ctx):
     r = run(nfl_ctx, "get_player", name="DK Metcalf")
-    assert "NFL TEAM: PIT (per nflverse weekly roster" in r.text
+    assert "NFL TEAM: PIT, the Pittsburgh Steelers (per nflverse weekly roster" in r.text  # names from the tool
     assert r.text.startswith("SUMMARY: DK Metcalf: WR, NFL team PIT")
 
 
@@ -140,7 +145,7 @@ def test_player_ambiguous_not_found_and_resolved(ctx):
         line.strip().split(",")[0] for line in amb.text.splitlines()[1:]}
     assert run(ctx, "get_player", name="Jaxon Pellerman").text.startswith("NOT FOUND:")
     r = run(ctx, "get_player", name="josh allen")
-    assert "NFL TEAM: BUF (per Sleeper players catalog" in r.text
+    assert "NFL TEAM: BUF, the Buffalo Bills (per Sleeper players catalog" in r.text
     assert "MY ROSTER (starter, QB)" in r.text and "NEWS: none stored for him" in r.text
     assert run(ctx, "get_player", name="Will Anderson").text.startswith("SUMMARY: Will Anderson Jr.")
 
