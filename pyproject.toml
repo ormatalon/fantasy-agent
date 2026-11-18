@@ -7,13 +7,16 @@ dependencies = [
     "fastapi>=0.162.0",
     "httpx>=0.28.1",
     "langsmith>=0.14.17",
+    "nicegui>=4.0.0",
     "openai>=3.52.0",
+    "pywebview>=6.2.1",
     "tzdata>=2026.6",
     "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
 dev = ["pytest>=9.2.0"]
+desktop = ["pyinstaller>=6.20.0"]
 notebooks = [
     "ipykernel>=7.4.0",
     "matplotlib>=3.11.2",
@@ -30,7 +33,7 @@ build-backend = "hatchling.build"
 # Packages live under src/ and import by their folder name (web, ingestion, storage, agent, ...).
 # dev-mode-dirs puts src/ on the path for `uv run`; add new packages to `packages` for the wheel.
 [tool.hatch.build.targets.wheel]
-packages = ["src/web", "src/ingestion", "src/storage", "src/projections", "src/decisions", "src/evaluation", "src/agent"]
+packages = ["src/web", "src/ingestion", "src/storage", "src/projections", "src/decisions", "src/evaluation", "src/agent", "src/ui"]
 dev-mode-dirs = ["src"]
 
 [tool.pytest.ini_options]

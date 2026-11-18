@@ -14,6 +14,8 @@ example `chat.html#quota`. Sample data is invented (an IDP league, week 9).
 The CSS is inlined in every file (the same `:root` tokens and component rules),
 so each opens alone. If a token changes, change it in all three.
 
+The chat-screen missing-key and no-league banners in the mockups can't be reached in the NiceGUI app, because setup gating comes first; a missing key only shows as an error when a key is removed while a chat is open.
+
 ## Window
 
 pywebview window. Default 1280 x 800, minimum 960 x 640. Below 960 wide the

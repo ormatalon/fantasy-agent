@@ -13,7 +13,7 @@ agent's behavior; extend it as features land.
   pyproject.toml, scripts/, desktop/, Dockerfile, docker-compose.yml,
   .github/workflows/, .env.example
 - ui-designer: design/ (spec and mockups only, no code)
-- frontend-developer: web/ (Next.js)
+- frontend-developer: src/ui (NiceGUI)
 - qa-expert: tests/ (live checks and acceptance; files bugs as tasks to the
   owner, doesn't fix code)
 Unit tests and the fixtures they use live in the owner's folder
@@ -55,14 +55,16 @@ These come from the PRD and are not open to change:
 
 ## Technical decisions
 
-- Next.js frontend.
-- Python FastAPI backend, serving the static Next.js site at `/`.
+- NiceGUI frontend (`src/ui`), in the same Python process as the FastAPI
+  backend: one app serves the UI at `/` and the API at `/api`, and the UI
+  calls the backend modules directly.
 - Everything packaged into a Docker container, with uv as the Python package
   manager.
 - Start and stop scripts in `scripts/` as docker compose wrappers (Mac/Linux:
   `.sh`, Windows: `.bat`).
-- Desktop (Windows, Mac) and Android apps per the PRD. Reuse the Next.js
-  frontend for them where practical.
+- Desktop (Windows, Mac) and Android apps per the PRD. Desktop reuses the
+  NiceGUI app in a native window. Android is not decided: NiceGUI renders
+  from a Python server, so the phone needs a server to reach.
 - OpenRouter for model calls, with `OPENROUTER_API_KEY` from `.env` in the
   project root (users enter their own key in the app). Use a free model that
   reliably calls tools, pinned by id, not an auto-router. Last known good:

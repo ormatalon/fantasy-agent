@@ -627,7 +627,7 @@ scored without leakage.
 | Mac build, code signing, auto-update | Untested / not done |
 | Undocumented API | Sleeper can change or close GraphQL without notice; moves stop working until fixed, while reads can fall back to REST |
 | Evaluations from `TEST_QUESTIONS.md` in a tracing tool | Later |
-| Android architecture | Not decided: where the backend runs, how the phone authenticates to it, and whether it reuses the Next.js page (for example wrapped as a native shell) or is a native app |
+| Android architecture | Not decided: where the backend runs, how the phone authenticates to it, and whether it reuses the NiceGUI app (served from a reachable server) or is a native app. NiceGUI renders from a Python server, so a phone cannot run it offline as a static page |
 | Decision quality not evaluated | Deferred. Projections are backtested; lineups and waiver picks are not. A cheap start: points left on the bench across past weeks |
 | Performance targets | Deferred. No target yet for first sync, app start, or the slowest acceptable answer (only "can take a minute") |
 | What a good "why" looks like | Deferred. Every decision must explain itself, but there is no reference example to test against |
@@ -639,7 +639,10 @@ scored without leakage.
 
 From `AGENT.md` (these are not open to change without the owner):
 
-- Next.js frontend; Python FastAPI backend serving the static site at `/`.
+- NiceGUI frontend in the same Python process as the FastAPI backend (UI at
+  `/`, API at `/api`). Changed from Next.js on 2026-11-17 by the owner, after
+  both were built: one language and one process outweighed Next.js's finer
+  layout control and static-page path to Android.
 - Packaged in Docker, using uv for Python; start/stop scripts in `scripts/` as
   docker compose wrappers (`.sh` and `.bat`).
 - OpenRouter for model calls, with a free model that reliably calls tools,
@@ -655,7 +658,6 @@ From `AGENT.md` (these are not open to change without the owner):
   before fixes, no emojis.
 
 Everything else (agent framework, optimizer, desktop and Android packaging,
-tracing tool, email provider) is the team's choice. For Android, reusing the
-Next.js frontend is preferred but not required. The first build used LangGraph, pulp,
+tracing tool, email provider) is the team's choice. The first build used LangGraph, pulp,
 pywebview + PyInstaller, LangSmith and Gmail SMTP; any of these may be kept or
 replaced.

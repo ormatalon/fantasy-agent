@@ -73,7 +73,7 @@ fetched. An LLM orchestrates; deterministic tools compute every number.
 Desktop shell (native window)          Docker (owner/dev)
         |                                    |
         +------------ FastAPI (localhost only) ------------+
-        |  serves static Next.js export at /               |
+        |  serves the NiceGUI page at / (same process)     |
         |  /api/*  setup, leagues, my fantasy team, chat   |
         |          (chat streams progress events)          |
         +---------------------------+----------------------+
@@ -91,8 +91,10 @@ Desktop shell (native window)          Docker (owner/dev)
       +-------------+------ SQLite (created if missing, migrated in place)
 ```
 
-- **Frontend:** Next.js static export, served by FastAPI. Same build in the
-  desktop shell (pywebview window, bundled with PyInstaller) and in Docker.
+- **Frontend:** NiceGUI (`src/ui`), in the FastAPI process, calling the
+  backend modules directly. Same app in the desktop shell (NiceGUI native
+  window via pywebview, bundled with PyInstaller) and in Docker. Chosen over
+  the Next.js version built in 2.6 for one language and one process.
 - **Tracing:** LangSmith free tier, off by default, enabled by env vars.
 - **Backend:** Python, FastAPI, uv. SQLite in the user's app-data folder
   (desktop) or a Docker volume.
@@ -135,7 +137,7 @@ its owner or a contract change.
 | data-scientist | `src/projections/`, `src/decisions/`, `src/evaluation/`, `notebooks/` | Projection sources and blend, variance, injury overlay, rest-of-season, lineup ILP, VORP, stash, trade evaluation and ideas, results and leaders, backtest. Author of `docs/data-contract.md` |
 | ai-engineer | `src/agent/` | Framework decision, model choice and verification, tool catalog, per-turn context, system prompt (including the fantasy team / NFL team rule), retries and quota handling, chat history, LangSmith tracing. Author of the agent-tools section of `docs/data-contract.md` |
 | ui-designer | `design/`, `docs/user-guide.md` | Screens (setup, chat with progress, my fantasy team panel), states (loading, empty, error, quota), tokens from the `AGENT.md` colors, desktop window sizes |
-| frontend-developer | `web/` | Next.js app built to the design and the API contract |
+| frontend-developer | `src/ui/` | NiceGUI app built to the design, calling the backend modules |
 | qa-expert | `tests/`, `TEST_QUESTIONS.md` | Live-check runner over the API, grounding check, acceptance runs, installer test plan. Reviews every contract for testability |
 
 Unit tests and their fixtures live next to the code they test
