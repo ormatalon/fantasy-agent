@@ -1,3 +1,5 @@
+from contextlib import closing
+
 from fastapi.testclient import TestClient
 
 from web import setup
@@ -100,7 +102,8 @@ def test_key_is_stored_but_never_returned(client, monkeypatch):
         assert secret not in r.text
     state = client.get("/api/state").json()
     assert state["key_set"] is True and state["model"] == "google/gemma-4-31b-it:free"
-    assert db.get_setting(db.connect(), "openrouter_api_key") == secret
+    with closing(db.connect()) as conn:
+        assert db.get_setting(conn, "openrouter_api_key") == secret
 
 
 def test_unknown_model(client):
@@ -154,4 +157,5 @@ def test_delete_key(client, monkeypatch):
     for _ in range(2):  # idempotent
         r = client.delete("/api/settings/key")
         assert r.status_code == 200 and r.json()["key_set"] is False
-    assert db.get_setting(db.connect(), "openrouter_api_key") is None
+    with closing(db.connect()) as conn:
+        assert db.get_setting(conn, "openrouter_api_key") is None

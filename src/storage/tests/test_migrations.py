@@ -5,22 +5,36 @@ import pytest
 from storage import db
 
 
+@pytest.fixture
+def connect():
+    """db.connect that closes every connection at the end of the test."""
+    opened = []
+
+    def open_db(path):
+        opened.append(db.connect(path))
+        return opened[-1]
+
+    yield open_db
+    for c in opened:
+        c.close()
+
+
 def tables(conn):
     return {r[0] for r in conn.execute("select name from sqlite_master where type = 'table'")}
 
 
-def test_creates_database_and_applies_schema(tmp_path):
-    conn = db.connect(tmp_path / "new" / "fantasy.db")
+def test_creates_database_and_applies_schema(tmp_path, connect):
+    conn = connect(tmp_path / "new" / "fantasy.db")
     db.migrate(conn)
     assert conn.execute("pragma user_version").fetchone()[0] == 4
     assert {"settings", "chat_message", "roster_diff", "league", "projection", "refresh_log"} <= tables(conn)
 
 
-def test_upgrade_keeps_user_data(tmp_path):
+def test_upgrade_keeps_user_data(tmp_path, connect):
     old = tmp_path / "migrations_old"
     old.mkdir()
     shutil.copy(db.MIGRATIONS / "0001_init.sql", old)
-    conn = db.connect(tmp_path / "fantasy.db")
+    conn = connect(tmp_path / "fantasy.db")
     db.migrate(conn, old)
     conn.execute("insert into settings values ('sleeper_username', 'OrMatalon')")
     conn.execute("insert into chat_message(league_id, role, content, created_at) values ('1', 'user', 'hi', 't')")
@@ -35,26 +49,26 @@ def test_upgrade_keeps_user_data(tmp_path):
     assert conn.execute("select count(*) from roster_diff").fetchone()[0] == 1
 
 
-def test_failed_migration_rolls_back_and_names_the_file(tmp_path):
+def test_failed_migration_rolls_back_and_names_the_file(tmp_path, connect):
     folder = tmp_path / "m"
     folder.mkdir()
     (folder / "0001_a.sql").write_text("create table a(x);")
     (folder / "0002_bad.sql").write_text("create table b(x); insert into missing values (1);")
-    conn = db.connect(tmp_path / "fantasy.db")
+    conn = connect(tmp_path / "fantasy.db")
     with pytest.raises(RuntimeError, match="0002_bad.sql"):
         db.migrate(conn, folder)
     assert conn.execute("pragma user_version").fetchone()[0] == 1
     assert "b" not in tables(conn)
 
 
-def test_old_sleeper_catalog_and_stats_errors_are_dropped(tmp_path):
+def test_old_sleeper_catalog_and_stats_errors_are_dropped(tmp_path, connect):
     from ingestion import sync
 
     old = tmp_path / "migrations_0003"
     old.mkdir()
     for f in db.MIGRATIONS.glob("000[123]_*.sql"):
         shutil.copy(f, old)
-    conn = db.connect(tmp_path / "fantasy.db")
+    conn = connect(tmp_path / "fantasy.db")
     db.migrate(conn, old)
     for scope in ("catalog", "stats", "projections", "projections_ros", "league"):
         sync._log(conn, "sleeper", scope, "down")

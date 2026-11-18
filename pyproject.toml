@@ -37,5 +37,5 @@ packages = ["src/web", "src/ingestion", "src/storage", "src/projections", "src/d
 dev-mode-dirs = ["src"]
 
 [tool.pytest.ini_options]
-testpaths = ["src"]
-pythonpath = ["src"]
+testpaths = ["src", "desktop"]
+pythonpath = ["src", "desktop"]

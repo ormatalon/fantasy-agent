@@ -90,6 +90,7 @@ def test_nothing_stored_and_sleeper_down(client, fake):
     c = db.connect()
     for table in ("league", "fantasy_team", "roster_player", "matchup", "refresh_log"):
         c.execute(f"delete from {table}")
+    c.close()
     fake.down = True
     r = client.get("/api/panel")
     assert r.status_code == 502 and r.json()["error"]["code"] == "sleeper_unreachable"
@@ -100,6 +101,7 @@ def set_games(status: str):
     conn = db.connect()
     load_games(conn)
     conn.execute("update nfl_game set status = ? where week = 11", (status,))
+    conn.close()
 
 
 def test_points_are_null_until_the_players_game_starts(client, fake):
@@ -130,6 +132,7 @@ def test_live_state_when_a_game_is_in_progress(client, fake):
     set_games("scheduled")
     conn = db.connect()
     conn.execute("update nfl_game set status = 'in_progress' where game_id = (select game_id from nfl_game where week = 11 and (home = 'BUF' or away = 'BUF'))")
+    conn.close()
     panel = client.post("/api/refresh").json()
     assert panel["matchup"]["state"] == "live"
     buf = next(s for s in panel["slots"] if s["player"] and s["player"]["nfl_team"] == "BUF")
@@ -140,6 +143,7 @@ def test_bye_week_player_has_a_bye_game_and_no_points(client, fake):
     pick_test_league(client, fake)
     conn = db.connect()
     load_games(conn, espn=True)
+    conn.close()
     panel = client.post("/api/refresh").json()
     bye = [s for s in panel["slots"] if s["player"] and s["player"]["game"] and s["player"]["game"]["status"] == "bye"]
     assert bye and all(s["points"] is None and s["player"]["game"]["kickoff"] is None for s in bye)
@@ -165,5 +169,6 @@ def test_sources_report_coverage_and_failures(client, fake):
     pick_test_league(client, fake)
     conn = db.connect()
     conn.execute("insert into refresh_log(source, scope, last_attempt_at, last_ok_at, coverage) values ('nflverse', 'injury', 't', 't', '{\"mapped\": 99, \"total\": 100}')")
+    conn.close()
     body = client.get("/api/sources").json()
     assert body["coverage"]["nflverse:injury"] == {"mapped": 99, "total": 100} and body["this_week"] == 11
