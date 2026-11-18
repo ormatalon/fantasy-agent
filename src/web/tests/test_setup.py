@@ -114,9 +114,8 @@ def test_only_localhost_host_header(client):
     assert client.get("/api/health").json()["ok"] is True
 
 
-def test_placeholder_page_at_root(client):
-    r = client.get("/")
-    assert r.status_code == 200 and "Fantasy Agent" in r.text
+def test_root_is_not_served_by_the_api_app(client):  # the page at / is NiceGUI's (src/ui)
+    assert client.get("/").status_code == 404
 
 
 def test_key_check_uses_the_base_url_setting_and_env(client, monkeypatch):

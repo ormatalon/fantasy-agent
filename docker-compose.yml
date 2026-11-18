@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    image: fantasy-agent
+    ports:
+      - "127.0.0.1:8080:8080"  # this computer only: the app has no login and stores credentials
+    volumes:
+      - fantasy-data:/data
+    env_file:
+      - path: .env
+        required: false
+    environment:  # these win over .env
+      FANTASY_DATA_DIR: /data
+      FANTASY_UI_HOST: 0.0.0.0
+    restart: unless-stopped
+
+volumes:
+  fantasy-data:

@@ -1,13 +1,11 @@
-"""FastAPI app: the /api routes and the static page at /. Bind it to 127.0.0.1 only."""
+"""FastAPI app: the /api routes (the page is src/ui). Bind it to 127.0.0.1 only."""
 
 import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from . import chat, panel, setup
@@ -56,5 +54,3 @@ app.include_router(chat.router)
 def health():
     return {"ok": True, "version": "0.1.0"}
 
-
-app.mount("/", StaticFiles(directory=Path(__file__).parent / "static", html=True), name="static")
