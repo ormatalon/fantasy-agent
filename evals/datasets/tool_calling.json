@@ -1,0 +1,816 @@
+[
+ {
+  "id": "T001",
+  "question": "What week is it in my league?",
+  "expected_tools": [
+   "get_league_state"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T002",
+  "question": "Who am I playing this week?",
+  "expected_tools": [
+   "get_league_state"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T003",
+  "question": "What are the starting roster slots in my league?",
+  "expected_tools": [
+   "get_league_state"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T004",
+  "question": "Who are my starters right now?",
+  "expected_tools": [
+   "get_my_roster"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T005",
+  "question": "Show me my team.",
+  "expected_tools": [
+   "get_my_roster"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T006",
+  "question": "Is anyone on my team hurt?",
+  "expected_tools": [
+   "get_my_roster"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T007",
+  "question": "What does my opponent's roster look like?",
+  "expected_tools": [
+   "get_fantasy_team_roster"
+  ],
+  "expected_args": {
+   "fantasy_team": "<opponent team name>"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T008",
+  "question": "Show me Dan's team.",
+  "expected_tools": [
+   "get_fantasy_team_roster"
+  ],
+  "expected_args": {
+   "fantasy_team": "Dan"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T009",
+  "question": "Which players does the team 'Gridiron Gang' have?",
+  "expected_tools": [
+   "get_fantasy_team_roster"
+  ],
+  "expected_args": {
+   "fantasy_team": "Gridiron Gang"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T010",
+  "question": "Who is on the Seahawks right now?",
+  "expected_tools": [
+   "get_nfl_team_roster"
+  ],
+  "expected_args": {
+   "team": "Seahawks"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T011",
+  "question": "Who is Kansas City's WR1?",
+  "expected_tools": [
+   "get_nfl_team_roster"
+  ],
+  "expected_args": {
+   "team": "Kansas City"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T012",
+  "question": "Which team does Tank Dell play for?",
+  "expected_tools": [
+   "get_nfl_team_roster"
+  ],
+  "expected_args": {
+   "team": "<resolved from player>"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T013",
+  "question": "What trades happened in my league recently?",
+  "expected_tools": [
+   "get_recent_transactions"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T014",
+  "question": "Who got picked up off waivers this week?",
+  "expected_tools": [
+   "get_recent_transactions"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T015",
+  "question": "Show me the last 5 moves in the league.",
+  "expected_tools": [
+   "get_recent_transactions"
+  ],
+  "expected_args": {
+   "limit": 5
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T016",
+  "question": "How many points is Josh Allen projected for this week?",
+  "expected_tools": [
+   "get_projections"
+  ],
+  "expected_args": {
+   "players": "Josh Allen"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T017",
+  "question": "Compare this week's projections for Justin Jefferson and Tyreek Hill.",
+  "expected_tools": [
+   "get_projections"
+  ],
+  "expected_args": {
+   "players": "Justin Jefferson, Tyreek Hill"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T018",
+  "question": "Who are the top 5 projected tight ends this week?",
+  "expected_tools": [
+   "get_projections"
+  ],
+  "expected_args": {
+   "position": "TE",
+   "limit": 5
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T019",
+  "question": "Who are the best running backs for the rest of the season?",
+  "expected_tools": [
+   "get_season_projections"
+  ],
+  "expected_args": {
+   "position": "RB"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T020",
+  "question": "Top 10 rest-of-season wide receivers?",
+  "expected_tools": [
+   "get_season_projections"
+  ],
+  "expected_args": {
+   "position": "WR",
+   "limit": 10
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T021",
+  "question": "Show me full-season projected totals for quarterbacks.",
+  "expected_tools": [
+   "get_season_projections"
+  ],
+  "expected_args": {
+   "position": "QB",
+   "full_season": true
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T022",
+  "question": "Who are the top RBs so far this season?",
+  "expected_tools": [
+   "get_season_to_date_leaders"
+  ],
+  "expected_args": {
+   "position": "RB"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T023",
+  "question": "Who has been the best TE this year?",
+  "expected_tools": [
+   "get_season_to_date_leaders"
+  ],
+  "expected_args": {
+   "position": "TE"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T024",
+  "question": "Is Derrick Henry having a good season?",
+  "expected_tools": [
+   "get_season_to_date_leaders"
+  ],
+  "expected_args": {
+   "position": "RB"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T025",
+  "question": "Who should I start this week?",
+  "expected_tools": [
+   "recommend_lineup"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T026",
+  "question": "Set my optimal lineup.",
+  "expected_tools": [
+   "recommend_lineup"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T027",
+  "question": "What's my best lineup for next week?",
+  "expected_tools": [
+   "recommend_lineup"
+  ],
+  "expected_args": {
+   "week": "<current week + 1>"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T028",
+  "question": "Who should I pick up off waivers this week?",
+  "expected_tools": [
+   "get_waiver_targets"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T029",
+  "question": "Best available wide receivers?",
+  "expected_tools": [
+   "get_waiver_targets"
+  ],
+  "expected_args": {
+   "position": "WR"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T030",
+  "question": "Any free agents worth a long-term add?",
+  "expected_tools": [
+   "get_waiver_targets"
+  ],
+  "expected_args": {
+   "horizon": "season"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T031",
+  "question": "Which injured players can I stash?",
+  "expected_tools": [
+   "get_injured_stash_candidates"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T032",
+  "question": "Is there an injured running back worth picking up?",
+  "expected_tools": [
+   "get_injured_stash_candidates"
+  ],
+  "expected_args": {
+   "position": "RB"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T033",
+  "question": "Any IR guys on waivers worth holding for the playoffs?",
+  "expected_tools": [
+   "get_injured_stash_candidates"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T034",
+  "question": "What waiver claims do I have in?",
+  "expected_tools": [
+   "get_pending_claims"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T035",
+  "question": "Did my claim go in?",
+  "expected_tools": [
+   "get_pending_claims"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T036",
+  "question": "Who am I dropping in my pending claims?",
+  "expected_tools": [
+   "get_pending_claims"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T037",
+  "question": "Should I trade Saquon Barkley for Josh Allen?",
+  "expected_tools": [
+   "evaluate_proposed_trade"
+  ],
+  "expected_args": {
+   "give": "Saquon Barkley",
+   "receive": "Josh Allen"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T038",
+  "question": "Is giving Justin Jefferson for Bijan Robinson and Drake London a good deal?",
+  "expected_tools": [
+   "evaluate_proposed_trade"
+  ],
+  "expected_args": {
+   "give": "Justin Jefferson",
+   "receive": "Bijan Robinson, Drake London"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T039",
+  "question": "Would trading Travis Kelce for Trey McBride help me just this week?",
+  "expected_tools": [
+   "evaluate_proposed_trade"
+  ],
+  "expected_args": {
+   "give": "Travis Kelce",
+   "receive": "Trey McBride",
+   "horizon": "week"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T040",
+  "question": "What's the latest on Christian McCaffrey?",
+  "expected_tools": [
+   "get_player_news"
+  ],
+  "expected_args": {
+   "players": "Christian McCaffrey"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T041",
+  "question": "Any news on Tank Dell and Malik Nabers?",
+  "expected_tools": [
+   "get_player_news"
+  ],
+  "expected_args": {
+   "players": "Tank Dell, Malik Nabers"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T042",
+  "question": "Why did Jaxon Smith-Njigba's role change?",
+  "expected_tools": [
+   "get_player_news"
+  ],
+  "expected_args": {
+   "players": "Jaxon Smith-Njigba"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T043",
+  "question": "Anything I should know about my team this week?",
+  "expected_tools": [
+   "get_roster_news"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T044",
+  "question": "Give me the news on all my players.",
+  "expected_tools": [
+   "get_roster_news"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T045",
+  "question": "Any updates across my roster?",
+  "expected_tools": [
+   "get_roster_news"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T046",
+  "question": "Who is everyone adding right now?",
+  "expected_tools": [
+   "get_trending_players"
+  ],
+  "expected_args": {
+   "kind": "add"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T047",
+  "question": "Who are people dropping this week?",
+  "expected_tools": [
+   "get_trending_players"
+  ],
+  "expected_args": {
+   "kind": "drop"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T048",
+  "question": "What are the top 5 trending adds in the last 48 hours?",
+  "expected_tools": [
+   "get_trending_players"
+  ],
+  "expected_args": {
+   "kind": "add",
+   "limit": 5,
+   "lookback_hours": 48
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T049",
+  "question": "How did I do last week?",
+  "expected_tools": [
+   "get_week_results"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T050",
+  "question": "Did I win in week 8?",
+  "expected_tools": [
+   "get_week_results"
+  ],
+  "expected_args": {
+   "week": 8
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T051",
+  "question": "What's my live score this week?",
+  "expected_tools": [
+   "get_week_results"
+  ],
+  "expected_args": {
+   "week": "<current week>"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T052",
+  "question": "I just made a trade, refresh the data.",
+  "expected_tools": [
+   "sync_league"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T053",
+  "question": "Sync my league.",
+  "expected_tools": [
+   "sync_league"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T054",
+  "question": "A player just got hurt, update everything.",
+  "expected_tools": [
+   "sync_league"
+  ],
+  "expected_args": {},
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T055",
+  "question": "Switch to my work league.",
+  "expected_tools": [
+   "switch_league"
+  ],
+  "expected_args": {
+   "league_name": "work"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T056",
+  "question": "Let's look at my dynasty league instead.",
+  "expected_tools": [
+   "switch_league"
+  ],
+  "expected_args": {
+   "league_name": "dynasty"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T057",
+  "question": "Go to the league called Sunday Legends.",
+  "expected_tools": [
+   "switch_league"
+  ],
+  "expected_args": {
+   "league_name": "Sunday Legends"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T058",
+  "question": "Remember that I never want Dallas players.",
+  "expected_tools": [
+   "remember_preference"
+  ],
+  "expected_args": {
+   "note": "Never recommend Dallas players"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T059",
+  "question": "From now on, I prefer a high floor at FLEX.",
+  "expected_tools": [
+   "remember_preference"
+  ],
+  "expected_args": {
+   "note": "Risk-averse at FLEX: prefers a high floor"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T060",
+  "question": "Always remember I like rookies.",
+  "expected_tools": [
+   "remember_preference"
+  ],
+  "expected_args": {
+   "note": "Likes rookies"
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T061",
+  "question": "Forget my first preference.",
+  "expected_tools": [
+   "forget_preference"
+  ],
+  "expected_args": {
+   "number": 1
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T062",
+  "question": "Delete preference number 3.",
+  "expected_tools": [
+   "forget_preference"
+  ],
+  "expected_args": {
+   "number": 3
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T063",
+  "question": "Remove the second thing you remember about me.",
+  "expected_tools": [
+   "forget_preference"
+  ],
+  "expected_args": {
+   "number": 2
+  },
+  "category": "single_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T064",
+  "question": "Should I start Jefferson or Hill this week, and is either of them hurt?",
+  "expected_tools": [
+   "get_projections",
+   "get_player_news"
+  ],
+  "expected_args": null,
+  "category": "multi_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T065",
+  "question": "How did I do last week, and who should I start this week?",
+  "expected_tools": [
+   "get_week_results",
+   "recommend_lineup"
+  ],
+  "expected_args": null,
+  "category": "multi_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T066",
+  "question": "Who's the best waiver WR, and what's the news on him?",
+  "expected_tools": [
+   "get_waiver_targets",
+   "get_player_news"
+  ],
+  "expected_args": null,
+  "category": "multi_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T067",
+  "question": "What week is it, and who is my opponent's best player?",
+  "expected_tools": [
+   "get_league_state",
+   "get_fantasy_team_roster"
+  ],
+  "expected_args": null,
+  "category": "multi_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T068",
+  "question": "Sync the league and then tell me my lineup.",
+  "expected_tools": [
+   "sync_league",
+   "recommend_lineup"
+  ],
+  "expected_args": null,
+  "category": "multi_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T069",
+  "question": "What is a PPR league?",
+  "expected_tools": [],
+  "expected_args": null,
+  "category": "no_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T070",
+  "question": "Explain what a FAAB bid is.",
+  "expected_tools": [],
+  "expected_args": null,
+  "category": "no_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T071",
+  "question": "Who will win the Super Bowl in 2030?",
+  "expected_tools": [],
+  "expected_args": null,
+  "category": "no_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T072",
+  "question": "Can you book me tickets to the Bills game?",
+  "expected_tools": [],
+  "expected_args": null,
+  "category": "no_tool",
+  "reviewed_by_or": false
+ },
+ {
+  "id": "T073",
+  "question": "Tell me a joke about kickers.",
+  "expected_tools": [],
+  "expected_args": null,
+  "category": "no_tool",
+  "reviewed_by_or": false
+ }
+]

@@ -1,0 +1,502 @@
+[
+ {
+  "paraphrases": [
+   "Should I start Justin Jefferson or Tyreek Hill this week?",
+   "Tyreek Hill or Justin Jefferson, who do I play?",
+   "I can only start one of Justin Jefferson and Tyreek Hill. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C01",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Justin Jefferson or Tyreek Hill?",
+   "Did Tyreek Hill outscore Justin Jefferson last week?",
+   "Compare last week's points for Justin Jefferson and Tyreek Hill."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C02",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start Bijan Robinson or Breece Hall this week?",
+   "Breece Hall or Bijan Robinson, who do I play?",
+   "I can only start one of Bijan Robinson and Breece Hall. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C03",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Bijan Robinson or Breece Hall?",
+   "Did Breece Hall outscore Bijan Robinson last week?",
+   "Compare last week's points for Bijan Robinson and Breece Hall."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C04",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start CeeDee Lamb or Amon-Ra St. Brown this week?",
+   "Amon-Ra St. Brown or CeeDee Lamb, who do I play?",
+   "I can only start one of CeeDee Lamb and Amon-Ra St. Brown. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C05",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, CeeDee Lamb or Amon-Ra St. Brown?",
+   "Did Amon-Ra St. Brown outscore CeeDee Lamb last week?",
+   "Compare last week's points for CeeDee Lamb and Amon-Ra St. Brown."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C06",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start Josh Allen or Lamar Jackson this week?",
+   "Lamar Jackson or Josh Allen, who do I play?",
+   "I can only start one of Josh Allen and Lamar Jackson. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C07",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Josh Allen or Lamar Jackson?",
+   "Did Lamar Jackson outscore Josh Allen last week?",
+   "Compare last week's points for Josh Allen and Lamar Jackson."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C08",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start Travis Kelce or Trey McBride this week?",
+   "Trey McBride or Travis Kelce, who do I play?",
+   "I can only start one of Travis Kelce and Trey McBride. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C09",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Travis Kelce or Trey McBride?",
+   "Did Trey McBride outscore Travis Kelce last week?",
+   "Compare last week's points for Travis Kelce and Trey McBride."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C10",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start Derrick Henry or Jahmyr Gibbs this week?",
+   "Jahmyr Gibbs or Derrick Henry, who do I play?",
+   "I can only start one of Derrick Henry and Jahmyr Gibbs. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C11",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Derrick Henry or Jahmyr Gibbs?",
+   "Did Jahmyr Gibbs outscore Derrick Henry last week?",
+   "Compare last week's points for Derrick Henry and Jahmyr Gibbs."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C12",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start A.J. Brown or Puka Nacua this week?",
+   "Puka Nacua or A.J. Brown, who do I play?",
+   "I can only start one of A.J. Brown and Puka Nacua. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C13",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, A.J. Brown or Puka Nacua?",
+   "Did Puka Nacua outscore A.J. Brown last week?",
+   "Compare last week's points for A.J. Brown and Puka Nacua."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C14",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start Jalen Hurts or Joe Burrow this week?",
+   "Joe Burrow or Jalen Hurts, who do I play?",
+   "I can only start one of Jalen Hurts and Joe Burrow. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C15",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Jalen Hurts or Joe Burrow?",
+   "Did Joe Burrow outscore Jalen Hurts last week?",
+   "Compare last week's points for Jalen Hurts and Joe Burrow."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C16",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start Saquon Barkley or Kyren Williams this week?",
+   "Kyren Williams or Saquon Barkley, who do I play?",
+   "I can only start one of Saquon Barkley and Kyren Williams. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C17",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Saquon Barkley or Kyren Williams?",
+   "Did Kyren Williams outscore Saquon Barkley last week?",
+   "Compare last week's points for Saquon Barkley and Kyren Williams."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C18",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I start Ja'Marr Chase or Malik Nabers this week?",
+   "Malik Nabers or Ja'Marr Chase, who do I play?",
+   "I can only start one of Ja'Marr Chase and Malik Nabers. Which one?"
+  ],
+  "expected": "same pick in all three",
+  "group": "C19",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who scored more fantasy points last week, Ja'Marr Chase or Malik Nabers?",
+   "Did Malik Nabers outscore Ja'Marr Chase last week?",
+   "Compare last week's points for Ja'Marr Chase and Malik Nabers."
+  ],
+  "expected": "same winner and same numbers",
+  "group": "C20",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Christian McCaffrey injured?",
+   "Any injury news on Christian McCaffrey?",
+   "Can I count on Christian McCaffrey being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C21",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Christian McCaffrey score last week?",
+   "What was Christian McCaffrey's fantasy score last week?",
+   "Last week, Christian McCaffrey put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C22",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Patrick Mahomes injured?",
+   "Any injury news on Patrick Mahomes?",
+   "Can I count on Patrick Mahomes being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C23",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Patrick Mahomes score last week?",
+   "What was Patrick Mahomes's fantasy score last week?",
+   "Last week, Patrick Mahomes put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C24",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Tank Dell injured?",
+   "Any injury news on Tank Dell?",
+   "Can I count on Tank Dell being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C25",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Tank Dell score last week?",
+   "What was Tank Dell's fantasy score last week?",
+   "Last week, Tank Dell put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C26",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Jaxon Smith-Njigba injured?",
+   "Any injury news on Jaxon Smith-Njigba?",
+   "Can I count on Jaxon Smith-Njigba being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C27",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Jaxon Smith-Njigba score last week?",
+   "What was Jaxon Smith-Njigba's fantasy score last week?",
+   "Last week, Jaxon Smith-Njigba put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C28",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is De'Von Achane injured?",
+   "Any injury news on De'Von Achane?",
+   "Can I count on De'Von Achane being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C29",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did De'Von Achane score last week?",
+   "What was De'Von Achane's fantasy score last week?",
+   "Last week, De'Von Achane put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C30",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Sam LaPorta injured?",
+   "Any injury news on Sam LaPorta?",
+   "Can I count on Sam LaPorta being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C31",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Sam LaPorta score last week?",
+   "What was Sam LaPorta's fantasy score last week?",
+   "Last week, Sam LaPorta put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C32",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is George Kittle injured?",
+   "Any injury news on George Kittle?",
+   "Can I count on George Kittle being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C33",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did George Kittle score last week?",
+   "What was George Kittle's fantasy score last week?",
+   "Last week, George Kittle put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C34",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Drake London injured?",
+   "Any injury news on Drake London?",
+   "Can I count on Drake London being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C35",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Drake London score last week?",
+   "What was Drake London's fantasy score last week?",
+   "Last week, Drake London put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C36",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Garrett Wilson injured?",
+   "Any injury news on Garrett Wilson?",
+   "Can I count on Garrett Wilson being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C37",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Garrett Wilson score last week?",
+   "What was Garrett Wilson's fantasy score last week?",
+   "Last week, Garrett Wilson put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C38",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Is Jonathan Taylor injured?",
+   "Any injury news on Jonathan Taylor?",
+   "Can I count on Jonathan Taylor being healthy this week?"
+  ],
+  "expected": "same injury status",
+  "group": "C39",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "How many fantasy points did Jonathan Taylor score last week?",
+   "What was Jonathan Taylor's fantasy score last week?",
+   "Last week, Jonathan Taylor put up how many points?"
+  ],
+  "expected": "same number",
+  "group": "C40",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Top 3 QBs this season?",
+   "Who are the three best fantasy quarterbacks so far?",
+   "Rank the top 3 fantasy QBs."
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C41",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "What's my weakest position?",
+   "Where is my team thinnest?",
+   "Which position should I upgrade first?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C42",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I pick up a tight end from waivers?",
+   "Is it worth adding a TE this week?",
+   "Do I need a new tight end?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C43",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who is the best free agent running back?",
+   "Which RB should I grab off waivers?",
+   "Best available running back right now?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C44",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Which of my players are on bye this week?",
+   "Who on my roster has a bye?",
+   "Any byes on my team this week?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C45",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Which defense should I start this week?",
+   "Best D/ST for me this week?",
+   "Pick my defense for this week."
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C46",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Who is my best trade chip?",
+   "Which player has the most trade value on my team?",
+   "Who should I shop in a trade?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C47",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Top 5 running backs this season?",
+   "Rank the five best fantasy RBs so far.",
+   "Who are the leading five running backs?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C48",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "Should I drop my worst bench player?",
+   "Is anyone on my bench worth cutting?",
+   "Who is the weakest player on my bench?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C49",
+  "reviewed_by_or": false
+ },
+ {
+  "paraphrases": [
+   "What was my team's score last week?",
+   "How many points did my team put up last week?",
+   "Last week's total for my team?"
+  ],
+  "expected": "same answer across paraphrases",
+  "group": "C50",
+  "reviewed_by_or": false
+ }
+]
